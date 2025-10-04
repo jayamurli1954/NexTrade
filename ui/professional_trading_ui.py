@@ -84,6 +84,7 @@ class ProfessionalTradingUI:
         self.notebook.pack(fill="both", expand=True)
 
         self.tab_dashboard = ttk.Frame(self.notebook)
+        self.tab_portfolio = ttk.Frame(self.notebook)
         self.tab_premarket = ttk.Frame(self.notebook)
         self.tab_watchlist = ttk.Frame(self.notebook)
         self.tab_analyzer = ttk.Frame(self.notebook)
@@ -92,6 +93,7 @@ class ProfessionalTradingUI:
         self.tab_about = ttk.Frame(self.notebook)
 
         self.notebook.add(self.tab_dashboard, text="Dashboard")
+        self.notebook.add(self.tab_portfolio, text="Portfolio")
         self.notebook.add(self.tab_premarket, text="Pre-Market")
         self.notebook.add(self.tab_watchlist, text="Watchlist")
         self.notebook.add(self.tab_analyzer, text="Analyzer")
@@ -100,6 +102,7 @@ class ProfessionalTradingUI:
         self.notebook.add(self.tab_about, text="About")
 
         self._build_dashboard_tab(self.tab_dashboard)
+        self._build_portfolio_tab(self.tab_portfolio)
         self._build_premarket_tab(self.tab_premarket)
         self._build_watchlist_tab(self.tab_watchlist)
         self._build_analyzer_tab(self.tab_analyzer)
@@ -135,6 +138,81 @@ class ProfessionalTradingUI:
         ttk.Label(right, text="Holdings & Positions", style="Heading.TLabel").pack(anchor="w")
         self._holdings_text = tk.Text(right, height=18, wrap="word", font=("Consolas", 9))
         self._holdings_text.pack(fill="both", expand=True, pady=(6, 0))
+
+    def _build_portfolio_tab(self, parent):
+        """Build portfolio holdings tab"""
+        box = ttk.Frame(parent)
+        box.pack(fill="both", expand=True, padx=12, pady=12)
+
+        header = ttk.Frame(box)
+        header.pack(fill="x", pady=(0, 8))
+        ttk.Label(header, text="Real Broker Holdings from Angel One", style="Heading.TLabel").pack(side="left")
+        ttk.Button(header, text="Refresh Holdings", command=self._refresh_portfolio, style="Success.TButton").pack(side="right")
+
+        # Summary info
+        self._portfolio_summary = ttk.Label(box, text="", font=("Segoe UI", 10))
+        self._portfolio_summary.pack(anchor="w", pady=(0, 8))
+
+        # Holdings table
+        columns = ('symbol', 'qty', 'avg_price', 'current_price', 'pnl', 'pnl_pct')
+        self.holdings_tree = ttk.Treeview(box, columns=columns, show='headings', height=20)
+        
+        self.holdings_tree.heading('symbol', text='Symbol')
+        self.holdings_tree.heading('qty', text='Quantity')
+        self.holdings_tree.heading('avg_price', text='Avg Price')
+        self.holdings_tree.heading('current_price', text='Current Price')
+        self.holdings_tree.heading('pnl', text='P&L (₹)')
+        self.holdings_tree.heading('pnl_pct', text='P&L %')
+        
+        self.holdings_tree.column('symbol', width=150)
+        self.holdings_tree.column('qty', width=100)
+        self.holdings_tree.column('avg_price', width=120)
+        self.holdings_tree.column('current_price', width=120)
+        self.holdings_tree.column('pnl', width=150)
+        self.holdings_tree.column('pnl_pct', width=100)
+        
+        self.holdings_tree.pack(fill="both", expand=True)
+        
+        # Color coding
+        self.holdings_tree.tag_configure('profit', background='#d4edda')
+        self.holdings_tree.tag_configure('loss', background='#f8d7da')
+        
+        self._refresh_portfolio()
+
+    def _refresh_portfolio(self):
+        """Refresh portfolio holdings table"""
+        for item in self.holdings_tree.get_children():
+            self.holdings_tree.delete(item)
+        
+        if not self.provider.is_connected:
+            self._portfolio_summary.config(text="Not connected to broker")
+            return
+        
+        try:
+            holdings = self.provider.get_holdings()
+            total_pnl = 0
+            total_value = 0
+            
+            for h in holdings:
+                pnl = h['pnl']
+                total_pnl += pnl
+                total_value += h['current_price'] * h['quantity']
+                
+                tag = 'profit' if pnl >= 0 else 'loss'
+                self.holdings_tree.insert('', 'end', values=(
+                    h['symbol'],
+                    h['quantity'],
+                    f"₹{h['avg_price']:.2f}",
+                    f"₹{h['current_price']:.2f}",
+                    f"₹{pnl:.2f}",
+                    f"{h['pnl_percent']:+.2f}%"
+                ), tags=(tag,))
+            
+            summary_text = f"Total Holdings: {len(holdings)} | Portfolio Value: ₹{total_value:,.2f} | Total P&L: ₹{total_pnl:+,.2f}"
+            self._portfolio_summary.config(text=summary_text)
+            
+        except Exception as e:
+            self._portfolio_summary.config(text=f"Error: {e}")
 
     def _build_premarket_tab(self, parent):
         box = ttk.Frame(parent)
@@ -738,7 +816,8 @@ Warning: This is educational software. Always test thoroughly in paper mode befo
                 if self.paper_mode:
                     paper_margin = self.paper_trader.get_available_margin()
                     # Show both
-                    self._netcash_text.set(f"Paper: ₹{paper_margin:,.2f} | Broker: ₹{broker_funds:,.2f}")
+                    broker_cash = broker_funds.get("available_cash", 0) if isinstance(broker_funds, dict) else broker_funds
+                    self._netcash_text.set(f"Paper: ₹{paper_margin:,.2f} | Broker: ₹{broker_cash:,.2f}")
                 else:
                     # Live mode
                     self._netcash_text.set(f"₹{broker_funds:,.2f}")
@@ -749,7 +828,7 @@ Warning: This is educational software. Always test thoroughly in paper mode befo
                 
         except Exception as e:
             self._account_name.set("Error")
-            self._netcash_text.set("₹0.00")(f"Connected ({'LIVE' if live else 'PAPER'})")
+            self._netcash_text.set("₹0.00")
         else:
             self._status_text.set("Disconnected")
             self._connect_text.set("Connect")
