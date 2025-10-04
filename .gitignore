@@ -1,0 +1,11 @@
+config/config.json
+config/credentials_path.txt
+__pycache__/
+*.pyc
+*.pyo
+logs/*.log
+logs/2025-*/
+data/*.json
+data/*.csv
+.env
+*.bat
