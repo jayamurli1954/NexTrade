@@ -39,4 +39,4 @@ Thumbs.db
 *.tmp
 *.bak
 *.backup
-   .gitignore.bak 
+.gitignore.bak 
