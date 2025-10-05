@@ -1,17 +1,41 @@
+# Credentials and sensitive data
 config/config.json
 config/credentials_path.txt
+.env
+
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
-logs/*.log
-logs/2025-*/
+
+# Virtual environment
+angelbot/
+venv/
+env/
+
+# Data files (large)
 data/*.json
 data/*.csv
-.env
+
+# Logs
+logs/*.log
+logs/2025-*/
+
+# Batch files (Windows specific, optional)
 *.bat
-data/*.json 
-logs/*.log 
-__pycache__/ 
-*.pyc 
-angelbot/ 
-.env 
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
