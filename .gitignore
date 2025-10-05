@@ -9,3 +9,9 @@ data/*.json
 data/*.csv
 .env
 *.bat
+data/*.json 
+logs/*.log 
+__pycache__/ 
+*.pyc 
+angelbot/ 
+.env 
