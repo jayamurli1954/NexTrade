@@ -1,0 +1,69 @@
+To check your Git version history and tags:
+
+## Check All Tagged Versions
+
+```cmd
+git tag -l
+```
+
+Expected output:
+```
+v1.0.0-baseline
+v1.0.2-portfolio-complete
+```
+
+## Check Commit History
+
+```cmd
+git log --oneline --graph --all
+```
+
+Shows visual graph of commits with tags.
+
+## Check Current Version
+
+```cmd
+git describe --tags
+```
+
+Shows: `v1.0.2-portfolio-complete` (your current version)
+
+## See What Changed Between Versions
+
+```cmd
+git diff v1.0.0-baseline v1.0.2-portfolio-complete
+```
+
+Shows all code changes between baseline and current version.
+
+## Check Which Files Changed
+
+```cmd
+git diff --name-only v1.0.0-baseline v1.0.2-portfolio-complete
+```
+
+Shows just filenames that changed.
+
+## View Specific Version Details
+
+```cmd
+git show v1.0.2-portfolio-complete
+```
+
+Shows commit message and changes for that tag.
+
+---
+
+Your current version history looks like this:
+
+```
+v1.0.2-portfolio-complete (HEAD -> master)
+    ↑
+    Step 2 Complete: Portfolio & Funds fetching
+    
+v1.0.0-baseline (develop branch)
+    ↑
+    Baseline: Current modular structure
+```
+
+You successfully completed Step 2 today. The version control is working properly, and you can safely rollback to `v1.0.0-baseline` if needed using `git checkout v1.0.0-baseline`.
