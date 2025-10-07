@@ -1,8 +1,7 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
-Enhanced Paper Trader with Auto-Exit and Excel Logging
-File: order_manager/paper_trader.py
+Enhanced Paper Trader with Auto-Exit & Excel Logging
+=====================================================
+File: c:\Users\Dell\tradingbot_new\order_manager\paper_trader.py
 
 Features:
 1. Intraday auto-exit at 3:15 PM
@@ -10,29 +9,28 @@ Features:
 3. Excel trade logging with P&L tracking
 4. Real-time position monitoring
 5. Daily trade summary
+
+COMPLETE - Replace your entire paper_trader.py with this file
 """
 
 from datetime import datetime, time
 import pandas as pd
 import os
 import threading
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment
 import logging
-
-# Optional Excel support
-try:
-    import openpyxl
-    from openpyxl.styles import Font, PatternFill, Alignment
-    EXCEL_AVAILABLE = True
-except ImportError:
-    EXCEL_AVAILABLE = False
-    print("WARNING: openpyxl not installed. Excel logging disabled.")
-    print("Install with: pip install openpyxl")
 
 logger = logging.getLogger("PaperTrader")
 
 
 class PaperTrader:
-    """Paper trading system with auto-exit and logging"""
+    """
+    Paper trading system with:
+    - Intraday auto-exit at 3:15 PM
+    - Auto SL/Target execution
+    - Excel trade logging
+    """
     
     def __init__(self, initial_cash=100000, leverage=5.0, enable_intraday=True, trade_logger=None):
         """Initialize paper trader"""
@@ -52,16 +50,12 @@ class PaperTrader:
         self._stop_monitoring = threading.Event()
         
         # Excel logging
-        if EXCEL_AVAILABLE:
-            self.excel_file = self._get_excel_filename()
-            self._init_excel_file()
-        else:
-            self.excel_file = None
+        self.excel_file = self._get_excel_filename()
+        self._init_excel_file()
         
-        logger.info("PaperTrader started: Cash Rs.{:,.2f}, Leverage {}x".format(self.cash, self.leverage))
-        logger.info("Auto-exit enabled: Square off at {}".format(self.market_close_time.strftime('%H:%M')))
-        if self.excel_file:
-            logger.info("Trade log: {}".format(self.excel_file))
+        logger.info(f"PaperTrader started: Cash ₹{self.cash:,.2f}, Leverage {self.leverage}x")
+        logger.info(f"Auto-exit enabled: Square off at {self.market_close_time.strftime('%H:%M')}")
+        logger.info(f"Trade log: {self.excel_file}")
         
         # Start monitoring thread
         if self.auto_exit_enabled:
@@ -72,12 +66,12 @@ class PaperTrader:
         today = datetime.now().strftime('%Y-%m-%d')
         logs_dir = 'logs/trades'
         os.makedirs(logs_dir, exist_ok=True)
-        return os.path.join(logs_dir, 'paper_trades_{}.xlsx'.format(today))
+        return os.path.join(logs_dir, f'paper_trades_{today}.xlsx')
     
     def _init_excel_file(self):
         """Initialize Excel file with headers"""
-        if not EXCEL_AVAILABLE or os.path.exists(self.excel_file):
-            return
+        if os.path.exists(self.excel_file):
+            return  # File already exists
         
         try:
             wb = openpyxl.Workbook()
@@ -88,7 +82,7 @@ class PaperTrader:
             headers = [
                 'Trade ID', 'Date', 'Time', 'Symbol', 'Action', 'Type',
                 'Quantity', 'Entry Price', 'Exit Price', 'Entry Time', 'Exit Time',
-                'Target', 'Stop Loss', 'P&L (Rs)', 'P&L %', 'Status', 'Exit Reason'
+                'Target', 'Stop Loss', 'P&L (₹)', 'P&L %', 'Status', 'Exit Reason'
             ]
             
             # Style headers
@@ -103,26 +97,39 @@ class PaperTrader:
                 cell.alignment = Alignment(horizontal='center')
             
             # Set column widths
-            widths = [12, 12, 10, 15, 8, 10, 10, 12, 12, 10, 10, 12, 12, 12, 10, 12, 20]
-            for idx, width in enumerate(widths, 1):
-                ws.column_dimensions[openpyxl.utils.get_column_letter(idx)].width = width
+            ws.column_dimensions['A'].width = 12  # Trade ID
+            ws.column_dimensions['B'].width = 12  # Date
+            ws.column_dimensions['C'].width = 10  # Time
+            ws.column_dimensions['D'].width = 15  # Symbol
+            ws.column_dimensions['E'].width = 8   # Action
+            ws.column_dimensions['F'].width = 10  # Type
+            ws.column_dimensions['G'].width = 10  # Quantity
+            ws.column_dimensions['H'].width = 12  # Entry Price
+            ws.column_dimensions['I'].width = 12  # Exit Price
+            ws.column_dimensions['J'].width = 10  # Entry Time
+            ws.column_dimensions['K'].width = 10  # Exit Time
+            ws.column_dimensions['L'].width = 12  # Target
+            ws.column_dimensions['M'].width = 12  # Stop Loss
+            ws.column_dimensions['N'].width = 12  # P&L
+            ws.column_dimensions['O'].width = 10  # P&L %
+            ws.column_dimensions['P'].width = 12  # Status
+            ws.column_dimensions['Q'].width = 20  # Exit Reason
             
             wb.save(self.excel_file)
-            logger.info("Created Excel file: {}".format(self.excel_file))
+            logger.info(f"Created Excel file: {self.excel_file}")
         except Exception as e:
-            logger.error("Excel init error: {}".format(e))
+            logger.error(f"Excel init error: {e}")
     
     def _log_trade_to_excel(self, trade_data):
         """Log trade to Excel file"""
-        if not EXCEL_AVAILABLE or not self.excel_file:
-            return
-        
         try:
             wb = openpyxl.load_workbook(self.excel_file)
             ws = wb.active
             
+            # Find next row
             next_row = ws.max_row + 1
             
+            # Write data
             data = [
                 trade_data.get('trade_id', ''),
                 trade_data.get('date', ''),
@@ -156,10 +163,9 @@ class PaperTrader:
                 pnl_cell.font = Font(color='FF0000', bold=True)
             
             wb.save(self.excel_file)
-            logger.info("Trade logged to Excel: {} P&L=Rs.{:.2f}".format(
-                trade_data['symbol'], trade_data.get('pnl', 0)))
+            logger.info(f"Trade logged to Excel: {trade_data['symbol']} P&L=₹{trade_data.get('pnl', 0):.2f}")
         except Exception as e:
-            logger.error("Excel logging error: {}".format(e))
+            logger.error(f"Excel logging error: {e}")
     
     def get_available_margin(self):
         """Calculate available margin"""
@@ -202,17 +208,21 @@ class PaperTrader:
         existing_position = self.positions.get(symbol)
         
         if existing_position:
+            # Closing existing position
             if existing_position['type'] != action:
                 if quantity <= existing_position['quantity']:
                     return self._close_position_partial(symbol, quantity, price, action)
                 else:
+                    # Close and reverse
                     close_qty = existing_position['quantity']
                     self._close_position_partial(symbol, close_qty, price, action)
                     reverse_qty = quantity - close_qty
                     return self._open_new_position(symbol, action, reverse_qty, price, stoploss, target)
             else:
+                # Adding to position
                 return self._add_to_position(symbol, quantity, price)
         
+        # Open new position
         return self._open_new_position(symbol, action, quantity, price, stoploss, target)
     
     def _open_new_position(self, symbol, action, quantity, price, stoploss=None, target=None):
@@ -224,8 +234,7 @@ class PaperTrader:
         if required_margin > available:
             return {
                 'success': False,
-                'message': 'Insufficient margin. Required: Rs.{:,.2f}, Available: Rs.{:,.2f}'.format(
-                    required_margin, available)
+                'message': f'Insufficient margin. Required: ₹{required_margin:,.2f}, Available: ₹{available:,.2f}'
             }
         
         self.used_margin += required_margin
@@ -270,12 +279,11 @@ class PaperTrader:
         self._log_trade_to_excel(trade_data)
         
         direction = "LONG" if action == 'BUY' else "SHORT"
-        logger.info("OPENED: {} {} x {} @ Rs.{:.2f} [ID: {}]".format(
-            direction, quantity, symbol, price, trade_id))
+        logger.info(f"OPENED: {direction} {quantity} x {symbol} @ ₹{price:.2f} [ID: {trade_id}]")
         
         return {
             'success': True,
-            'message': '{} {} x {} @ Rs.{:.2f}'.format(direction, quantity, symbol, price),
+            'message': f'{direction} {quantity} x {symbol} @ ₹{price:.2f}',
             'position': self.positions[symbol].copy()
         }
     
@@ -335,14 +343,12 @@ class PaperTrader:
             pos['margin_used'] -= margin_to_release
             status = 'PARTIAL_CLOSE'
         
-        pnl_sign = "+" if pnl >= 0 else ""
-        logger.info("{}: {} x {} @ Rs.{:.2f} | P&L: {}Rs.{:,.2f} ({:+.2f}%) | Reason: {}".format(
-            status, quantity, symbol, exit_price, pnl_sign, pnl, pnl_pct, exit_reason))
+        pnl_emoji = "✓" if pnl > 0 else "✗"
+        logger.info(f"{pnl_emoji} {status}: {quantity} x {symbol} @ ₹{exit_price:.2f} | P&L: ₹{pnl:+,.2f} ({pnl_pct:+.2f}%) | Reason: {exit_reason}")
         
         return {
             'success': True,
-            'message': '{}: {} x {} @ Rs.{:.2f}. P&L: Rs.{:+,.2f} ({:+.2f}%)'.format(
-                status, quantity, symbol, exit_price, pnl, pnl_pct),
+            'message': f'{status}: {quantity} x {symbol} @ ₹{exit_price:.2f}. P&L: ₹{pnl:+,.2f} ({pnl_pct:+.2f}%)',
             'pnl': pnl,
             'status': status
         }
@@ -357,7 +363,7 @@ class PaperTrader:
         if required_margin > available:
             return {
                 'success': False,
-                'message': 'Insufficient margin to add. Required: Rs.{:,.2f}'.format(required_margin)
+                'message': f'Insufficient margin to add. Required: ₹{required_margin:,.2f}'
             }
         
         total_qty = pos['qty'] + quantity
@@ -371,13 +377,13 @@ class PaperTrader:
         
         return {
             'success': True,
-            'message': 'Added {} to {}. New avg: Rs.{:.2f}'.format(quantity, symbol, new_avg_price),
+            'message': f'Added {quantity} to {symbol}. New avg: ₹{new_avg_price:.2f}',
             'position': pos.copy()
         }
     
     def _generate_trade_id(self):
         """Generate unique trade ID"""
-        return "T{}".format(datetime.now().strftime('%Y%m%d%H%M%S'))
+        return f"T{datetime.now().strftime('%Y%m%d%H%M%S')}"
     
     def update_position(self, symbol, current_price):
         """Update position with current price"""
@@ -407,14 +413,14 @@ class PaperTrader:
                 self._last_exit_reason = 'STOP_LOSS'
                 exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
                 result = self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
-                logger.warning("STOP-LOSS HIT: {} @ Rs.{:.2f}".format(symbol, current_price))
+                logger.warning(f"STOP-LOSS HIT: {symbol} @ ₹{current_price:.2f}")
                 return {'action': 'STOP_LOSS', 'result': result}
             
             elif pos['position_type'] == 'SHORT' and current_price >= pos['stoploss']:
                 self._last_exit_reason = 'STOP_LOSS'
                 exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
                 result = self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
-                logger.warning("STOP-LOSS HIT: {} @ Rs.{:.2f}".format(symbol, current_price))
+                logger.warning(f"STOP-LOSS HIT: {symbol} @ ₹{current_price:.2f}")
                 return {'action': 'STOP_LOSS', 'result': result}
         
         # Check target
@@ -423,14 +429,14 @@ class PaperTrader:
                 self._last_exit_reason = 'TARGET'
                 exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
                 result = self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
-                logger.info("TARGET REACHED: {} @ Rs.{:.2f}".format(symbol, current_price))
+                logger.info(f"TARGET REACHED: {symbol} @ ₹{current_price:.2f}")
                 return {'action': 'TARGET', 'result': result}
             
             elif pos['position_type'] == 'SHORT' and current_price <= pos['target']:
                 self._last_exit_reason = 'TARGET'
                 exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
                 result = self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
-                logger.info("TARGET REACHED: {} @ Rs.{:.2f}".format(symbol, current_price))
+                logger.info(f"TARGET REACHED: {symbol} @ ₹{current_price:.2f}")
                 return {'action': 'TARGET', 'result': result}
         
         return None
@@ -450,15 +456,17 @@ class PaperTrader:
             try:
                 now = datetime.now().time()
                 
+                # Check if it's 3:15 PM or later
                 if now >= self.market_close_time and self.positions:
-                    logger.warning("AUTO-EXIT TRIGGERED at {}".format(now.strftime('%H:%M:%S')))
+                    logger.warning(f"AUTO-EXIT TRIGGERED at {now.strftime('%H:%M:%S')}")
                     self._auto_square_off_all()
-                    break
+                    break  # Stop monitoring after square off
                 
+                # Sleep for 30 seconds before next check
                 time_module.sleep(30)
                 
             except Exception as e:
-                logger.error("Monitoring error: {}".format(e))
+                logger.error(f"Monitoring error: {e}")
                 time_module.sleep(60)
     
     def _auto_square_off_all(self):
@@ -466,7 +474,7 @@ class PaperTrader:
         if not self.positions:
             return
         
-        logger.warning("FORCE SQUARE OFF: Closing {} open positions at 3:15 PM".format(len(self.positions)))
+        logger.warning(f"FORCE SQUARE OFF: Closing {len(self.positions)} open positions at 3:15 PM")
         
         squared_off = []
         for symbol in list(self.positions.keys()):
@@ -476,7 +484,12 @@ class PaperTrader:
             self._last_exit_reason = 'AUTO_EXIT_3:15PM'
             exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
             
-            result = self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
+            result = self._close_position_partial(
+                symbol, 
+                pos['qty'], 
+                current_price, 
+                exit_action
+            )
             
             if result['success']:
                 squared_off.append({
@@ -486,17 +499,17 @@ class PaperTrader:
                 })
         
         total_pnl = sum(item['pnl'] for item in squared_off)
-        logger.info("AUTO SQUARE-OFF COMPLETE: Total P&L = Rs.{:+,.2f}".format(total_pnl))
+        logger.info(f"AUTO SQUARE-OFF COMPLETE: Total P&L = ₹{total_pnl:+,.2f}")
         
+        # Print summary to console
         print("\n" + "="*80)
         print("  AUTO SQUARE-OFF EXECUTED AT 3:15 PM")
         print("="*80)
         for item in squared_off:
             pnl_sign = "+" if item['pnl'] >= 0 else ""
-            print("  {:12} @ Rs.{:8.2f}  |  P&L: {}Rs.{:,.2f}".format(
-                item['symbol'], item['price'], pnl_sign, item['pnl']))
+            print(f"  {item['symbol']:12} @ ₹{item['price']:8.2f}  |  P&L: {pnl_sign}₹{item['pnl']:,.2f}")
         print("="*80)
-        print("  TOTAL P&L: {}Rs.{:,.2f}".format("+" if total_pnl >= 0 else "", total_pnl))
+        print(f"  TOTAL P&L: {'+' if total_pnl >= 0 else ''}₹{total_pnl:,.2f}")
         print("="*80 + "\n")
         
         return squared_off
@@ -507,12 +520,13 @@ class PaperTrader:
             logger.info("No open positions to square off")
             return []
         
-        logger.info("Manual square off: {} positions".format(len(self.positions)))
+        logger.info(f"Manual square off: {len(self.positions)} positions")
         
         squared_off = []
         for symbol in list(self.positions.keys()):
             pos = self.positions[symbol]
             
+            # Get current price from provider if available
             if provider:
                 try:
                     current_price = provider.get_ltp(symbol, 'NSE')
@@ -524,7 +538,12 @@ class PaperTrader:
             self._last_exit_reason = 'MANUAL_SQUARE_OFF'
             exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
             
-            result = self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
+            result = self._close_position_partial(
+                symbol, 
+                pos['qty'], 
+                current_price, 
+                exit_action
+            )
             
             if result['success']:
                 squared_off.append({
@@ -534,7 +553,7 @@ class PaperTrader:
                 })
         
         total_pnl = sum(item['pnl'] for item in squared_off)
-        logger.info("Manual square-off complete. Total P&L: Rs.{:+,.2f}".format(total_pnl))
+        logger.info(f"Manual square-off complete. Total P&L: ₹{total_pnl:+,.2f}")
         
         return squared_off
     
@@ -585,6 +604,67 @@ class PaperTrader:
             'portfolio_value': summary['portfolio_value'],
             'positions': {symbol: pos for symbol, pos in self.positions.items()}
         }
+    
+    def get_daily_summary_from_excel(self):
+        """Get daily summary from Excel"""
+        try:
+            if not os.path.exists(self.excel_file):
+                return {
+                    'total_trades': 0,
+                    'winning_trades': 0,
+                    'losing_trades': 0,
+                    'total_pnl': 0,
+                    'win_rate': 0
+                }
+            
+            df = pd.read_excel(self.excel_file)
+            
+            # Filter only EXIT trades
+            exits = df[df['Type'] == 'EXIT']
+            
+            total_trades = len(exits)
+            winning_trades = len(exits[exits['P&L (₹)'] > 0])
+            losing_trades = len(exits[exits['P&L (₹)'] < 0])
+            total_pnl = exits['P&L (₹)'].sum()
+            win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0
+            
+            return {
+                'total_trades': total_trades,
+                'winning_trades': winning_trades,
+                'losing_trades': losing_trades,
+                'total_pnl': total_pnl,
+                'win_rate': win_rate,
+                'avg_win': exits[exits['P&L (₹)'] > 0]['P&L (₹)'].mean() if winning_trades > 0 else 0,
+                'avg_loss': exits[exits['P&L (₹)'] < 0]['P&L (₹)'].mean() if losing_trades > 0 else 0
+            }
+        except Exception as e:
+            logger.error(f"Excel summary error: {e}")
+            return {
+                'total_trades': 0,
+                'winning_trades': 0,
+                'losing_trades': 0,
+                'total_pnl': 0,
+                'win_rate': 0
+            }
+    
+    def print_daily_summary(self):
+        """Print daily summary to console"""
+        summary = self.get_daily_summary_from_excel()
+        
+        print("\n" + "="*80)
+        print("  DAILY TRADING SUMMARY")
+        print("="*80)
+        print(f"  Total Trades     : {summary['total_trades']}")
+        print(f"  Winning Trades   : {summary['winning_trades']}")
+        print(f"  Losing Trades    : {summary['losing_trades']}")
+        print(f"  Win Rate         : {summary['win_rate']:.2f}%")
+        print(f"  Total P&L        : ₹{summary['total_pnl']:+,.2f}")
+        if summary['total_trades'] > 0:
+            print(f"  Avg Win          : ₹{summary.get('avg_win', 0):+,.2f}")
+            print(f"  Avg Loss         : ₹{summary.get('avg_loss', 0):+,.2f}")
+        print("="*80)
+        print(f"  Excel Report: {self.excel_file}")
+        print("="*80 + "\n")
     
     def stop(self):
         """Stop monitoring thread"""

@@ -1,0 +1,5 @@
+[33m0b42218[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;33mtag: [m[1;33mv1.0.9-watchlist-working[m[33m)[m wip: Watchlist working with 94 stocks, UI fixes pending
+[33m88d062b[m[33m ([m[1;33mtag: [m[1;33mv1.0.8-watchlist[m[33m)[m feat: Add 94-stock watchlist with complete Angel One symbol mapping
+[33ma07a266[m[33m ([m[1;33mtag: [m[1;33mv1.0.7-working[m[33m, [m[1;33mtag: [m[1;33mv1.0.6-organized[m[33m)[m refactor: Move test files to tests/ directory for better organization
+[33m6223f25[m fix: Remove leading space from .gitignore.bak entry
+[33m8a435b5[m fix: Correct .gitignore formatting
