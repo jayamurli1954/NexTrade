@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Enhanced Paper Trader with Auto-Exit and Excel Logging
+Enhanced Paper Trader with REAL-TIME Monitoring - FIXED VERSION
 File: order_manager/paper_trader.py
 
-Features:
-1. Intraday auto-exit at 3:15 PM
-2. Auto Stop-Loss and Target execution
-3. Excel trade logging with P&L tracking
-4. Real-time position monitoring
-5. Daily trade summary
+CRITICAL FIXES:
+1. ✅ Real-time SL/Target monitoring every 10 seconds
+2. ✅ Network failure handling - NEVER uses entry price as fallback
+3. ✅ Exact 3:15 PM auto-exit with 5-second interval checks from 3:14:50
+4. ✅ Proper API retry logic with exponential backoff
+5. ✅ Excel logging with all trade details
 """
 
 from datetime import datetime, time
@@ -17,6 +17,7 @@ import pandas as pd
 import os
 import threading
 import logging
+import time as time_module
 
 # Optional Excel support
 try:
@@ -32,7 +33,7 @@ logger = logging.getLogger("PaperTrader")
 
 
 class PaperTrader:
-    """Paper trading system with auto-exit and logging"""
+    """Paper trading system with REAL-TIME monitoring"""
     
     def __init__(self, initial_cash=100000, leverage=5.0, enable_intraday=True, trade_logger=None):
         """Initialize paper trader"""
@@ -44,11 +45,16 @@ class PaperTrader:
         self.positions = {}
         self.trade_history = []
         self.trade_logger = trade_logger
+        self.data_provider = None  # Will be set by main.py
         
-        # Auto-exit settings
-        self.market_close_time = time(15, 15)  # Square off at 3:15 PM
+        # FIXED: Real-time monitoring settings
+        self.market_close_time = time(15, 15, 0)  # 3:15:00 PM
+        self.pre_close_check_time = time(15, 14, 50)  # Start checking at 3:14:50 PM
         self.auto_exit_enabled = True
-        self._exit_thread = None
+        self.monitoring_interval = 10  # Check every 10 seconds for SL/Target
+        self.pre_close_interval = 5  # Check every 5 seconds near market close
+        
+        self._monitor_thread = None
         self._stop_monitoring = threading.Event()
         
         # Excel logging
@@ -58,13 +64,19 @@ class PaperTrader:
         else:
             self.excel_file = None
         
-        logger.info("PaperTrader started: Cash Rs.{:,.2f}, Leverage {}x".format(self.cash, self.leverage))
-        logger.info("Auto-exit enabled: Square off at {}".format(self.market_close_time.strftime('%H:%M')))
+        logger.info(f"PaperTrader started: Cash ₹{self.cash:,.2f}, Leverage {self.leverage}x")
+        logger.info(f"Real-time monitoring: SL/Target checks every {self.monitoring_interval}s")
+        logger.info(f"Auto-exit at {self.market_close_time.strftime('%H:%M:%S')} (checks from {self.pre_close_check_time.strftime('%H:%M:%S')})")
         if self.excel_file:
-            logger.info("Trade log: {}".format(self.excel_file))
+            logger.info(f"Trade log: {self.excel_file}")
+    
+    def set_data_provider(self, provider):
+        """Set data provider for live price fetching"""
+        self.data_provider = provider
+        logger.info("Data provider connected for real-time prices")
         
-        # Start monitoring thread
-        if self.auto_exit_enabled:
+        # Start monitoring thread now that we have provider
+        if self.auto_exit_enabled and not self._monitor_thread:
             self._start_monitoring()
     
     def _get_excel_filename(self):
@@ -72,7 +84,7 @@ class PaperTrader:
         today = datetime.now().strftime('%Y-%m-%d')
         logs_dir = 'logs/trades'
         os.makedirs(logs_dir, exist_ok=True)
-        return os.path.join(logs_dir, 'paper_trades_{}.xlsx'.format(today))
+        return os.path.join(logs_dir, f'paper_trades_{today}.xlsx')
     
     def _init_excel_file(self):
         """Initialize Excel file with headers"""
@@ -84,14 +96,12 @@ class PaperTrader:
             ws = wb.active
             ws.title = "Trades"
             
-            # Headers
             headers = [
                 'Trade ID', 'Date', 'Time', 'Symbol', 'Action', 'Type',
                 'Quantity', 'Entry Price', 'Exit Price', 'Entry Time', 'Exit Time',
-                'Target', 'Stop Loss', 'P&L (Rs)', 'P&L %', 'Status', 'Exit Reason'
+                'Target', 'Stop Loss', 'P&L (₹)', 'P&L %', 'Status', 'Exit Reason'
             ]
             
-            # Style headers
             header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
             header_font = Font(bold=True, color='FFFFFF')
             
@@ -102,15 +112,14 @@ class PaperTrader:
                 cell.font = header_font
                 cell.alignment = Alignment(horizontal='center')
             
-            # Set column widths
             widths = [12, 12, 10, 15, 8, 10, 10, 12, 12, 10, 10, 12, 12, 12, 10, 12, 20]
             for idx, width in enumerate(widths, 1):
                 ws.column_dimensions[openpyxl.utils.get_column_letter(idx)].width = width
             
             wb.save(self.excel_file)
-            logger.info("Created Excel file: {}".format(self.excel_file))
+            logger.info(f"Created Excel file: {self.excel_file}")
         except Exception as e:
-            logger.error("Excel init error: {}".format(e))
+            logger.error(f"Excel init error: {e}")
     
     def _log_trade_to_excel(self, trade_data):
         """Log trade to Excel file"""
@@ -148,7 +157,6 @@ class PaperTrader:
                 cell.value = value
                 cell.alignment = Alignment(horizontal='center')
             
-            # Color code P&L
             pnl_cell = ws.cell(row=next_row, column=14)
             if trade_data.get('pnl', 0) > 0:
                 pnl_cell.font = Font(color='00B050', bold=True)
@@ -156,10 +164,9 @@ class PaperTrader:
                 pnl_cell.font = Font(color='FF0000', bold=True)
             
             wb.save(self.excel_file)
-            logger.info("Trade logged to Excel: {} P&L=Rs.{:.2f}".format(
-                trade_data['symbol'], trade_data.get('pnl', 0)))
+            logger.info(f"✅ Excel logged: {trade_data['symbol']} P&L=₹{trade_data.get('pnl', 0):.2f}")
         except Exception as e:
-            logger.error("Excel logging error: {}".format(e))
+            logger.error(f"Excel logging error: {e}")
     
     def get_available_margin(self):
         """Calculate available margin"""
@@ -224,8 +231,7 @@ class PaperTrader:
         if required_margin > available:
             return {
                 'success': False,
-                'message': 'Insufficient margin. Required: Rs.{:,.2f}, Available: Rs.{:,.2f}'.format(
-                    required_margin, available)
+                'message': f'Insufficient margin. Required: ₹{required_margin:,.2f}, Available: ₹{available:,.2f}'
             }
         
         self.used_margin += required_margin
@@ -270,12 +276,20 @@ class PaperTrader:
         self._log_trade_to_excel(trade_data)
         
         direction = "LONG" if action == 'BUY' else "SHORT"
-        logger.info("OPENED: {} {} x {} @ Rs.{:.2f} [ID: {}]".format(
-            direction, quantity, symbol, price, trade_id))
+        print(f"\n{'='*80}")
+        print(f"  ✅ POSITION OPENED: {direction} {quantity} x {symbol} @ ₹{price:.2f}")
+        print(f"  Trade ID: {trade_id}")
+        if stoploss:
+            print(f"  Stop Loss: ₹{stoploss:.2f}")
+        if target:
+            print(f"  Target: ₹{target:.2f}")
+        print(f"{'='*80}\n")
+        
+        logger.info(f"OPENED: {direction} {quantity} x {symbol} @ ₹{price:.2f} [ID: {trade_id}]")
         
         return {
             'success': True,
-            'message': '{} {} x {} @ Rs.{:.2f}'.format(direction, quantity, symbol, price),
+            'message': f'{direction} {quantity} x {symbol} @ ₹{price:.2f}',
             'position': self.positions[symbol].copy()
         }
     
@@ -336,13 +350,18 @@ class PaperTrader:
             status = 'PARTIAL_CLOSE'
         
         pnl_sign = "+" if pnl >= 0 else ""
-        logger.info("{}: {} x {} @ Rs.{:.2f} | P&L: {}Rs.{:,.2f} ({:+.2f}%) | Reason: {}".format(
-            status, quantity, symbol, exit_price, pnl_sign, pnl, pnl_pct, exit_reason))
+        
+        print(f"\n{'='*80}")
+        print(f"  ✅ POSITION {status}: {quantity} x {symbol} @ ₹{exit_price:.2f}")
+        print(f"  P&L: {pnl_sign}₹{pnl:,.2f} ({pnl_pct:+.2f}%)")
+        print(f"  Exit Reason: {exit_reason}")
+        print(f"{'='*80}\n")
+        
+        logger.info(f"{status}: {quantity} x {symbol} @ ₹{exit_price:.2f} | P&L: {pnl_sign}₹{pnl:,.2f} ({pnl_pct:+.2f}%) | Reason: {exit_reason}")
         
         return {
             'success': True,
-            'message': '{}: {} x {} @ Rs.{:.2f}. P&L: Rs.{:+,.2f} ({:+.2f}%)'.format(
-                status, quantity, symbol, exit_price, pnl, pnl_pct),
+            'message': f'{status}: {quantity} x {symbol} @ ₹{exit_price:.2f}. P&L: ₹{pnl:+,.2f} ({pnl_pct:+.2f}%)',
             'pnl': pnl,
             'status': status
         }
@@ -357,7 +376,7 @@ class PaperTrader:
         if required_margin > available:
             return {
                 'success': False,
-                'message': 'Insufficient margin to add. Required: Rs.{:,.2f}'.format(required_margin)
+                'message': f'Insufficient margin to add. Required: ₹{required_margin:,.2f}'
             }
         
         total_qty = pos['qty'] + quantity
@@ -371,107 +390,168 @@ class PaperTrader:
         
         return {
             'success': True,
-            'message': 'Added {} to {}. New avg: Rs.{:.2f}'.format(quantity, symbol, new_avg_price),
+            'message': f'Added {quantity} to {symbol}. New avg: ₹{new_avg_price:.2f}',
             'position': pos.copy()
         }
     
     def _generate_trade_id(self):
         """Generate unique trade ID"""
-        return "T{}".format(datetime.now().strftime('%Y%m%d%H%M%S'))
+        return f"T{datetime.now().strftime('%Y%m%d%H%M%S')}"
     
-    def update_position(self, symbol, current_price):
-        """Update position with current price"""
-        if symbol not in self.positions:
+    def _get_live_price_with_retry(self, symbol, max_retries=3):
+        """
+        CRITICAL FIX: Get live price with retry logic - NEVER use entry price as fallback
+        Returns None if all retries fail - caller must handle this
+        """
+        if not self.data_provider:
+            logger.error(f"No data provider for {symbol} - cannot fetch live price")
             return None
         
-        pos = self.positions[symbol]
-        pos['current_price'] = current_price
+        for attempt in range(max_retries):
+            try:
+                price = self.data_provider.get_ltp(symbol, 'NSE')
+                if price and price > 0:
+                    return price
+                
+                logger.warning(f"Invalid price for {symbol} (attempt {attempt+1}/{max_retries})")
+                time_module.sleep(1 * (attempt + 1))  # Exponential backoff
+                
+            except Exception as e:
+                logger.error(f"Price fetch error for {symbol} (attempt {attempt+1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    time_module.sleep(2 * (attempt + 1))
         
-        if pos['position_type'] == 'LONG':
-            pos['pnl'] = (current_price - pos['avg_price']) * pos['qty']
-        else:
-            pos['pnl'] = (pos['avg_price'] - current_price) * pos['qty']
-        
-        return pos
-    
-    def check_and_execute_sl_target(self, symbol, current_price):
-        """Check and auto-execute SL/Target"""
-        if symbol not in self.positions:
-            return None
-        
-        pos = self.positions[symbol]
-        
-        # Check stop-loss
-        if pos.get('stoploss'):
-            if pos['position_type'] == 'LONG' and current_price <= pos['stoploss']:
-                self._last_exit_reason = 'STOP_LOSS'
-                exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
-                result = self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
-                logger.warning("STOP-LOSS HIT: {} @ Rs.{:.2f}".format(symbol, current_price))
-                return {'action': 'STOP_LOSS', 'result': result}
-            
-            elif pos['position_type'] == 'SHORT' and current_price >= pos['stoploss']:
-                self._last_exit_reason = 'STOP_LOSS'
-                exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
-                result = self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
-                logger.warning("STOP-LOSS HIT: {} @ Rs.{:.2f}".format(symbol, current_price))
-                return {'action': 'STOP_LOSS', 'result': result}
-        
-        # Check target
-        if pos.get('target'):
-            if pos['position_type'] == 'LONG' and current_price >= pos['target']:
-                self._last_exit_reason = 'TARGET'
-                exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
-                result = self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
-                logger.info("TARGET REACHED: {} @ Rs.{:.2f}".format(symbol, current_price))
-                return {'action': 'TARGET', 'result': result}
-            
-            elif pos['position_type'] == 'SHORT' and current_price <= pos['target']:
-                self._last_exit_reason = 'TARGET'
-                exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
-                result = self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
-                logger.info("TARGET REACHED: {} @ Rs.{:.2f}".format(symbol, current_price))
-                return {'action': 'TARGET', 'result': result}
-        
+        logger.error(f"❌ CRITICAL: Failed to fetch live price for {symbol} after {max_retries} attempts")
         return None
     
     def _start_monitoring(self):
-        """Start monitoring thread for auto-exit"""
+        """Start monitoring thread for real-time SL/Target checks"""
         self._stop_monitoring.clear()
-        self._exit_thread = threading.Thread(target=self._monitor_positions, daemon=True)
-        self._exit_thread.start()
-        logger.info("Position monitoring started")
+        self._monitor_thread = threading.Thread(target=self._monitor_positions, daemon=True)
+        self._monitor_thread.start()
+        logger.info("✅ Real-time position monitoring started")
     
     def _monitor_positions(self):
-        """Monitor positions for auto-exit at 3:15 PM"""
-        import time as time_module
+        """
+        CRITICAL FIX: Monitor positions in real-time
+        - Check SL/Target every 10 seconds
+        - Check for 3:15 PM auto-exit every 5 seconds from 3:14:50 PM
+        """
+        logger.info("Monitoring thread active - checking positions continuously")
         
         while not self._stop_monitoring.is_set():
             try:
                 now = datetime.now().time()
                 
-                if now >= self.market_close_time and self.positions:
-                    logger.warning("AUTO-EXIT TRIGGERED at {}".format(now.strftime('%H:%M:%S')))
-                    self._auto_square_off_all()
-                    break
+                # CRITICAL FIX: Precise 3:15 PM check starting from 3:14:50 PM
+                if now >= self.pre_close_check_time:
+                    if now >= self.market_close_time:
+                        if self.positions:
+                            logger.warning(f"⏰ AUTO-EXIT TRIGGERED at {now.strftime('%H:%M:%S')}")
+                            self._auto_square_off_all()
+                        break  # Stop monitoring after auto-exit
+                    else:
+                        # Near market close - check every 5 seconds
+                        time_module.sleep(self.pre_close_interval)
+                        continue
                 
-                time_module.sleep(30)
+                # CRITICAL FIX: Real-time SL/Target monitoring
+                if self.positions:
+                    self._check_all_positions_sl_target()
+                
+                # Sleep 10 seconds before next check
+                time_module.sleep(self.monitoring_interval)
                 
             except Exception as e:
-                logger.error("Monitoring error: {}".format(e))
+                logger.error(f"Monitoring error: {e}")
                 time_module.sleep(60)
+        
+        logger.info("Monitoring thread stopped")
+    
+    def _check_all_positions_sl_target(self):
+        """
+        CRITICAL FIX: Check all positions for SL/Target hits
+        Uses live prices with retry logic
+        """
+        for symbol in list(self.positions.keys()):
+            try:
+                pos = self.positions.get(symbol)
+                if not pos:
+                    continue
+                
+                # Get live price with retry
+                current_price = self._get_live_price_with_retry(symbol)
+                
+                if current_price is None:
+                    logger.warning(f"⚠️ Skipping SL/Target check for {symbol} - no live price available")
+                    continue
+                
+                # Update position with live price
+                pos['current_price'] = current_price
+                
+                # Calculate current P&L
+                if pos['position_type'] == 'LONG':
+                    pos['pnl'] = (current_price - pos['avg_price']) * pos['qty']
+                else:
+                    pos['pnl'] = (pos['avg_price'] - current_price) * pos['qty']
+                
+                # Check Stop-Loss
+                if pos.get('stoploss') and pos['stoploss'] > 0:
+                    if pos['position_type'] == 'LONG' and current_price <= pos['stoploss']:
+                        logger.warning(f"🛑 STOP-LOSS HIT: {symbol} @ ₹{current_price:.2f} (SL: ₹{pos['stoploss']:.2f})")
+                        self._last_exit_reason = 'STOP_LOSS'
+                        exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
+                        self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
+                        continue
+                    
+                    elif pos['position_type'] == 'SHORT' and current_price >= pos['stoploss']:
+                        logger.warning(f"🛑 STOP-LOSS HIT: {symbol} @ ₹{current_price:.2f} (SL: ₹{pos['stoploss']:.2f})")
+                        self._last_exit_reason = 'STOP_LOSS'
+                        exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
+                        self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
+                        continue
+                
+                # Check Target
+                if pos.get('target') and pos['target'] > 0:
+                    if pos['position_type'] == 'LONG' and current_price >= pos['target']:
+                        logger.info(f"🎯 TARGET REACHED: {symbol} @ ₹{current_price:.2f} (Target: ₹{pos['target']:.2f})")
+                        self._last_exit_reason = 'TARGET'
+                        exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
+                        self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
+                        continue
+                    
+                    elif pos['position_type'] == 'SHORT' and current_price <= pos['target']:
+                        logger.info(f"🎯 TARGET REACHED: {symbol} @ ₹{current_price:.2f} (Target: ₹{pos['target']:.2f})")
+                        self._last_exit_reason = 'TARGET'
+                        exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
+                        self._close_position_partial(symbol, pos['qty'], current_price, exit_action)
+                        continue
+                
+            except Exception as e:
+                logger.error(f"Error checking position {symbol}: {e}")
     
     def _auto_square_off_all(self):
-        """Auto square off all positions at market close"""
+        """
+        CRITICAL FIX: Auto square off at 3:15 PM with proper price fetching
+        """
         if not self.positions:
             return
         
-        logger.warning("FORCE SQUARE OFF: Closing {} open positions at 3:15 PM".format(len(self.positions)))
+        logger.warning(f"🚨 FORCE SQUARE OFF: Closing {len(self.positions)} open positions at 3:15 PM")
         
         squared_off = []
+        failed_symbols = []
+        
         for symbol in list(self.positions.keys()):
             pos = self.positions[symbol]
-            current_price = pos['current_price']
+            
+            # CRITICAL FIX: Get live price with retry - NEVER use entry price
+            current_price = self._get_live_price_with_retry(symbol, max_retries=5)
+            
+            if current_price is None:
+                logger.error(f"❌ CRITICAL: Cannot square off {symbol} - no live price after retries")
+                failed_symbols.append(symbol)
+                continue
             
             self._last_exit_reason = 'AUTO_EXIT_3:15PM'
             exit_action = 'SELL' if pos['type'] == 'BUY' else 'BUY'
@@ -486,18 +566,20 @@ class PaperTrader:
                 })
         
         total_pnl = sum(item['pnl'] for item in squared_off)
-        logger.info("AUTO SQUARE-OFF COMPLETE: Total P&L = Rs.{:+,.2f}".format(total_pnl))
         
         print("\n" + "="*80)
-        print("  AUTO SQUARE-OFF EXECUTED AT 3:15 PM")
+        print("  🚨 AUTO SQUARE-OFF EXECUTED AT 3:15 PM")
         print("="*80)
         for item in squared_off:
             pnl_sign = "+" if item['pnl'] >= 0 else ""
-            print("  {:12} @ Rs.{:8.2f}  |  P&L: {}Rs.{:,.2f}".format(
-                item['symbol'], item['price'], pnl_sign, item['pnl']))
+            print(f"  {item['symbol']:12} @ ₹{item['price']:8.2f}  |  P&L: {pnl_sign}₹{item['pnl']:,.2f}")
         print("="*80)
-        print("  TOTAL P&L: {}Rs.{:,.2f}".format("+" if total_pnl >= 0 else "", total_pnl))
+        print(f"  TOTAL P&L: {'+'if total_pnl >= 0 else ''}₹{total_pnl:,.2f}")
+        if failed_symbols:
+            print(f"  ⚠️ FAILED TO EXIT: {', '.join(failed_symbols)}")
         print("="*80 + "\n")
+        
+        logger.info(f"AUTO SQUARE-OFF COMPLETE: Total P&L = ₹{total_pnl:+,.2f}")
         
         return squared_off
     
@@ -507,18 +589,16 @@ class PaperTrader:
             logger.info("No open positions to square off")
             return []
         
-        logger.info("Manual square off: {} positions".format(len(self.positions)))
+        logger.info(f"Manual square off: {len(self.positions)} positions")
         
         squared_off = []
         for symbol in list(self.positions.keys()):
             pos = self.positions[symbol]
             
-            if provider:
-                try:
-                    current_price = provider.get_ltp(symbol, 'NSE')
-                except:
-                    current_price = pos['current_price']
-            else:
+            # Get live price
+            current_price = self._get_live_price_with_retry(symbol)
+            if current_price is None:
+                logger.warning(f"Using last known price for {symbol}")
                 current_price = pos['current_price']
             
             self._last_exit_reason = 'MANUAL_SQUARE_OFF'
@@ -534,7 +614,7 @@ class PaperTrader:
                 })
         
         total_pnl = sum(item['pnl'] for item in squared_off)
-        logger.info("Manual square-off complete. Total P&L: Rs.{:+,.2f}".format(total_pnl))
+        logger.info(f"Manual square-off complete. Total P&L: ₹{total_pnl:+,.2f}")
         
         return squared_off
     
@@ -588,9 +668,10 @@ class PaperTrader:
     
     def stop(self):
         """Stop monitoring thread"""
+        logger.info("Stopping paper trader...")
         self._stop_monitoring.set()
-        if self._exit_thread:
-            self._exit_thread.join(timeout=2)
+        if self._monitor_thread:
+            self._monitor_thread.join(timeout=5)
         logger.info("Paper trader stopped")
     
     def __del__(self):

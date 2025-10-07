@@ -1,4 +1,13 @@
-# analyzer/enhanced_analyzer.py - COMPLETE FILE WITH LIVE LTP
+# analyzer/enhanced_analyzer.py - FIXED VERSION WITH SIGNAL VALIDATION
+"""
+CRITICAL FIXES:
+1. ✅ Always uses LIVE LTP for analysis (not historical close)
+2. ✅ Signal validation - checks if BUY signals correlate with uptrend
+3. ✅ Improved confidence scoring
+4. ✅ Better error handling for API failures
+5. ✅ Retry logic for failed price fetches
+"""
+
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,8 +37,34 @@ class EnhancedAnalyzer:
         self.sentiment_analyzer = SentimentIntensityAnalyzer()
         self.newsapi_key = "your_newsapi_key"  # Replace with real key from newsapi.org
 
+    def _get_live_price_with_retry(self, symbol, exchange="NSE", max_retries=3):
+        """
+        CRITICAL FIX: Get live price with retry logic
+        Returns None if all retries fail
+        """
+        for attempt in range(max_retries):
+            try:
+                price = self.data_provider.get_ltp(symbol, exchange)
+                if price and price > 0:
+                    return price
+                
+                logger.warning(f"Invalid price for {symbol} (attempt {attempt+1}/{max_retries})")
+                if attempt < max_retries - 1:
+                    import time
+                    time.sleep(1)
+                
+            except Exception as e:
+                logger.error(f"Price fetch error for {symbol} (attempt {attempt+1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    import time
+                    time.sleep(1)
+        
+        return None
+
     def analyze_symbol(self, symbol, exchange="NSE"):
-        """Analyze a single symbol with LIVE LTP"""
+        """
+        CRITICAL FIX: Analyze with LIVE LTP and signal validation
+        """
         try:
             # Get historical data for indicators
             df = self.data_provider.get_historical(symbol=symbol, exchange=exchange, period_days=self.analysis_period)
@@ -56,11 +91,11 @@ class EnhancedAnalyzer:
             period_low = low_prices.min()
             fib_levels = fibonacci_retracement(period_high, period_low)
 
-            # CRITICAL FIX: Get LIVE LTP instead of using historical close
-            current_price_live = self.data_provider.get_ltp(symbol, exchange)
+            # CRITICAL FIX: Get LIVE LTP with retry
+            current_price_live = self._get_live_price_with_retry(symbol, exchange)
             if current_price_live is None:
-                logger.warning(f"Could not fetch live LTP for {symbol}, using last close price")
-                current_price_live = close_prices.iloc[-1]
+                logger.error(f"❌ Could not fetch live LTP for {symbol} - SKIPPING analysis")
+                return None
             
             logger.info(f"Analyzing {symbol} - Live LTP: ₹{current_price_live:.2f}")
 
@@ -74,9 +109,13 @@ class EnhancedAnalyzer:
 
             sentiment = self._get_sentiment(symbol)
 
+            # CRITICAL FIX: Calculate price momentum for signal validation
+            price_change_1d = ((current_price_live - close_prices.iloc[-1]) / close_prices.iloc[-1]) * 100
+            price_change_5d = ((current_price_live - close_prices.iloc[-5]) / close_prices.iloc[-5]) * 100 if len(close_prices) >= 5 else 0
+
             signal_data = self._generate_golden_ratio_signal(
                 symbol=symbol,
-                current_price=current_price_live,  # Using LIVE price
+                current_price=current_price_live,
                 current_rsi=current_rsi,
                 ema_short=current_ema_short,
                 ema_long=current_ema_long,
@@ -86,23 +125,81 @@ class EnhancedAnalyzer:
                 bb_lower=current_bb_lower,
                 period_high=period_high,
                 period_low=period_low,
-                sentiment=sentiment
+                sentiment=sentiment,
+                price_change_1d=price_change_1d,
+                price_change_5d=price_change_5d
             )
 
-            if signal_data and signal_data['confidence'] >= self.confidence_threshold:
-                logger.info(f"Signal found for {symbol}: {signal_data['action']} @ ₹{current_price_live:.2f} (confidence: {signal_data['confidence']:.1%})")
-                return signal_data
-            else:
-                logger.info(f"No high-confidence signal for {symbol} (confidence: {signal_data['confidence'] if signal_data else 0:.1%})")
-                return None
+            if signal_data:
+                # CRITICAL FIX: Validate signal logic
+                is_valid = self._validate_signal(signal_data, price_change_1d, price_change_5d)
+                
+                if not is_valid:
+                    logger.warning(f"⚠️ Signal REJECTED for {symbol}: {signal_data['action']} signal doesn't match price momentum")
+                    return None
+                
+                if signal_data['confidence'] >= self.confidence_threshold:
+                    logger.info(f"✅ Valid signal for {symbol}: {signal_data['action']} @ ₹{current_price_live:.2f} (confidence: {signal_data['confidence']:.1%})")
+                    return signal_data
+                else:
+                    logger.info(f"Low confidence signal for {symbol} ({signal_data['confidence']:.1%}) - rejected")
+                    return None
+            
+            return None
+            
         except Exception as e:
             logger.exception(f"Error analyzing {symbol}: {e}")
             return None
 
+    def _validate_signal(self, signal, price_change_1d, price_change_5d):
+        """
+        CRITICAL FIX: Validate that signal matches price momentum
+        
+        BUY signal should have:
+        - Positive or slightly negative momentum (not falling sharply)
+        - Or clear reversal indicators
+        
+        SELL signal should have:
+        - Negative or slightly positive momentum (not rising sharply)
+        - Or clear reversal indicators
+        """
+        action = signal['action']
+        
+        if action == 'BUY':
+            # For BUY signals, we want upward momentum or strong reversal signals
+            # Allow BUY if price is not falling more than -2% in 1 day
+            # OR if RSI is very oversold (clear reversal)
+            if price_change_1d < -2.0 and signal['rsi'] > 35:
+                logger.debug(f"BUY rejected: Price falling {price_change_1d:.2f}% without oversold RSI")
+                return False
+            
+            # If price falling 5%+ over 5 days, need very strong oversold signal
+            if price_change_5d < -5.0 and signal['rsi'] > 30:
+                logger.debug(f"BUY rejected: Strong downtrend ({price_change_5d:.2f}%) without strong oversold")
+                return False
+            
+            return True
+        
+        elif action == 'SELL':
+            # For SELL signals, we want downward momentum or strong overbought signals
+            # Allow SELL if price is not rising more than +2% in 1 day
+            # OR if RSI is very overbought
+            if price_change_1d > 2.0 and signal['rsi'] < 65:
+                logger.debug(f"SELL rejected: Price rising {price_change_1d:.2f}% without overbought RSI")
+                return False
+            
+            # If price rising 5%+ over 5 days, need very strong overbought signal
+            if price_change_5d > 5.0 and signal['rsi'] < 70:
+                logger.debug(f"SELL rejected: Strong uptrend ({price_change_5d:.2f}%) without strong overbought")
+                return False
+            
+            return True
+        
+        return True  # HOLD signals always valid
+
     def _get_sentiment(self, symbol):
         """Fetch sentiment from news (requires NewsAPI key)"""
         if self.newsapi_key == "your_newsapi_key":
-            # logger.debug("Using neutral sentiment - set real NewsAPI key for live sentiment")
             return 0
         try:
             url = f"https://newsapi.org/v2/everything?q={symbol}&apiKey={self.newsapi_key}&pageSize=10"
@@ -124,8 +221,10 @@ class EnhancedAnalyzer:
 
     def _generate_golden_ratio_signal(self, symbol, current_price, current_rsi, ema_short, ema_long, 
                                      fib_levels, volume_ratio, bb_upper, bb_lower, period_high, 
-                                     period_low, sentiment):
-        """Generate trading signal based on Golden Ratio and technical indicators"""
+                                     period_low, sentiment, price_change_1d, price_change_5d):
+        """
+        CRITICAL FIX: Improved signal generation with better scoring
+        """
         signal = {
             'symbol': symbol,
             'current_price': round(current_price, 2),
@@ -138,16 +237,21 @@ class EnhancedAnalyzer:
             'timestamp': datetime.now().isoformat(),
             'fib_levels': {k: round(v, 2) for k, v in fib_levels.items()},
             'volume_ratio': round(volume_ratio, 2),
-            'sentiment': round(sentiment, 2)
+            'sentiment': round(sentiment, 2),
+            'price_change_1d': round(price_change_1d, 2),
+            'price_change_5d': round(price_change_5d, 2)
         }
 
         buy_conditions = []
         buy_score = 0
 
-        # Buy condition checks
+        # BUY condition checks with improved scoring
         if current_price <= fib_levels['level_618'] * 1.02:
             buy_conditions.append("Near Golden Ratio support (61.8%)")
             buy_score += 30
+        elif current_price <= fib_levels['level_500'] * 1.02:
+            buy_conditions.append("At Fibonacci 50% support")
+            buy_score += 25
         elif current_price <= fib_levels['level_382'] * 1.02:
             buy_conditions.append("At Fibonacci 38.2% support")
             buy_score += 20
@@ -155,10 +259,17 @@ class EnhancedAnalyzer:
         if current_rsi <= self.rsi_oversold:
             buy_conditions.append(f"RSI oversold ({current_rsi:.1f})")
             buy_score += 25
+        elif current_rsi <= 40:
+            buy_conditions.append(f"RSI below 40 ({current_rsi:.1f})")
+            buy_score += 15
 
+        # CRITICAL FIX: EMA must show uptrend for BUY
         if ema_short > ema_long:
             buy_conditions.append("EMA uptrend confirmed")
-            buy_score += 20
+            buy_score += 25
+        elif ema_short > ema_long * 0.99:  # Within 1% - potential reversal
+            buy_conditions.append("EMA near crossover")
+            buy_score += 10
 
         if volume_ratio >= self.volume_threshold:
             buy_conditions.append(f"High volume ({volume_ratio:.1f}x avg)")
@@ -172,21 +283,31 @@ class EnhancedAnalyzer:
             buy_conditions.append(f"Positive sentiment ({sentiment:.2f})")
             buy_score += 10
 
-        # Sell condition checks
+        # Sell condition checks with improved scoring
         sell_conditions = []
         sell_score = 0
 
         if current_price >= fib_levels['level_618'] * 0.98:
             sell_conditions.append("Near Golden Ratio resistance (61.8%)")
             sell_score += 30
+        elif current_price >= fib_levels['level_786'] * 0.98:
+            sell_conditions.append("At Fibonacci 78.6% resistance")
+            sell_score += 25
 
         if current_rsi >= self.rsi_overbought:
             sell_conditions.append(f"RSI overbought ({current_rsi:.1f})")
             sell_score += 25
+        elif current_rsi >= 60:
+            sell_conditions.append(f"RSI above 60 ({current_rsi:.1f})")
+            sell_score += 15
 
+        # CRITICAL FIX: EMA must show downtrend for SELL
         if ema_short < ema_long:
             sell_conditions.append("EMA downtrend confirmed")
-            sell_score += 20
+            sell_score += 25
+        elif ema_short < ema_long * 1.01:  # Within 1% - potential reversal
+            sell_conditions.append("EMA near crossover")
+            sell_score += 10
 
         if volume_ratio >= self.volume_threshold:
             sell_conditions.append(f"High volume ({volume_ratio:.1f}x avg)")
@@ -200,19 +321,30 @@ class EnhancedAnalyzer:
             sell_conditions.append(f"Negative sentiment ({sentiment:.2f})")
             sell_score += 10
 
-        # Determine signal
+        # Determine signal with improved logic
         if buy_score > sell_score and buy_score >= 50:
             signal['action'] = 'BUY'
             signal['confidence'] = min(0.95, buy_score / 100)
             signal['reason'] = ' + '.join(buy_conditions) or "Multiple buy conditions met"
-            signal['target'] = round(max(fib_levels['level_618'], current_price * 1.05), 2)
-            signal['stop_loss'] = round(min(fib_levels['level_382'], current_price * 0.95), 2)
+            
+            # CRITICAL FIX: Better target and stop-loss calculation
+            target_multiplier = 1.05  # 5% target
+            sl_multiplier = 0.97  # 3% stop-loss
+            
+            signal['target'] = round(current_price * target_multiplier, 2)
+            signal['stop_loss'] = round(current_price * sl_multiplier, 2)
+            
         elif sell_score > buy_score and sell_score >= 50:
             signal['action'] = 'SELL'
             signal['confidence'] = min(0.95, sell_score / 100)
             signal['reason'] = ' + '.join(sell_conditions) or "Multiple sell conditions met"
-            signal['target'] = round(min(fib_levels['level_382'], current_price * 0.95), 2)
-            signal['stop_loss'] = round(max(fib_levels['level_618'], current_price * 1.05), 2)
+            
+            # CRITICAL FIX: For SHORT positions
+            target_multiplier = 0.95  # 5% downside target
+            sl_multiplier = 1.03  # 3% stop-loss (upside)
+            
+            signal['target'] = round(current_price * target_multiplier, 2)
+            signal['stop_loss'] = round(current_price * sl_multiplier, 2)
         else:
             logger.debug(f"No clear signal for {symbol} - Buy: {buy_score}, Sell: {sell_score}")
 
@@ -224,12 +356,15 @@ class EnhancedAnalyzer:
         signals = []
         
         for sym in symbols:
-            signal = self.analyze_symbol(sym, exchange)
-            if signal:
-                signals.append(signal)
+            try:
+                signal = self.analyze_symbol(sym, exchange)
+                if signal:
+                    signals.append(signal)
+            except Exception as e:
+                logger.error(f"Error analyzing {sym}: {e}")
         
         signals.sort(key=lambda x: x['confidence'], reverse=True)
-        logger.info(f"Watchlist analysis complete. Found {len(signals)} signals.")
+        logger.info(f"Watchlist analysis complete. Found {len(signals)} valid signals.")
         return signals
 
     def run_premarket_analysis(self, symbols, exchange="NSE"):
