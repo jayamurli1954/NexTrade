@@ -1,16 +1,8 @@
-# ui/professional_trading_ui.py - FIXED VERSION v3.1.1
-# CRITICAL FIX: Added threading to prevent UI freezing
+# ui/professional_trading_ui.py - COMPLETE FIXED VERSION
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import json
 import os
-import sys
-
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# ✅ NEW: Import threading helper
-from ui.threading_helper import ThreadManager
 
 class ProfessionalTradingUI:
     def __init__(self, root, analyzer, provider, paper_trader, *, paper_mode=True, **kwargs):
@@ -19,15 +11,16 @@ class ProfessionalTradingUI:
         self.provider = provider
         self.paper_trader = paper_trader
         self.paper_mode = paper_mode
-        self.settings_password = "1234"
+        self.settings_password = "1234"  # Default password for settings
 
-        self.version = kwargs.get("version") or "3.1.1"
-        self.build = kwargs.get("build") or "CRITICAL-FIXES"
+        self.version = kwargs.get("version") or "3.0.0"
+        self.build = kwargs.get("build") or ""
         self.app_title = kwargs.get("title") or "Angel One Trading Bot"
         self.starting_tab = kwargs.get("starting_tab") or "Dashboard"
 
+        # Trading parameters
         self.max_positions = 5
-        self.capital_per_position = 20000
+        self.capital_per_position = 20000  # Base capital per stock
 
         self._status_text = tk.StringVar(value="Disconnected")
         self._mode_text = tk.StringVar(value="LIVE" if not paper_mode else "PAPER")
@@ -54,13 +47,10 @@ class ProfessionalTradingUI:
         self.root.after(30000, self._auto_refresh)
 
     def _auto_refresh(self):
-        """Auto-refresh with threading - NON-BLOCKING"""
         try:
-            # Run refreshes in background
-            ThreadManager.run_async(
-                func=lambda: self._refresh_dashboard_data(),
-                root=self.root
-            )
+            self._refresh_dashboard()
+            self._refresh_paper_tab()
+            self._update_watchlist_display()
         except Exception as e:
             print(f"Auto-refresh error: {e}")
         finally:
@@ -159,9 +149,11 @@ class ProfessionalTradingUI:
         ttk.Label(header, text="Real Broker Holdings from Angel One", style="Heading.TLabel").pack(side="left")
         ttk.Button(header, text="Refresh Holdings", command=self._refresh_portfolio, style="Success.TButton").pack(side="right")
 
+        # Summary info
         self._portfolio_summary = ttk.Label(box, text="", font=("Segoe UI", 10))
         self._portfolio_summary.pack(anchor="w", pady=(0, 8))
 
+        # Holdings table
         columns = ('symbol', 'qty', 'avg_price', 'current_price', 'pnl', 'pnl_pct')
         self.holdings_tree = ttk.Treeview(box, columns=columns, show='headings', height=20)
         
@@ -181,13 +173,14 @@ class ProfessionalTradingUI:
         
         self.holdings_tree.pack(fill="both", expand=True)
         
+        # Color coding
         self.holdings_tree.tag_configure('profit', background='#d4edda')
         self.holdings_tree.tag_configure('loss', background='#f8d7da')
         
         self._refresh_portfolio()
 
     def _refresh_portfolio(self):
-        """✅ FIXED: Refresh portfolio - NON-BLOCKING with threading"""
+        """Refresh portfolio holdings table"""
         for item in self.holdings_tree.get_children():
             self.holdings_tree.delete(item)
         
@@ -195,12 +188,8 @@ class ProfessionalTradingUI:
             self._portfolio_summary.config(text="Not connected to broker")
             return
         
-        self._portfolio_summary.config(text="⏳ Loading holdings...")
-        
-        def fetch_holdings():
-            return self.provider.get_holdings()
-        
-        def on_success(holdings):
+        try:
+            holdings = self.provider.get_holdings()
             total_pnl = 0
             total_value = 0
             
@@ -221,17 +210,9 @@ class ProfessionalTradingUI:
             
             summary_text = f"Total Holdings: {len(holdings)} | Portfolio Value: ₹{total_value:,.2f} | Total P&L: ₹{total_pnl:+,.2f}"
             self._portfolio_summary.config(text=summary_text)
-        
-        def on_error(error):
-            self._portfolio_summary.config(text=f"Error: {error}")
-        
-        # ✅ Execute in background - UI stays responsive!
-        ThreadManager.run_async(
-            func=fetch_holdings,
-            on_success=on_success,
-            on_error=on_error,
-            root=self.root
-        )
+            
+        except Exception as e:
+            self._portfolio_summary.config(text=f"Error: {e}")
 
     def _build_premarket_tab(self, parent):
         box = ttk.Frame(parent)
@@ -266,31 +247,19 @@ class ProfessionalTradingUI:
         ttk.Button(btn_frame, text="Execute Selected Trade", command=lambda: self._execute_trade_from_tree(self.premarket_tree), style="Success.TButton").pack(side="left", padx=4)
 
     def _run_premarket_analysis(self):
-        """✅ FIXED: Run pre-market analysis - NON-BLOCKING"""
-        self._premarket_info.delete("1.0", "end")
-        self._premarket_info.insert("1.0", "⏳ Running pre-market analysis...")
-        
-        def analyze():
-            return self.analyzer.run_premarket_analysis(self.watchlist)
-        
-        def on_success(result):
+        try:
+            result = self.analyzer.run_premarket_analysis(self.watchlist)
+            
+            self._premarket_info.delete("1.0", "end")
             info_text = f"""Timestamp: {result['timestamp']}
 Market Hours: {'YES - Pre-Market Active' if result['is_premarket_hours'] else 'NO - Outside Hours'}
 Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']} | High Confidence: {result['high_confidence_signals']}"""
-            self._premarket_info.delete("1.0", "end")
             self._premarket_info.insert("1.0", info_text)
             
             for item in self.premarket_tree.get_children():
                 self.premarket_tree.delete(item)
             
-            # ✅ Sort by confidence (descending) and take top 10
-            sorted_signals = sorted(result['signals'], key=lambda x: x.get('confidence', 0), reverse=True)
-            top_signals = sorted_signals[:10]
-            
-            # Update info text to show filtered count
-            total_found = len(result['signals'])
-            showing_count = len(top_signals)
-            for sig in top_signals:
+            for sig in result['signals']:
                 qty = self._calculate_quantity(sig['current_price'])
                 self.premarket_tree.insert('', 'end', values=(
                     sig['symbol'],
@@ -307,19 +276,8 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
             self.premarket_tree.tag_configure('SELL', background='#f8d7da')
             
             messagebox.showinfo("Success", f"Found {result['signals_found']} signals")
-        
-        def on_error(error):
-            self._premarket_info.delete("1.0", "end")
-            self._premarket_info.insert("1.0", f"Error: {error}")
-            messagebox.showerror("Error", f"Pre-market analysis failed: {str(error)}")
-        
-        # ✅ Execute in background
-        ThreadManager.run_async(
-            func=analyze,
-            on_success=on_success,
-            on_error=on_error,
-            root=self.root
-        )
+        except Exception as e:
+            messagebox.showerror("Error", f"Pre-market analysis failed: {str(e)}")
 
     def _calculate_quantity(self, price):
         """Calculate quantity based on capital allocation and leverage"""
@@ -364,35 +322,11 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
             json.dump(self.watchlist, f)
 
     def _update_watchlist_display(self):
-        """Update watchlist display - FIXED: Only updates prices, doesn't rebuild list"""
-        
-        # Get current number of items
-        current_count = self.watchlist_list.size()
-        
-        # If count changed, rebuild the list
-        if current_count != len(self.watchlist):
-            self.watchlist_list.delete(0, tk.END)
-            for sym in self.watchlist:
-                self.watchlist_list.insert(tk.END, f"{sym:12} | LTP: Fetching...")
-        
-        # Now just update the prices without rebuilding
-        for idx, sym in enumerate(self.watchlist):
-            try:
-                ltp = self.provider.get_ltp(sym, 'NSE')
-                display = f"{sym:12} | LTP: ₹{ltp:8.2f}" if ltp else f"{sym:12} | LTP: N/A"
-                
-                # Update only if text changed (prevents flickering)
-                if idx < self.watchlist_list.size():
-                    current_text = self.watchlist_list.get(idx)
-                    if current_text != display:
-                        self.watchlist_list.delete(idx)
-                        self.watchlist_list.insert(idx, display)
-            except Exception as e:
-                # If error, just show N/A
-                display = f"{sym:12} | LTP: N/A"
-                if idx < self.watchlist_list.size():
-                    self.watchlist_list.delete(idx)
-                    self.watchlist_list.insert(idx, display)
+        self.watchlist_list.delete(0, tk.END)
+        for sym in self.watchlist:
+            ltp = self.provider.get_ltp(sym, 'NSE')
+            display = f"{sym:12} | LTP: ₹{ltp:8.2f}" if ltp else f"{sym:12} | LTP: N/A"
+            self.watchlist_list.insert(tk.END, display)
 
     def _add_to_watchlist(self):
         sym = self.add_entry.get().strip().upper()
@@ -418,6 +352,7 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
         ttk.Label(header, text="Golden Ratio Signal Analyzer", style="Heading.TLabel").pack(side="left")
         ttk.Button(header, text="Run Analysis", command=self._run_analysis, style="Success.TButton").pack(side="right")
 
+        # Add analysis info panel like Pre-Market
         self._analyzer_info = tk.Text(box, height=3, wrap="word", bg="#f0f0f0", font=("Consolas", 9))
         self._analyzer_info.pack(fill="x", pady=(0, 8))
 
@@ -442,30 +377,21 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
         ttk.Button(btn_frame, text="Execute Selected Trade", command=lambda: self._execute_trade_from_tree(self.signal_tree), style="Success.TButton").pack(side="left")
 
     def _run_analysis(self):
-        """✅ FIXED: Run analyzer - NON-BLOCKING"""
-        from datetime import datetime
-        
-        self._analyzer_info.delete("1.0", "end")
-        self._analyzer_info.insert("1.0", "⏳ Analyzing watchlist...")
-        
-        def analyze():
-            return self.analyzer.analyze_watchlist(self.watchlist)
-        
-        def on_success(signals):
+        try:
+            signals = self.analyzer.analyze_watchlist(self.watchlist)
+            
+            # Update analyzer info panel
+            from datetime import datetime
             high_conf = sum(1 for s in signals if s.get('confidence', 0) > 0.7)
             info_text = f"""Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-Analyzed: {len(self.watchlist)} | Signals Found: {len(top_signals)} of {len(signals)} | High Confidence: {high_conf}"""
+Analyzed: {len(self.watchlist)} | Signals Found: {len(signals)} | High Confidence: {high_conf}"""
             self._analyzer_info.delete("1.0", "end")
             self._analyzer_info.insert("1.0", info_text)
             
             for item in self.signal_tree.get_children():
                 self.signal_tree.delete(item)
             
-            # ✅ Sort by confidence and take top 10
-            sorted_signals = sorted(signals, key=lambda x: x.get('confidence', 0), reverse=True)
-            top_signals = sorted_signals[:10]
-            
-            for sig in top_signals:
+            for sig in signals:
                 qty = self._calculate_quantity(sig['current_price'])
                 self.signal_tree.insert('', 'end', values=(
                     sig['symbol'],
@@ -482,19 +408,8 @@ Analyzed: {len(self.watchlist)} | Signals Found: {len(top_signals)} of {len(sign
             self.signal_tree.tag_configure('SELL', background='#f8d7da')
             
             messagebox.showinfo("Success", f"Analysis complete. Found {len(signals)} signals.")
-        
-        def on_error(error):
-            self._analyzer_info.delete("1.0", "end")
-            self._analyzer_info.insert("1.0", f"Error: {error}")
-            messagebox.showerror("Error", f"Analysis failed: {str(error)}")
-        
-        # ✅ Execute in background
-        ThreadManager.run_async(
-            func=analyze,
-            on_success=on_success,
-            on_error=on_error,
-            root=self.root
-        )
+        except Exception as e:
+            messagebox.showerror("Error", f"Analysis failed: {str(e)}")
 
     def _execute_trade_from_tree(self, tree):
         """Execute trade with calculated quantity"""
@@ -576,11 +491,11 @@ Analyzed: {len(self.watchlist)} | Signals Found: {len(top_signals)} of {len(sign
         self._refresh_paper_tab()
 
     def _on_position_click(self, event):
-        """Handle clicks on position tree"""
+        """Handle clicks on position tree - check if Exit button clicked"""
         region = self.position_tree.identify("region", event.x, event.y)
         if region == "cell":
             column = self.position_tree.identify_column(event.x)
-            if column == '#7':
+            if column == '#7':  # Action column
                 item = self.position_tree.identify_row(event.y)
                 if item:
                     values = self.position_tree.item(item)['values']
@@ -589,20 +504,11 @@ Analyzed: {len(self.watchlist)} | Signals Found: {len(top_signals)} of {len(sign
                         self._exit_position(symbol)
 
     def _exit_position(self, symbol):
-        """✅ FIXED: Manually exit with proper price validation"""
+        """Manually exit a position"""
         holdings = self.paper_trader.holdings_snapshot()
         if symbol in holdings['positions']:
             pos = holdings['positions'][symbol]
-            
-            # ✅ FIX: Use retry logic instead of fallback
-            current_price = self.paper_trader._get_live_price_with_retry(symbol)
-            
-            if current_price is None:
-                messagebox.showerror("Error", 
-                    f"Cannot exit {symbol} - failed to fetch live price after retries.\n\n"
-                    "Please try again in a few seconds.")
-                return
-            
+            current_price = self.provider.get_ltp(symbol, 'NSE') or pos['avg_price']
             success, msg = self.paper_trader.sell(symbol, pos['qty'], current_price)
             if success:
                 messagebox.showinfo("Success", f"Exited {symbol}: {msg}")
@@ -612,7 +518,7 @@ Analyzed: {len(self.watchlist)} | Signals Found: {len(top_signals)} of {len(sign
                 messagebox.showerror("Failed", msg)
 
     def _refresh_paper_tab(self):
-        """Refresh paper trading positions"""
+        """Refresh paper trading positions with Exit buttons"""
         for item in self.position_tree.get_children():
             self.position_tree.delete(item)
         
@@ -635,6 +541,12 @@ Analyzed: {len(self.watchlist)} | Signals Found: {len(top_signals)} of {len(sign
                 f"{pnl_pct:+.2f}%",
                 "Exit"
             ), tags=(tag,))
+            
+            # Auto exit on SL/Target
+            if 'sl' in pos and pos['sl'] > 0 and current_price <= pos['sl']:
+                self.paper_trader.sell(sym, pos['qty'], current_price)
+            elif 'target' in pos and pos['target'] > 0 and current_price >= pos['target']:
+                self.paper_trader.sell(sym, pos['qty'], current_price)
         
         self.position_tree.tag_configure('profit', background='#d4edda')
         self.position_tree.tag_configure('loss', background='#f8d7da')
@@ -681,16 +593,8 @@ Analyzed: {len(self.watchlist)} | Signals Found: {len(top_signals)} of {len(sign
         box = ttk.Frame(parent)
         box.pack(fill="both", expand=True, padx=20, pady=20)
         
-        about_text = f"""ANGEL ONE TRADING BOT - CRITICAL FIXES v3.1.1
-
+        about_text = f"""ANGEL ONE TRADING BOT - MODULAR ARCHITECTURE
 Version: {self.version} | Build: {self.build}
-
-✅ FIXED IN THIS VERSION:
-• NO MORE UI FREEZING - All operations run in background threads
-• NO MORE ₹1000 EXIT ERRORS - Price validation implemented
-• Real-time SL/Target monitoring every 10 seconds
-• Proper retry logic with exponential backoff
-• Excel logging with all trade details
 
 Features:
 • Golden Ratio Analysis (Fibonacci + RSI + EMA + Bollinger Bands)
@@ -699,6 +603,7 @@ Features:
 • Enhanced Paper Trading with P&L tracking & Margin calculation
 • Auto Stop-Loss & Target execution
 • Dynamic Quantity calculation based on risk management
+• Sentiment Analysis (requires NewsAPI key)
 • Password-protected settings
 
 Mode: {'PAPER TRADING' if self.paper_mode else 'LIVE TRADING'}
@@ -733,16 +638,10 @@ Warning: This is educational software. Always test thoroughly in paper mode befo
         if connected:
             self._status_text.set("Connected")
             self._connect_text.set("Disconnect")
-            mode_text = "LIVE" if live else "PAPER"
-            self._env_badge_text.set(f"Connected ({mode_text})")
-        else:
-            self._status_text.set("Disconnected")
-            self._connect_text.set("Connect")
-            mode_text = "LIVE" if live else "PAPER"
-            self._env_badge_text.set(f"Disconnected ({mode_text})")
+            self._env_badge_text.set(f"Disconnected ({'LIVE' if live else 'PAPER'})")
 
     def _select_starting_tab(self):
-        tabs = {"Dashboard": 0, "Portfolio": 1, "Pre-Market": 2, "Watchlist": 3, "Analyzer": 4, "Paper Trade": 5, "Logs": 6, "About": 7}
+        tabs = {"Dashboard": 0, "Pre-Market": 1, "Watchlist": 2, "Analyzer": 3, "Paper Trade": 4, "Logs": 5, "About": 6}
         idx = tabs.get(self.starting_tab, 0)
         self.notebook.select(idx)
 
@@ -828,8 +727,10 @@ Warning: This is educational software. Always test thoroughly in paper mode befo
     def _save_all_settings(self, api_key, client_code, password, totp_secret, max_pos, cap_per_pos, new_pwd, win):
         """Save all settings including trading parameters"""
         try:
+            # Save broker credentials
             success, msg = self.provider.set_credentials(api_key, client_code, password, totp_secret)
             
+            # Save trading parameters
             self.max_positions = int(max_pos)
             self.capital_per_position = int(cap_per_pos)
             self.settings_password = new_pwd
@@ -855,74 +756,80 @@ Warning: This is educational software. Always test thoroughly in paper mode befo
             success, msg = self.provider.login()
             if success:
                 self.set_connection_status(True, live=not self.paper_mode)
-                messagebox.showinfo("Connected", "Successfully logged in")
+                messagebox.showinfo("Connected", "Successfully logged in - Now fetching LIVE data")
             else:
                 messagebox.showerror("Login Failed", msg)
         
         self._refresh_dashboard()
 
     def _refresh_dashboard(self):
-        """✅ FIXED: Refresh dashboard - NON-BLOCKING"""
-        def fetch_data():
-            provider_snap = self.provider.snapshot()
-            
+        """
+        FIXED: Refresh dashboard - ALWAYS fetch real broker data when connected
+        Shows both paper trading AND real broker holdings/funds
+        """
+        # Provider snapshot
+        try:
+            snap = self.provider.snapshot()
+            self._provider_text.delete("1.0", "end")
+            self._provider_text.insert("end", json.dumps(snap, indent=2))
+        except Exception as e:
+            self._provider_text.delete("1.0", "end")
+            self._provider_text.insert("end", f"Error: {e}")
+
+        # Holdings - ALWAYS fetch real broker holdings when connected
+        try:
             if self.provider.is_connected:
+                # Get REAL broker holdings
                 broker_holdings = self.provider.get_holdings()
                 
                 if self.paper_mode:
+                    # Show BOTH paper and real holdings
                     paper_holdings = self.paper_trader.holdings_snapshot()
-                    holdings_data = {
+                    combined = {
                         "paper_trading": paper_holdings,
                         "broker_holdings": broker_holdings
                     }
+                    self._holdings_text.delete("1.0", "end")
+                    self._holdings_text.insert("end", json.dumps(combined, indent=2))
                 else:
-                    holdings_data = broker_holdings
+                    # Live mode - show only broker holdings
+                    self._holdings_text.delete("1.0", "end")
+                    self._holdings_text.insert("end", json.dumps(broker_holdings, indent=2))
             else:
-                holdings_data = self.paper_trader.holdings_snapshot()
-            
-            account_name = self.provider.account_name()
+                # Not connected - show paper holdings only
+                paper_holdings = self.paper_trader.holdings_snapshot()
+                self._holdings_text.delete("1.0", "end")
+                self._holdings_text.insert("end", json.dumps(paper_holdings, indent=2))
+                
+        except Exception as e:
+            self._holdings_text.delete("1.0", "end")
+            self._holdings_text.insert("end", f"Error: {e}")
+
+        # Margin/Funds - ALWAYS fetch real broker funds when connected
+        try:
+            self._account_name.set(self.provider.account_name())
             
             if self.provider.is_connected:
+                # Get REAL broker funds
                 broker_funds = self.provider.get_funds()
                 
                 if self.paper_mode:
                     paper_margin = self.paper_trader.get_available_margin()
+                    # Show both
                     broker_cash = broker_funds.get("available_cash", 0) if isinstance(broker_funds, dict) else broker_funds
-                    funds_text = f"Paper: ₹{paper_margin:,.2f} | Broker: ₹{broker_cash:,.2f}"
+                    self._netcash_text.set(f"Paper: ₹{paper_margin:,.2f} | Broker: ₹{broker_cash:,.2f}")
                 else:
-                    funds_text = f"₹{broker_funds:,.2f}"
+                    # Live mode
+                    self._netcash_text.set(f"₹{broker_funds:,.2f}")
             else:
+                # Not connected - show paper only
                 paper_margin = self.paper_trader.get_available_margin()
-                funds_text = f"₹{paper_margin:,.2f}"
-            
-            return provider_snap, holdings_data, account_name, funds_text
-        
-        def on_success(result):
-            provider_snap, holdings_data, account_name, funds_text = result
-            
-            self._provider_text.delete("1.0", "end")
-            self._provider_text.insert("end", json.dumps(provider_snap, indent=2))
-            
-            self._holdings_text.delete("1.0", "end")
-            self._holdings_text.insert("end", json.dumps(holdings_data, indent=2))
-            
-            self._account_name.set(account_name)
-            self._netcash_text.set(funds_text)
-        
-        def on_error(error):
-            self._provider_text.delete("1.0", "end")
-            self._provider_text.insert("end", f"Error: {error}")
-        
-        # ✅ Execute in background
-        ThreadManager.run_async(
-            func=fetch_data,
-            on_success=on_success,
-            on_error=on_error,
-            root=self.root
-        )
-    
-    def _refresh_dashboard_data(self):
-        """Helper for auto-refresh"""
-        self._refresh_dashboard()
-        self._refresh_paper_tab()
-        self._update_watchlist_display()
+                self._netcash_text.set(f"₹{paper_margin:,.2f}")
+                
+        except Exception as e:
+            self._account_name.set("Error")
+            self._netcash_text.set("₹0.00")
+        else:
+            self._status_text.set("Disconnected")
+            self._connect_text.set("Connect")
+            self._env_badge_text.set

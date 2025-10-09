@@ -283,14 +283,7 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
             for item in self.premarket_tree.get_children():
                 self.premarket_tree.delete(item)
             
-            # ✅ Sort by confidence (descending) and take top 10
-            sorted_signals = sorted(result['signals'], key=lambda x: x.get('confidence', 0), reverse=True)
-            top_signals = sorted_signals[:10]
-            
-            # Update info text to show filtered count
-            total_found = len(result['signals'])
-            showing_count = len(top_signals)
-            for sig in top_signals:
+            for sig in result['signals']:
                 qty = self._calculate_quantity(sig['current_price'])
                 self.premarket_tree.insert('', 'end', values=(
                     sig['symbol'],
@@ -364,35 +357,11 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
             json.dump(self.watchlist, f)
 
     def _update_watchlist_display(self):
-        """Update watchlist display - FIXED: Only updates prices, doesn't rebuild list"""
-        
-        # Get current number of items
-        current_count = self.watchlist_list.size()
-        
-        # If count changed, rebuild the list
-        if current_count != len(self.watchlist):
-            self.watchlist_list.delete(0, tk.END)
-            for sym in self.watchlist:
-                self.watchlist_list.insert(tk.END, f"{sym:12} | LTP: Fetching...")
-        
-        # Now just update the prices without rebuilding
-        for idx, sym in enumerate(self.watchlist):
-            try:
-                ltp = self.provider.get_ltp(sym, 'NSE')
-                display = f"{sym:12} | LTP: ₹{ltp:8.2f}" if ltp else f"{sym:12} | LTP: N/A"
-                
-                # Update only if text changed (prevents flickering)
-                if idx < self.watchlist_list.size():
-                    current_text = self.watchlist_list.get(idx)
-                    if current_text != display:
-                        self.watchlist_list.delete(idx)
-                        self.watchlist_list.insert(idx, display)
-            except Exception as e:
-                # If error, just show N/A
-                display = f"{sym:12} | LTP: N/A"
-                if idx < self.watchlist_list.size():
-                    self.watchlist_list.delete(idx)
-                    self.watchlist_list.insert(idx, display)
+        self.watchlist_list.delete(0, tk.END)
+        for sym in self.watchlist:
+            ltp = self.provider.get_ltp(sym, 'NSE')
+            display = f"{sym:12} | LTP: ₹{ltp:8.2f}" if ltp else f"{sym:12} | LTP: N/A"
+            self.watchlist_list.insert(tk.END, display)
 
     def _add_to_watchlist(self):
         sym = self.add_entry.get().strip().upper()
@@ -454,18 +423,14 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
         def on_success(signals):
             high_conf = sum(1 for s in signals if s.get('confidence', 0) > 0.7)
             info_text = f"""Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-Analyzed: {len(self.watchlist)} | Signals Found: {len(top_signals)} of {len(signals)} | High Confidence: {high_conf}"""
+Analyzed: {len(self.watchlist)} | Signals Found: {len(signals)} | High Confidence: {high_conf}"""
             self._analyzer_info.delete("1.0", "end")
             self._analyzer_info.insert("1.0", info_text)
             
             for item in self.signal_tree.get_children():
                 self.signal_tree.delete(item)
             
-            # ✅ Sort by confidence and take top 10
-            sorted_signals = sorted(signals, key=lambda x: x.get('confidence', 0), reverse=True)
-            top_signals = sorted_signals[:10]
-            
-            for sig in top_signals:
+            for sig in signals:
                 qty = self._calculate_quantity(sig['current_price'])
                 self.signal_tree.insert('', 'end', values=(
                     sig['symbol'],

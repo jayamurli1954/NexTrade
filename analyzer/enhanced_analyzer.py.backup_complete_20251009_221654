@@ -355,45 +355,17 @@ class EnhancedAnalyzer:
         logger.info(f"Starting watchlist analysis for {len(symbols)} symbols")
         signals = []
         
-        # ✅ FIXED: Added rate limiting and progress tracking
-        import time
-        total_symbols = len(symbols)
-        print(f"📊 Analyzing {total_symbols} stocks with rate limiting...")
-        
-        # ✅ Rate limiting setup
-        total_symbols = len(symbols)
-        print(f"📊 Analyzing {total_symbols} stocks with rate limiting...")
-
-        for idx, sym in enumerate(symbols):
-            # Show progress every 10 stocks
-            if idx > 0 and idx % 10 == 0:
-                print(f"  ⏳ Progress: {idx}/{total_symbols} stocks analyzed... ({len(signals)} signals so far)")
-            
+        for sym in symbols:
             try:
                 signal = self.analyze_symbol(sym, exchange)
                 if signal:
                     signals.append(signal)
             except Exception as e:
                 logger.error(f"Error analyzing {sym}: {e}")
-            
-            # ✅ CRITICAL: Add delay to prevent rate limiting
-            # Wait 250ms between stocks = max 4 requests per second
-            if idx < total_symbols - 1:  # Don't wait after last stock
-                time.sleep(0.25)
-
-            # ✅ Progress update every 10 stocks
-            if idx > 0 and idx % 10 == 0:
-                print(f"  ⏳ Progress: {idx}/{total_symbols} analyzed... ({len(signals)} signals)")
-
-            # ✅ CRITICAL: Rate limiting delay
-            if idx < total_symbols - 1:
-                time.sleep(0.25)  # 250ms = max 4 stocks/sec
+        
         signals.sort(key=lambda x: x['confidence'], reverse=True)
         logger.info(f"Watchlist analysis complete. Found {len(signals)} valid signals.")
-        # ✅ Return top 10 highest confidence signals only
-        top_signals = signals[:10]
-        print(f"✅ Analysis complete: Returning {len(top_signals)} of {len(signals)} signals (top 10)")
-        return top_signals
+        return signals
 
     def run_premarket_analysis(self, symbols, exchange="NSE"):
         """Run pre-market analysis (7:00 AM - 9:15 AM)"""

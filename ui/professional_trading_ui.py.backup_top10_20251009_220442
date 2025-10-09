@@ -283,14 +283,7 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
             for item in self.premarket_tree.get_children():
                 self.premarket_tree.delete(item)
             
-            # ✅ Sort by confidence (descending) and take top 10
-            sorted_signals = sorted(result['signals'], key=lambda x: x.get('confidence', 0), reverse=True)
-            top_signals = sorted_signals[:10]
-            
-            # Update info text to show filtered count
-            total_found = len(result['signals'])
-            showing_count = len(top_signals)
-            for sig in top_signals:
+            for sig in result['signals']:
                 qty = self._calculate_quantity(sig['current_price'])
                 self.premarket_tree.insert('', 'end', values=(
                     sig['symbol'],
@@ -454,18 +447,14 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
         def on_success(signals):
             high_conf = sum(1 for s in signals if s.get('confidence', 0) > 0.7)
             info_text = f"""Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-Analyzed: {len(self.watchlist)} | Signals Found: {len(top_signals)} of {len(signals)} | High Confidence: {high_conf}"""
+Analyzed: {len(self.watchlist)} | Signals Found: {len(signals)} | High Confidence: {high_conf}"""
             self._analyzer_info.delete("1.0", "end")
             self._analyzer_info.insert("1.0", info_text)
             
             for item in self.signal_tree.get_children():
                 self.signal_tree.delete(item)
             
-            # ✅ Sort by confidence and take top 10
-            sorted_signals = sorted(signals, key=lambda x: x.get('confidence', 0), reverse=True)
-            top_signals = sorted_signals[:10]
-            
-            for sig in top_signals:
+            for sig in signals:
                 qty = self._calculate_quantity(sig['current_price'])
                 self.signal_tree.insert('', 'end', values=(
                     sig['symbol'],
