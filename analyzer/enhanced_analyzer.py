@@ -44,7 +44,7 @@ class EnhancedAnalyzer:
         
         # Strategy parameters (can be overridden by config)
         self.golden_ratio = self.config.get('golden_ratio', 1.618)
-        self.confidence_threshold = self.config.get('confidence_threshold', 0.65)
+        self.confidence_threshold = self.config.get('confidence_threshold', 0.60)
         self.rsi_oversold = self.config.get('rsi_oversold', 30)
         self.rsi_overbought = self.config.get('rsi_overbought', 70)
         self.volume_threshold = self.config.get('volume_threshold', 1.2)
