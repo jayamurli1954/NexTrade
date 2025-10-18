@@ -327,14 +327,15 @@ class AnalyzerTab(QWidget):
             self.table.setItem(row, 1, symbol_item)
             
             # LTP
-            ltp_item = QTableWidgetItem(f"₹{result['ltp']:.2f}")
+            ltp = result.get('ltp', result.get('current_price', 0))
+            ltp_item = QTableWidgetItem(f"₹{ltp:.2f}")
             ltp_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 2, ltp_item)
             
             # Confidence
-            conf_item = QTableWidgetItem(f"{result['confidence']}%")
+            conf_item = QTableWidgetItem(f"{result.get('confidence', 0)}%")
             conf_item.setTextAlignment(Qt.AlignCenter)
-            conf = result['confidence']
+            conf = result.get('confidence', 0)
             if conf >= 80:
                 conf_item.setForeground(QColor(0, 150, 0))
                 conf_item.setBackground(QColor(230, 255, 230))
@@ -344,9 +345,9 @@ class AnalyzerTab(QWidget):
             self.table.setItem(row, 3, conf_item)
             
             # Signal
-            signal_item = QTableWidgetItem(result['signal'])
+            signal_item = QTableWidgetItem(result.get('signal', result.get('action', 'HOLD')))
             signal_item.setTextAlignment(Qt.AlignCenter)
-            if result['signal'] == 'BUY':
+            if result.get('signal', result.get('action', 'HOLD')) == 'BUY':
                 signal_item.setForeground(QColor(0, 150, 0))
                 signal_item.setBackground(QColor(230, 255, 230))
             else:  # SELL
@@ -356,13 +357,13 @@ class AnalyzerTab(QWidget):
             
             # Target / SL (combined)
             target_sl_item = QTableWidgetItem(
-                f"T: ₹{result['target']:.2f}\nSL: ₹{result['stop_loss']:.2f}"
+                f"T: ₹{result.get('target', 0):.2f}\nSL: ₹{result['stop_loss']:.2f}"
             )
             target_sl_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 5, target_sl_item)
             
             # ⭐ SINGLE ACTION BUTTON (based on signal)
-            if result['signal'] == 'BUY':
+            if result.get('signal', result.get('action', 'HOLD')) == 'BUY':
                 action_btn = QPushButton("📈 Execute BUY")
                 action_btn.setStyleSheet("""
                     QPushButton {
