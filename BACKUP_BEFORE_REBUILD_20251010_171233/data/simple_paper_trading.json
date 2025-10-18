@@ -1,0 +1,54 @@
+{
+  "current_balance": 1730.0,
+  "initial_balance": 100000.0,
+  "positions": {
+    "RELIANCE": {
+      "side": "BUY",
+      "qty": 40,
+      "avg_price": 2456.75,
+      "invested": 98270.0
+    }
+  },
+  "trades": [
+    {
+      "order_id": "3BDA97F4",
+      "timestamp": "2025-09-25 13:28:38",
+      "symbol": "RELIANCE",
+      "side": "BUY",
+      "quantity": 10,
+      "price": 2456.75,
+      "order_value": 24567.5,
+      "status": "EXECUTED"
+    },
+    {
+      "order_id": "FF47E757",
+      "timestamp": "2025-09-25 13:33:47",
+      "symbol": "RELIANCE",
+      "side": "BUY",
+      "quantity": 10,
+      "price": 2456.75,
+      "order_value": 24567.5,
+      "status": "EXECUTED"
+    },
+    {
+      "order_id": "06C81C2F",
+      "timestamp": "2025-09-25 14:02:37",
+      "symbol": "RELIANCE",
+      "side": "BUY",
+      "quantity": 10,
+      "price": 2456.75,
+      "order_value": 24567.5,
+      "status": "EXECUTED"
+    },
+    {
+      "order_id": "5E453E38",
+      "timestamp": "2025-09-25 14:15:30",
+      "symbol": "RELIANCE",
+      "side": "BUY",
+      "quantity": 10,
+      "price": 2456.75,
+      "order_value": 24567.5,
+      "status": "EXECUTED"
+    }
+  ]
+}

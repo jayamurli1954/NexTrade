@@ -1,0 +1,58 @@
+2025-09-27 22:22:28,864 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 22:22:28,864 - TradingBot - INFO - Startup banner printed
+2025-09-27 22:22:28,873 - TradingBot.Main - INFO - Starting...
+2025-09-27 22:22:28,873 - TradingBot.Main - INFO - Angel One provider initialized (paper_mode=True)
+2025-09-27 22:22:28,873 - TradingBot - ERROR - Fatal error in main
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\main.py", line 106, in <module>
+    sys.exit(main())
+  File "c:\Users\Dell\tradingbot_new\main.py", line 78, in main
+    paper_trader = PaperTrader(initial_balance=100000.0, leverage=5.0)
+TypeError: PaperTrader.__init__() got an unexpected keyword argument 'leverage'
+2025-09-27 22:25:53,386 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 22:25:53,386 - TradingBot - INFO - Startup banner printed
+2025-09-27 22:25:53,386 - TradingBot.Main - INFO - Starting...
+2025-09-27 22:25:53,386 - TradingBot.Main - INFO - Angel One provider initialized (paper_mode=True)
+2025-09-27 22:25:53,386 - TradingBot.Main - INFO - PaperTrader initialized with balance Rs100,000.00
+2025-09-27 22:25:53,386 - TradingBot - ERROR - Fatal error in main
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\main.py", line 99, in <module>
+    sys.exit(main())
+  File "c:\Users\Dell\tradingbot_new\main.py", line 77, in main
+    analyzer = EnhancedAnalyzer()
+TypeError: EnhancedAnalyzer.__init__() missing 1 required positional argument: 'data_provider'
+2025-09-27 22:40:06,413 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 22:40:06,424 - TradingBot.Main - INFO - Starting...
+2025-09-27 22:40:06,424 - TradingBot.Main - INFO - Angel One provider initialized (paper_mode=True)
+2025-09-27 22:40:06,425 - TradingBot.Main - INFO - PaperTrader initialized with balance Rs100,000.00
+2025-09-27 22:40:06,425 - TradingBot.Main - INFO - EnhancedAnalyzer initialized
+2025-09-27 22:40:07,371 - TradingBot.Main - INFO - UI constructed; entering mainloop
+2025-09-27 23:05:30,173 - TradingBot.Main - INFO - Application closed
+2025-09-27 23:05:56,379 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 23:05:56,382 - TradingBot.Main - INFO - Starting...
+2025-09-27 23:05:56,382 - TradingBot.Main - INFO - Angel One provider initialized (paper_mode=True)
+2025-09-27 23:05:56,382 - TradingBot.Main - INFO - PaperTrader initialized with balance Rs100,000.00
+2025-09-27 23:05:56,382 - TradingBot.Main - INFO - EnhancedAnalyzer initialized
+2025-09-27 23:05:56,483 - TradingBot - ERROR - Fatal error in main
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\main.py", line 98, in <module>
+    sys.exit(main())
+  File "c:\Users\Dell\tradingbot_new\main.py", line 80, in main
+    ui = ProfessionalTradingUI(
+  File "c:\Users\Dell\tradingbot_new\ui\professional_trading_ui.py", line 80, in __init__
+    self._build_header()
+  File "c:\Users\Dell\tradingbot_new\ui\professional_trading_ui.py", line 123, in _build_header
+    ttk.Label(left, textvariable=self._status_text, style="TLabel").pack(side="left")
+AttributeError: 'ProfessionalTradingUI' object has no attribute '_status_text'
+2025-09-27 23:12:06,987 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 23:12:06,989 - TradingBot.Main - INFO - Starting...
+2025-09-27 23:12:06,989 - TradingBot.Main - INFO - Angel One provider initialized (paper_mode=True)
+2025-09-27 23:12:06,989 - TradingBot.Main - INFO - PaperTrader initialized with balance Rs100,000.00
+2025-09-27 23:12:06,989 - TradingBot.Main - INFO - EnhancedAnalyzer initialized
+2025-09-27 23:12:07,072 - TradingBot - ERROR - Fatal error in main
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\main.py", line 98, in <module>
+    sys.exit(main())
+  File "c:\Users\Dell\tradingbot_new\main.py", line 80, in main
+    ui = ProfessionalTradingUI(
+TypeError: ProfessionalTradingUI.__init__() got an unexpected keyword argument 'log_dir'

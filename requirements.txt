@@ -24,3 +24,7 @@ tzdata==2025.2
 urllib3==2.5.0
 vaderSentiment==3.3.2
 websocket-client==1.8.0
+
+# Added by upgrade script
+yfinance>=0.2.0  # For fundamentals data
+python-dotenv>=1.0.0  # For environment variables

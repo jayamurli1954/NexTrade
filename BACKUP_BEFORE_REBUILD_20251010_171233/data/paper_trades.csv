@@ -1,0 +1,2 @@
+timestamp,symbol,side,quantity,price,order_type,order_value,target,stop_loss,status
+2025-09-25T11:27:26.983973,RELIANCE,BUY,10,2456.75,MARKET,24567.5,0,0,EXECUTED

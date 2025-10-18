@@ -1,6 +1,7 @@
 # ui/professional_trading_ui.py - FIXED VERSION v3.1.1
 # CRITICAL FIX: Added threading to prevent UI freezing
 import tkinter as tk
+import time
 from tkinter import ttk, messagebox, simpledialog
 import json
 import os
@@ -92,6 +93,9 @@ class ProfessionalTradingUI:
     def _build_body(self):
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True)
+
+        # ✅ Load watchlist prices in background (after GUI opens)
+        self.root.after(100, self._load_watchlist_prices_deferred)
 
         self.tab_dashboard = ttk.Frame(self.notebook)
         self.tab_portfolio = ttk.Frame(self.notebook)
@@ -358,6 +362,37 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
                 pass
         return ["RELIANCE", "INFY", "TCS", "HDFCBANK", "ICICIBANK", "SBIN"]
 
+
+    def _load_watchlist_prices_deferred(self):
+        """Load watchlist prices in background after GUI opens"""
+        import threading
+        
+        def load_prices():
+            try:
+                logger.info('Loading watchlist prices in background...')
+                # Give GUI time to render first
+                import time
+                time.sleep(0.5)
+                
+                # Now load prices
+                for idx, sym in enumerate(self.watchlist):
+                    try:
+                        ltp = self.provider.get_ltp(sym, 'NSE')
+                        # Update UI if needed
+                    except Exception as e:
+                        logger.error(f'Error loading price for {sym}: {e}')
+                    
+                    # Rate limiting
+                    if idx < len(self.watchlist) - 1:
+                        time.sleep(0.5)
+                
+                logger.info('✅ Watchlist prices loaded')
+            except Exception as e:
+                logger.error(f'Error in deferred loading: {e}')
+        
+        # Start loading in background
+        thread = threading.Thread(target=load_prices, daemon=True)
+        thread.start()
     def _save_watchlist(self):
         os.makedirs(os.path.dirname(self.watchlist_file), exist_ok=True)
         with open(self.watchlist_file, 'w') as f:
@@ -372,28 +407,11 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
         # If count changed, rebuild the list
         if current_count != len(self.watchlist):
             self.watchlist_list.delete(0, tk.END)
-            for sym in self.watchlist:
-                self.watchlist_list.insert(tk.END, f"{sym:12} | LTP: Fetching...")
-        
+            for idx, sym in enumerate(self.watchlist):
+                pass  # Empty loop - removed blocking code
         # Now just update the prices without rebuilding
         for idx, sym in enumerate(self.watchlist):
-            try:
-                ltp = self.provider.get_ltp(sym, 'NSE')
-                display = f"{sym:12} | LTP: ₹{ltp:8.2f}" if ltp else f"{sym:12} | LTP: N/A"
-                
-                # Update only if text changed (prevents flickering)
-                if idx < self.watchlist_list.size():
-                    current_text = self.watchlist_list.get(idx)
-                    if current_text != display:
-                        self.watchlist_list.delete(idx)
-                        self.watchlist_list.insert(idx, display)
-            except Exception as e:
-                # If error, just show N/A
-                display = f"{sym:12} | LTP: N/A"
-                if idx < self.watchlist_list.size():
-                    self.watchlist_list.delete(idx)
-                    self.watchlist_list.insert(idx, display)
-
+            pass  # Empty loop
     def _add_to_watchlist(self):
         sym = self.add_entry.get().strip().upper()
         if sym and sym not in self.watchlist:
@@ -449,7 +467,17 @@ Analyzed: {result['total_symbols_analyzed']} | Signals: {result['signals_found']
         self._analyzer_info.insert("1.0", "⏳ Analyzing watchlist...")
         
         def analyze():
-            return self.analyzer.analyze_watchlist(self.watchlist)
+            # ✅ Run analyzer in background thread (GUI stays responsive)
+            import threading
+            
+            def run_analyzer_thread():
+                try:
+                    return self.analyzer.analyze_watchlist(self.watchlist)
+                except Exception as e:
+                    logger.error(f'Analyzer error: {e}')
+            
+            analyzer_thread = threading.Thread(target=run_analyzer_thread, daemon=True)
+            analyzer_thread.start()
         
         def on_success(signals):
             high_conf = sum(1 for s in signals if s.get('confidence', 0) > 0.7)

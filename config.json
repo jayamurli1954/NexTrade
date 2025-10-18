@@ -1,0 +1,9 @@
+{
+    "api_key": "S3r4XTTV",
+    "client_id": "M586478",
+    "password": "1954",
+    "totp_token": "IHB5UTV7XWWI4DPZ5XOGUNZXUE",
+    "initial_capital": 100000,
+    "risk_per_trade": 2,
+    "auto_trading": false
+}

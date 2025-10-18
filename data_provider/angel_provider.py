@@ -3,6 +3,7 @@
 # Save as: c:\Users\Dell\tradingbot_new\data_provider\angel_provider.py
 
 import sys
+from core.websocket.price_provider import get_websocket_provider
 import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
@@ -66,6 +67,10 @@ class AngelProvider(DataProviderInterface):
         self._load_saved_credentials()
         logger.info(f"Angel One provider initialized (paper_mode={paper_mode})")
 
+
+        # WebSocket LTP Provider (NO RATE LIMITS!)
+        self.ws_provider = None
+        self._ws_enabled = False
     def _load_token_map(self) -> dict:
         """Load token mapping"""
         try:
@@ -210,14 +215,38 @@ class AngelProvider(DataProviderInterface):
                             data = self.smart_api.ltpData(exchange, symbol, token)
                             if data.get('status'):
                                 return float(data['data']['ltp'])
-                    return self._fallback_prices.get(symbol, 1000.00)
+                    return None
             except Exception as e:
                 logger.error(f"LTP error for {symbol}: {e}")
         
-        return self._fallback_prices.get(symbol, 1000.00)
+        return None
 
     def get_holdings(self) -> List[PortfolioHolding]:
         """CONTRACT METHOD: Fetch real holdings from Angel One"""
+        # Try WebSocket first (NO RATE LIMITS!)
+        if self._ws_enabled and self.ws_provider:
+            ws_price = self.ws_provider.get_ltp(symbol)
+            if ws_price is not None:
+                return ws_price
+            # Symbol not subscribed yet, will use REST API below
+
+        # Fallback to REST API
+        # ✅ GLOBAL RATE LIMITING - Applied to ALL get_ltp calls
+        import time
+        import threading
+        
+        # Thread-safe rate limiting using a lock
+        if not hasattr(self, '_ltp_lock'):
+            self._ltp_lock = threading.Lock()
+            self._last_ltp_call = 0
+        
+        with self._ltp_lock:
+            # Enforce minimum 0.5 second delay between ANY get_ltp calls
+            elapsed = time.time() - self._last_ltp_call
+            if elapsed < 0.5:
+                time.sleep(0.5 - elapsed)
+            self._last_ltp_call = time.time()
+        
         if not self.smart_api or not self.is_connected:
             logger.warning("Not connected to Angel One")
             return []

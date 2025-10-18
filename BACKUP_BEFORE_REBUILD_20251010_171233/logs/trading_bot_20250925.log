@@ -1,0 +1,414 @@
+2025-09-25 08:08:50,178 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 08:08:50,178 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 08:08:50,178 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 08:08:50,178 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 08:08:50,178 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 08:09:22,519 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 08:09:23,566 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 08:09:23,566 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 08:09:24,374 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 08:09:24,379 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 08:09:24,380 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 08:26:43,006 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 08:26:43,006 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 08:26:43,006 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 08:26:43,006 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 08:26:43,006 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 08:27:14,141 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 08:27:15,094 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 08:27:15,094 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 08:27:15,696 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 08:27:15,712 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 08:27:15,712 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 08:38:59,869 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 08:38:59,869 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 08:39:09,758 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 08:39:09,758 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 08:39:09,758 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 08:39:09,758 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 08:39:09,758 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 08:41:00,887 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 08:41:01,680 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 08:41:01,691 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 08:41:02,251 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 08:41:02,251 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 08:41:02,251 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 08:45:40,603 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 08:45:40,603 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 08:45:56,849 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 08:45:56,849 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 08:45:56,849 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 08:45:56,849 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 08:45:56,849 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 08:46:28,128 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 08:46:29,003 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 08:46:29,004 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 08:46:29,582 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 08:46:29,583 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 08:46:29,583 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 08:46:38,709 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 08:46:38,709 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 08:46:52,333 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 08:46:52,333 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 08:46:52,333 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 08:46:52,333 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 08:46:52,333 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 08:47:23,758 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 08:47:24,646 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 08:47:24,646 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 08:47:25,193 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 08:47:25,193 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 08:47:25,209 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 08:54:23,058 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 08:54:23,058 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 08:54:31,245 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 08:54:31,245 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 08:54:31,245 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 08:54:31,245 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 08:54:31,245 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 08:55:02,321 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 08:55:03,011 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 08:55:03,015 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 08:55:03,563 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 08:55:03,580 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 08:55:03,580 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 08:59:16,365 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 08:59:16,365 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 08:59:23,243 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 08:59:23,243 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 08:59:23,243 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 08:59:23,243 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 08:59:23,243 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 08:59:54,190 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 08:59:55,019 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 08:59:55,019 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 08:59:55,606 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 08:59:55,606 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 08:59:55,606 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 09:04:46,692 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 09:04:46,692 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 09:04:58,179 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 09:04:58,179 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 09:04:58,179 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 09:04:58,179 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 09:04:58,179 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 09:05:29,139 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 09:05:29,965 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 09:05:29,965 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 09:05:30,547 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 09:05:30,559 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 09:05:30,560 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 09:24:57,154 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 09:24:57,154 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 09:25:08,103 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 09:25:08,103 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 09:25:08,103 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 09:25:08,103 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 09:25:08,103 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 09:25:38,830 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 09:25:39,703 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 09:25:39,719 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 09:27:04,376 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 09:27:04,376 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 09:27:04,376 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 09:27:04,376 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 09:27:04,376 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 09:27:35,812 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 09:27:36,707 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 09:27:36,707 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 09:27:37,310 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 09:27:37,310 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 09:27:37,310 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 10:19:54,957 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 10:19:54,957 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 10:20:03,775 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 10:20:03,775 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 10:20:03,775 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 10:20:03,775 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 10:20:03,775 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 10:20:34,972 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 10:20:35,879 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 10:20:35,879 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 10:20:36,489 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 10:20:36,489 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 10:20:36,489 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 10:20:51,376 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 10:20:51,376 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 10:20:58,931 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 10:20:58,933 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 10:20:58,933 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 10:20:58,933 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 10:20:58,933 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 10:21:29,466 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 10:21:30,314 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 10:21:30,317 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 10:21:30,868 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 10:21:30,868 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 10:21:30,868 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 10:25:01,671 - AngelProvider - ERROR - Login error: SmartConnect.generateSession() got an unexpected keyword argument 'clientcode'
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\data_provider\angel_provider.py", line 53, in login
+    data = self.smart_api.generateSession(
+TypeError: SmartConnect.generateSession() got an unexpected keyword argument 'clientcode'
+2025-09-25 10:25:08,100 - AngelProvider - ERROR - Login error: SmartConnect.generateSession() got an unexpected keyword argument 'clientcode'
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\data_provider\angel_provider.py", line 53, in login
+    data = self.smart_api.generateSession(
+TypeError: SmartConnect.generateSession() got an unexpected keyword argument 'clientcode'
+2025-09-25 10:25:14,310 - AngelProvider - ERROR - Login error: SmartConnect.generateSession() got an unexpected keyword argument 'clientcode'
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\data_provider\angel_provider.py", line 53, in login
+    data = self.smart_api.generateSession(
+TypeError: SmartConnect.generateSession() got an unexpected keyword argument 'clientcode'
+2025-09-25 10:52:59,140 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 10:52:59,140 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 10:52:59,140 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 10:52:59,140 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 10:52:59,140 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 10:53:30,694 - TradingBot.Main - ERROR - Module import error: cannot import name 'AngelProvider' from 'data_provider.angel_provider' (c:\Users\Dell\tradingbot_new\data_provider\angel_provider.py)
+2025-09-25 10:53:30,694 - TradingBot.Main - ERROR - Module structure incomplete - check file installation
+2025-09-25 10:57:54,547 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 10:57:54,547 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 10:57:54,547 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 10:57:54,547 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 10:57:54,547 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 10:58:25,206 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 10:58:25,476 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 10:58:25,476 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 10:58:25,476 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 11:10:32,344 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 11:10:32,344 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 11:10:32,344 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 11:10:32,344 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 11:10:32,344 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 11:11:03,162 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 11:11:03,463 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 11:11:03,463 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 11:11:03,478 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 11:11:03,571 - TradingBot.Main - ERROR - Critical startup error
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\main.py", line 518, in main
+    from ui.professional_trading_ui import ProfessionalTradingUI
+  File "c:\Users\Dell\tradingbot_new\ui\professional_trading_ui.py", line 1387
+    logger.info("Professional trading UI closed")100, self.root.quit)
+                                                                    ^
+SyntaxError: unmatched ')'
+2025-09-25 11:19:58,003 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 11:19:58,003 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 11:19:58,003 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 11:19:58,003 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 11:19:58,003 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 11:20:28,593 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 11:20:28,846 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 11:20:28,846 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 11:20:28,846 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 11:20:29,033 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 11:20:29,036 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 11:20:29,036 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 11:23:56,422 - AngelProvider - INFO - SmartConnect initialized successfully
+2025-09-25 11:23:56,422 - AngelProvider - INFO - Attempting to login to Angel One API
+2025-09-25 11:23:56,422 - AngelProvider - INFO - TOTP generated successfully: 178838
+2025-09-25 11:23:56,422 - AngelProvider - INFO - Using Client Code: M586478
+2025-09-25 11:23:56,422 - AngelProvider - INFO - Generated TOTP: 178838
+2025-09-25 11:23:56,422 - AngelProvider - INFO - Login attempt 1: Trying with clientCode parameter
+2025-09-25 11:23:56,741 - AngelProvider - INFO - Login successful on attempt 1
+2025-09-25 11:23:56,741 - AngelProvider - INFO - Auth Token: Bearer eyJhbGciOiJIU...
+2025-09-25 11:23:56,741 - AngelProvider - INFO - Refresh Token: eyJhbGciOiJIUzUxMiJ9...
+2025-09-25 11:23:56,741 - AngelProvider - INFO - Feed Token: eyJhbGciOiJIUzUxMiJ9...
+2025-09-25 11:25:06,249 - AngelProvider - INFO - SmartConnect initialized successfully
+2025-09-25 11:25:06,261 - AngelProvider - INFO - Attempting to login to Angel One API
+2025-09-25 11:25:06,261 - AngelProvider - INFO - TOTP generated successfully: 033346
+2025-09-25 11:25:06,261 - AngelProvider - INFO - Using Client Code: M586478
+2025-09-25 11:25:06,261 - AngelProvider - INFO - Generated TOTP: 033346
+2025-09-25 11:25:06,261 - AngelProvider - INFO - Login attempt 1: Trying with clientCode parameter
+2025-09-25 11:25:06,599 - AngelProvider - INFO - Login successful on attempt 1
+2025-09-25 11:25:06,599 - AngelProvider - INFO - Auth Token: Bearer eyJhbGciOiJIU...
+2025-09-25 11:25:06,599 - AngelProvider - INFO - Refresh Token: eyJhbGciOiJIUzUxMiJ9...
+2025-09-25 11:25:06,599 - AngelProvider - INFO - Feed Token: eyJhbGciOiJIUzUxMiJ9...
+2025-09-25 11:25:14,443 - AngelProvider - INFO - SmartConnect initialized successfully
+2025-09-25 11:25:14,461 - AngelProvider - INFO - Attempting to login to Angel One API
+2025-09-25 11:25:14,461 - AngelProvider - INFO - TOTP generated successfully: 033346
+2025-09-25 11:25:14,461 - AngelProvider - INFO - Using Client Code: M586478
+2025-09-25 11:25:14,461 - AngelProvider - INFO - Generated TOTP: 033346
+2025-09-25 11:25:14,461 - AngelProvider - INFO - Login attempt 1: Trying with clientCode parameter
+2025-09-25 11:25:14,763 - AngelProvider - INFO - Login successful on attempt 1
+2025-09-25 11:25:14,763 - AngelProvider - INFO - Auth Token: Bearer eyJhbGciOiJIU...
+2025-09-25 11:25:14,763 - AngelProvider - INFO - Refresh Token: eyJhbGciOiJIUzUxMiJ9...
+2025-09-25 11:25:14,763 - AngelProvider - INFO - Feed Token: eyJhbGciOiJIUzUxMiJ9...
+2025-09-25 11:27:26,995 - PaperTrader - INFO - Paper trade executed: BUY 10 RELIANCE @ 2456.75
+2025-09-25 12:14:33,665 - ProfessionalUI - INFO - UI closing - stopping all timers
+2025-09-25 12:14:33,769 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 12:14:33,769 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 12:14:43,331 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 12:14:43,331 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 12:14:43,331 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 12:14:43,331 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 12:14:43,331 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 12:15:14,180 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 12:15:14,465 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 12:15:14,465 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 12:15:14,465 - PaperTrader - INFO - Enhanced paper trader initialized with balance: Rs100,000.00
+2025-09-25 12:15:14,465 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 12:15:14,623 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 12:15:14,638 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 12:15:14,638 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 12:47:38,712 - ProfessionalUI - INFO - UI closing - stopping all timers
+2025-09-25 12:47:38,823 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 12:47:38,823 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 12:47:56,898 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 12:47:56,898 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 12:47:56,898 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 12:47:56,898 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 12:47:56,898 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 12:48:27,845 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 12:48:28,144 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 12:48:28,144 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 12:48:28,144 - PaperTrader - INFO - Enhanced paper trader initialized with balance: Rs100,000.00
+2025-09-25 12:48:28,144 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 12:48:28,324 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 12:48:28,324 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 12:48:28,324 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 12:50:50,384 - AngelProvider - INFO - SmartConnect initialized successfully
+2025-09-25 12:50:50,384 - AngelProvider - INFO - Attempting to login to Angel One API
+2025-09-25 12:50:50,384 - AngelProvider - INFO - TOTP generated successfully: 528862
+2025-09-25 12:50:50,384 - AngelProvider - INFO - Using Client Code: M586478
+2025-09-25 12:50:50,384 - AngelProvider - INFO - Generated TOTP: 528862
+2025-09-25 12:50:50,384 - AngelProvider - INFO - Login attempt 1: Trying with clientCode parameter
+2025-09-25 12:50:50,749 - AngelProvider - INFO - Login successful on attempt 1
+2025-09-25 12:50:50,751 - AngelProvider - INFO - Auth Token: Bearer eyJhbGciOiJIU...
+2025-09-25 12:50:50,751 - AngelProvider - INFO - Refresh Token: eyJhbGciOiJIUzUxMiJ9...
+2025-09-25 12:50:50,751 - AngelProvider - INFO - Feed Token: eyJhbGciOiJIUzUxMiJ9...
+2025-09-25 12:53:30,000 - PaperTrader - INFO - Order placed: BUY 10 RELIANCE @ Rs2457.78
+2025-09-25 12:55:29,163 - PaperTrader - INFO - Order placed: BUY 10 RELIANCE @ Rs2457.03
+2025-09-25 13:27:10,217 - ProfessionalUI - INFO - UI closing - stopping all timers
+2025-09-25 13:27:11,846 - ProfessionalUI - INFO - UI closing - stopping all timers
+2025-09-25 13:27:14,107 - ProfessionalUI - INFO - UI closing - stopping all timers
+2025-09-25 13:27:21,755 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 13:27:21,755 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 13:27:33,182 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 13:27:33,182 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 13:27:33,182 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 13:27:33,182 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 13:27:33,182 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 13:28:04,251 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 13:28:04,535 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 13:28:04,535 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 13:28:04,535 - PaperTraderHotfix - INFO - Simple paper trader initialized. Balance: Rs100,000.00
+2025-09-25 13:28:04,535 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 13:28:04,695 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 13:28:04,695 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 13:28:04,695 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 13:28:38,698 - PaperTraderHotfix - INFO - Order executed: BUY 10 RELIANCE @ Rs2456.75
+2025-09-25 13:31:05,389 - ProfessionalUI - INFO - UI closing - stopping all timers
+2025-09-25 13:31:05,499 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 13:31:05,499 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 13:31:37,453 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 13:31:37,453 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 13:31:37,453 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 13:31:37,453 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 13:31:37,453 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 13:32:09,141 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 13:32:09,410 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 13:32:09,410 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 13:32:09,425 - PaperTraderHotfix - INFO - Data loaded. Balance: Rs75,432.50, Positions: 1
+2025-09-25 13:32:09,425 - PaperTraderHotfix - INFO - Simple paper trader initialized. Balance: Rs75,432.50
+2025-09-25 13:32:09,425 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 13:32:09,573 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 13:32:09,573 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 13:32:09,573 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 13:33:47,375 - PaperTraderHotfix - INFO - Order executed: BUY 10 RELIANCE @ Rs2456.75
+2025-09-25 13:36:06,636 - ProfessionalUI - INFO - UI closing - stopping all timers
+2025-09-25 13:36:06,759 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 13:36:06,759 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 13:59:00,552 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 13:59:00,552 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 13:59:00,552 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 13:59:00,552 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 13:59:00,552 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 13:59:31,969 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 13:59:32,257 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 13:59:32,272 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 13:59:32,287 - PaperTraderHotfix - INFO - Data loaded. Balance: Rs50,865.00, Positions: 1
+2025-09-25 13:59:32,287 - PaperTraderHotfix - INFO - Simple paper trader initialized. Balance: Rs50,865.00
+2025-09-25 13:59:32,287 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 13:59:32,452 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 13:59:32,452 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 13:59:32,452 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 14:02:37,743 - PaperTraderHotfix - INFO - Order executed: BUY 10 RELIANCE @ Rs2456.75
+2025-09-25 14:13:47,200 - ProfessionalUI - INFO - UI closing - stopping all timers
+2025-09-25 14:13:47,307 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 14:13:47,307 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 14:14:02,194 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 14:14:02,194 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 14:14:02,194 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 14:14:02,194 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 14:14:02,194 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 14:14:47,999 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 14:14:48,290 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 14:14:48,290 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 14:14:48,308 - PaperTraderHotfix - INFO - Data loaded. Balance: Rs26,297.50, Positions: 1
+2025-09-25 14:14:48,322 - PaperTraderHotfix - INFO - Simple paper trader initialized. Balance: Rs26,297.50
+2025-09-25 14:14:48,322 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 14:14:48,476 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 14:14:48,476 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 14:14:48,476 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 14:15:30,192 - PaperTraderHotfix - INFO - Order executed: BUY 10 RELIANCE @ Rs2456.75
+2025-09-25 14:24:41,647 - ProfessionalUI - INFO - UI closing - stopping all timers
+2025-09-25 14:24:41,759 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 14:24:41,759 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 14:25:11,317 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 14:25:11,317 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 14:25:11,317 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 14:25:11,317 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 14:25:11,317 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 14:25:46,822 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 14:25:47,137 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 14:25:47,137 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 14:25:47,139 - MinimalPaperTrader - INFO - Minimal paper trader started. Balance: Rs100,000.00
+2025-09-25 14:25:47,139 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 14:25:47,293 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 14:25:47,293 - TradingBot.Main - INFO - Startup sequence completed successfully
+2025-09-25 14:25:47,293 - ProfessionalUI - INFO - Professional trading UI started
+2025-09-25 15:05:59,712 - ProfessionalUI - INFO - UI closing - stopping all timers
+2025-09-25 15:05:59,823 - ProfessionalUI - INFO - Professional trading UI closed
+2025-09-25 15:05:59,823 - TradingBot.Main - INFO - Application shutdown initiated
+2025-09-25 15:06:18,534 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 15:06:18,534 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 15:06:18,534 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 15:06:18,534 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 15:06:18,534 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 15:06:49,501 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 15:06:49,791 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 15:06:49,791 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 15:06:49,791 - IntradayPaperTrader - INFO - Intraday paper trader initialized. Balance: Rs100,000.00
+2025-09-25 15:06:49,791 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 15:06:49,951 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 15:09:16,869 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 15:09:16,869 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 15:09:16,869 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 15:09:16,869 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 15:09:16,869 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 15:09:48,573 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 15:09:48,854 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 15:09:48,870 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 15:09:48,870 - IntradayPaperTrader - INFO - Intraday paper trader initialized. Balance: Rs100,000.00
+2025-09-25 15:09:48,871 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 15:09:49,013 - TradingBot.Main - INFO - Professional UI initialized successfully
+2025-09-25 15:45:48,215 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250924001
+2025-09-25 15:45:48,215 - TradingBot.Main - INFO - Trading Bot startup initiated
+2025-09-25 15:45:48,215 - TradingBot.Main - INFO - Version: 3.0.0 | Build: 20250924001
+2025-09-25 15:45:48,215 - TradingBot.Main - INFO - Python: 3.10.9 | packaged by Anaconda, Inc. | (main, Mar  1 2023, 18:18:15) [MSC v.1916 64 bit (AMD64)]
+2025-09-25 15:45:48,215 - TradingBot.Main - INFO - Working Directory: c:\Users\Dell\tradingbot_new
+2025-09-25 15:46:19,525 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-25 15:46:19,805 - TradingBot.Main - INFO - Core trading modules imported successfully
+2025-09-25 15:46:19,807 - AngelProvider - INFO - Angel One provider initialized
+2025-09-25 15:46:19,807 - IntradayPaperTrader - INFO - Intraday paper trader initialized. Balance: Rs100,000.00
+2025-09-25 15:46:19,807 - TradingBot.Main - INFO - Trading system components initialized successfully
+2025-09-25 15:46:19,887 - TradingBot.Main - ERROR - Critical startup error
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\main.py", line 518, in main
+    from ui.professional_trading_ui import ProfessionalTradingUI
+  File "c:\Users\Dell\tradingbot_new\ui\professional_trading_ui.py", line 622
+    threading.Thread(target=self._analysis_worker, daemon=True).start()def _analysis_worker(self):
+                                                                       ^^^
+SyntaxError: invalid syntax

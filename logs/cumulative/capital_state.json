@@ -1,0 +1,22 @@
+{
+  "initial_capital": 100000.0,
+  "current_balance": 100750.0,
+  "last_updated": "2025-10-10T17:23:51.951190",
+  "start_date": "2025-10-10",
+  "total_trades": 4,
+  "winning_trades": 2,
+  "losing_trades": 2,
+  "total_profit": 1250.0,
+  "total_loss": 500.0,
+  "largest_win": 750,
+  "largest_loss": -300,
+  "daily_sessions": {
+    "2025-10-10": {
+      "starting_balance": 100000.0,
+      "ending_balance": 100750.0,
+      "trades": 4,
+      "pnl": 750
+    }
+  },
+  "version": "1.0"
+}

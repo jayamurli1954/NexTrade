@@ -1,0 +1,1146 @@
+2025-10-04 17:49:11 - console_handler - INFO - ================================================================================
+2025-10-04 17:49:11 - console_handler - INFO - Enhanced logging initialized
+2025-10-04 17:49:11 - console_handler - INFO - Log file: logs\2025-10-04/app.log
+2025-10-04 17:49:11 - console_handler - INFO - ================================================================================
+2025-10-04 17:49:11 - trade_logger - INFO - TradeLogger initialized. File: logs/trades\trades_2025-10-04.xlsx
+2025-10-04 17:49:11 - TradingBot - INFO - ⚙️  System: STARTUP - System initialization in progress...
+2025-10-04 17:49:11 - TradingBot - INFO - ⚙️  System: INIT - Loading credentials...
+2025-10-04 17:49:11 - TradingBot - INFO - ⚙️  System: INIT - Credentials loaded
+2025-10-04 17:49:11 - TradingBot - INFO - ⚙️  System: INIT - Connecting to Angel One API...
+2025-10-04 17:49:11 - CredentialsManager - INFO - Credentials manager initialized
+2025-10-04 17:49:11 - AngelProvider - INFO - ✓ Loaded 136336 tokens from data/angel_tokens_map.json
+2025-10-04 17:49:11 - CredentialsManager - INFO - Credentials loaded
+2025-10-04 17:49:11 - AngelProvider - INFO - Credentials loaded - ready for login
+2025-10-04 17:49:11 - AngelProvider - INFO - Angel One provider initialized (paper_mode={'api_key': '', 'client_id': '', 'password': '', 'totp': ''})
+2025-10-04 17:49:11 - TradingBot - INFO - ✗ Connection: DISCONNECTED Angel One API - Using fallback mode
+2025-10-04 17:49:11 - TradingBot - INFO - ⚙️  System: INIT - Initializing analyzer...
+2025-10-04 17:49:11 - TradingBot - INFO - ⚙️  System: INIT - Initializing paper trading system...
+2025-10-04 17:49:11 - order_manager.paper_trader - INFO - 💰 PaperTrader started with cash ₹100,000.00 and leverage x5.0
+2025-10-04 17:49:11 - order_manager.paper_trader - INFO - Intraday trading enabled: SHORT SELLING supported
+2025-10-04 17:49:11 - TradingBot - INFO - 📊 Portfolio: 0 holdings | Value: ₹0.00 | Available: ₹0.00
+2025-10-04 17:49:11 - TradingBot - INFO - ⚙️  System: READY - All systems initialized successfully
+2025-10-04 17:49:11 - AngelProvider - WARNING - API unavailable - Using fallback price for RELIANCE: ₹2895.00
+2025-10-04 17:49:11 - AngelProvider - WARNING - API unavailable - Using fallback price for INFY: ₹1867.00
+2025-10-04 17:49:11 - AngelProvider - WARNING - API unavailable - Using fallback price for TCS: ₹4012.00
+2025-10-04 17:49:11 - AngelProvider - WARNING - API unavailable - Using fallback price for HDFCBANK: ₹1648.00
+2025-10-04 17:49:11 - AngelProvider - WARNING - API unavailable - Using fallback price for ICICIBANK: ₹1296.00
+2025-10-04 17:49:11 - AngelProvider - WARNING - API unavailable - Using fallback price for SBIN: ₹836.00
+2025-10-04 17:49:11 - AngelProvider - WARNING - API unavailable - Using fallback price for CASTROLIND: ₹189.00
+2025-10-04 17:49:11 - AngelProvider - WARNING - API unavailable - Using fallback price for BPCL: ₹1000.00
+2025-10-04 17:49:18 - AngelProvider - INFO - ✓ Successfully logged in to Angel One - JWT token stored
+2025-10-04 17:49:18 - AngelProvider - INFO - ✓ Now fetching REAL market data
+2025-10-04 17:49:42 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 17:49:42 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 17:49:42 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 17:49:43 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 17:49:43 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 17:49:44 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 17:49:44 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 17:49:44 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 17:50:06 - AngelProvider - INFO - ✓ Successfully logged in to Angel One - JWT token stored
+2025-10-04 17:50:06 - AngelProvider - INFO - ✓ Now fetching REAL market data
+2025-10-04 17:50:15 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 17:50:15 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 17:50:15 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 17:50:16 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 17:50:16 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 17:50:16 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 17:50:17 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 17:50:17 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 17:50:48 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 17:50:48 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 17:50:49 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 17:50:49 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 17:50:50 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 17:50:50 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 17:50:51 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 17:50:51 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 17:51:22 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 17:51:22 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 17:51:23 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 17:51:23 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 17:51:24 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 17:51:24 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 17:51:25 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 17:51:25 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 17:51:56 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 17:52:05 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 17:52:06 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 17:52:07 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 17:52:07 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 17:52:08 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 17:52:08 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 17:52:09 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 17:52:40 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 17:52:40 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 17:52:41 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 17:52:41 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 17:52:42 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 17:52:42 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 17:52:43 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 17:52:43 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 17:53:14 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 17:53:14 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 17:53:15 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 17:53:15 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 17:53:16 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 17:53:17 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 17:53:17 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 17:53:18 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 17:53:43 - console_handler - INFO - ================================================================================
+2025-10-04 17:53:43 - console_handler - INFO - Enhanced logging initialized
+2025-10-04 17:53:43 - console_handler - INFO - Log file: logs\2025-10-04/app.log
+2025-10-04 17:53:43 - console_handler - INFO - ================================================================================
+2025-10-04 17:53:43 - trade_logger - INFO - TradeLogger initialized. File: logs/trades\trades_2025-10-04.xlsx
+2025-10-04 17:53:43 - TradingBot - INFO - ⚙️  System: STARTUP - System initialization in progress...
+2025-10-04 17:53:43 - TradingBot - INFO - ⚙️  System: INIT - Loading credentials...
+2025-10-04 17:53:43 - TradingBot - ERROR - ❌ Critical error: 'NoneType' object is not callable
+2025-10-04 18:09:50 - console_handler - INFO - ================================================================================
+2025-10-04 18:09:50 - console_handler - INFO - Enhanced logging initialized
+2025-10-04 18:09:50 - console_handler - INFO - Log file: logs\2025-10-04/app.log
+2025-10-04 18:09:50 - console_handler - INFO - ================================================================================
+2025-10-04 18:09:50 - trade_logger - INFO - TradeLogger initialized. File: logs/trades\trades_2025-10-04.xlsx
+2025-10-04 18:09:50 - TradingBot - INFO - ⚙️  System: STARTUP - System initialization in progress...
+2025-10-04 18:09:50 - TradingBot - INFO - ⚙️  System: INIT - Loading credentials...
+2025-10-04 18:09:50 - TradingBot - INFO - ⚙️  System: INIT - Credentials loaded
+2025-10-04 18:09:50 - TradingBot - INFO - ⚙️  System: INIT - Connecting to Angel One API...
+2025-10-04 18:09:50 - CredentialsManager - INFO - Credentials manager initialized
+2025-10-04 18:09:50 - AngelProvider - INFO - ✓ Loaded 136336 tokens
+2025-10-04 18:09:50 - CredentialsManager - INFO - Credentials loaded
+2025-10-04 18:09:50 - AngelProvider - INFO - Credentials loaded
+2025-10-04 18:09:50 - AngelProvider - INFO - Angel One provider initialized (paper_mode={'api_key': '', 'client_id': '', 'password': '', 'totp': ''})
+2025-10-04 18:09:50 - TradingBot - INFO - ✗ Connection: DISCONNECTED Angel One API - Using fallback mode
+2025-10-04 18:09:50 - TradingBot - INFO - ⚙️  System: INIT - Initializing analyzer...
+2025-10-04 18:09:50 - TradingBot - INFO - ⚙️  System: INIT - Initializing paper trading system...
+2025-10-04 18:09:50 - order_manager.paper_trader - INFO - 💰 PaperTrader started with cash ₹100,000.00 and leverage x5.0
+2025-10-04 18:09:50 - order_manager.paper_trader - INFO - Intraday trading enabled: SHORT SELLING supported
+2025-10-04 18:09:50 - AngelProvider - WARNING - Not connected to Angel One
+2025-10-04 18:09:50 - TradingBot - WARNING - ⚠️  Could not fetch portfolio: 'list' object has no attribute 'get'
+2025-10-04 18:09:50 - TradingBot - INFO - ⚙️  System: READY - All systems initialized successfully
+2025-10-04 18:09:54 - AngelProvider - INFO - ✓ Successfully logged in to Angel One - JWT token stored
+2025-10-04 18:09:54 - AngelProvider - INFO - ✓ Now fetching REAL market data
+2025-10-04 18:09:57 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:09:58 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:09:58 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:09:58 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:09:59 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:09:59 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:09:59 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:10:00 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:10:00 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:10:00 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:10:01 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:10:01 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:10:01 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:10:21 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:10:21 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:10:21 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:10:22 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:10:22 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:10:22 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:10:23 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:10:23 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:10:23 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:10:24 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:10:24 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:10:24 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:10:25 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:10:55 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:10:56 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:10:56 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:10:56 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:10:57 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:10:57 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:10:57 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:10:58 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:10:58 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:10:58 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:10:59 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:10:59 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:10:59 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:11:30 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:11:30 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:11:31 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:11:31 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:11:31 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:11:32 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:11:32 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:11:32 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:11:33 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:11:33 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:11:33 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:11:33 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:11:34 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:11:50 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:11:51 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:11:51 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:11:51 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:11:52 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:11:52 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:11:52 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:11:53 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:11:53 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:11:53 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:11:54 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:11:54 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:11:54 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:12:05 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:12:05 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:12:05 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:12:06 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:12:06 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:12:06 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:12:07 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:12:07 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:12:07 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:12:08 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:12:08 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:12:08 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:12:08 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:12:39 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:12:40 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:12:40 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:12:41 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:12:41 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:12:42 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:12:42 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:12:43 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:12:43 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:12:44 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:12:45 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:12:45 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:12:45 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:13:16 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:13:17 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:13:17 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:13:18 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:13:18 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:13:19 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:13:20 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:13:20 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:13:21 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:13:21 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:13:22 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:13:22 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:13:22 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:13:53 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:13:54 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:13:54 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:13:55 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:13:55 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:13:56 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:13:57 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:13:57 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:13:58 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:13:58 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:13:59 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:13:59 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:13:59 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:14:30 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:14:31 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:14:31 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:14:32 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:14:32 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:14:33 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:14:33 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:14:34 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:14:34 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:14:35 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:14:35 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:14:35 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:14:36 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:15:07 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:15:08 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:15:08 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:15:09 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:15:09 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:15:10 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:15:10 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:15:11 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:15:11 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:15:12 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:15:13 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:15:13 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:15:13 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:15:44 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:15:45 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:15:45 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:15:46 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:15:46 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:15:47 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:15:48 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:15:48 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:15:49 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:15:49 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:15:50 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:15:50 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:15:50 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:16:21 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:16:22 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:16:22 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:16:23 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:16:23 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:16:24 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:16:25 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:16:25 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:16:26 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:16:26 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:16:27 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:16:27 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:16:27 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:16:58 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:17:15 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:17:16 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:17:16 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:17:17 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:17:17 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:17:18 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:17:18 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:17:19 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:17:20 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:17:20 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:17:20 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:17:21 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:17:52 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:17:53 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:17:53 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:17:54 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:17:54 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:17:55 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:17:55 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:17:56 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:17:56 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:17:57 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:17:57 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:17:57 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:17:58 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:18:29 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:18:30 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:18:30 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:18:31 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:18:31 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:18:32 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:18:32 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:18:33 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:18:33 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:18:34 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:18:34 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:18:34 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:18:35 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:19:06 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:19:06 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:19:07 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:19:07 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:19:08 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:19:08 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:19:09 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:19:09 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:19:10 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:19:11 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:19:11 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:19:11 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:19:12 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:19:43 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:19:43 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:19:44 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:19:44 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:19:45 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:19:45 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:19:46 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:19:47 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:19:47 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:19:48 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:19:48 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:19:48 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:19:49 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:20:13 - console_handler - INFO - ================================================================================
+2025-10-04 18:20:13 - console_handler - INFO - Enhanced logging initialized
+2025-10-04 18:20:13 - console_handler - INFO - Log file: logs\2025-10-04/app.log
+2025-10-04 18:20:13 - console_handler - INFO - ================================================================================
+2025-10-04 18:20:13 - trade_logger - INFO - TradeLogger initialized. File: logs/trades\trades_2025-10-04.xlsx
+2025-10-04 18:20:13 - TradingBot - INFO - ⚙️  System: STARTUP - System initialization in progress...
+2025-10-04 18:20:13 - TradingBot - INFO - ⚙️  System: INIT - Loading credentials...
+2025-10-04 18:20:13 - TradingBot - ERROR - ❌ Critical error: 'NoneType' object is not callable
+2025-10-04 18:21:04 - console_handler - INFO - ================================================================================
+2025-10-04 18:21:04 - console_handler - INFO - Enhanced logging initialized
+2025-10-04 18:21:04 - console_handler - INFO - Log file: logs\2025-10-04/app.log
+2025-10-04 18:21:04 - console_handler - INFO - ================================================================================
+2025-10-04 18:21:04 - trade_logger - INFO - TradeLogger initialized. File: logs/trades\trades_2025-10-04.xlsx
+2025-10-04 18:21:04 - TradingBot - INFO - ⚙️  System: STARTUP - System initialization in progress...
+2025-10-04 18:21:04 - TradingBot - INFO - ⚙️  System: INIT - Loading credentials...
+2025-10-04 18:21:04 - TradingBot - INFO - ⚙️  System: INIT - Credentials loaded
+2025-10-04 18:21:04 - TradingBot - INFO - ⚙️  System: INIT - Connecting to Angel One API...
+2025-10-04 18:21:04 - CredentialsManager - INFO - Credentials manager initialized
+2025-10-04 18:21:04 - AngelProvider - INFO - ✓ Loaded 136336 tokens
+2025-10-04 18:21:04 - CredentialsManager - INFO - Credentials loaded
+2025-10-04 18:21:05 - AngelProvider - INFO - Credentials loaded
+2025-10-04 18:21:05 - AngelProvider - INFO - Angel One provider initialized (paper_mode={'api_key': '', 'client_id': '', 'password': '', 'totp': ''})
+2025-10-04 18:21:05 - TradingBot - INFO - ✗ Connection: DISCONNECTED Angel One API - Using fallback mode
+2025-10-04 18:21:05 - TradingBot - INFO - ⚙️  System: INIT - Initializing analyzer...
+2025-10-04 18:21:05 - TradingBot - INFO - ⚙️  System: INIT - Initializing paper trading system...
+2025-10-04 18:21:05 - order_manager.paper_trader - INFO - 💰 PaperTrader started with cash ₹100,000.00 and leverage x5.0
+2025-10-04 18:21:05 - order_manager.paper_trader - INFO - Intraday trading enabled: SHORT SELLING supported
+2025-10-04 18:21:05 - AngelProvider - WARNING - Not connected to Angel One
+2025-10-04 18:21:05 - TradingBot - WARNING - ⚠️  Could not fetch portfolio: 'list' object has no attribute 'get'
+2025-10-04 18:21:05 - TradingBot - INFO - ⚙️  System: READY - All systems initialized successfully
+2025-10-04 18:21:15 - AngelProvider - INFO - ✓ Successfully logged in to Angel One - JWT token stored
+2025-10-04 18:21:15 - AngelProvider - INFO - ✓ Now fetching REAL market data
+2025-10-04 18:21:20 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:21:20 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:21:20 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:21:21 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:21:21 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:21:21 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:21:22 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:21:22 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:21:22 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:21:23 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:21:23 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:21:23 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:21:23 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:21:38 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:21:38 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:21:38 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:21:39 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:21:39 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:21:40 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:21:40 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:21:40 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:21:41 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:21:41 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:21:41 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:21:41 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:21:42 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:21:42 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:21:42 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:21:43 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:21:43 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:21:43 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:21:44 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:21:44 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:21:44 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:22:03 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:22:04 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:22:04 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:22:04 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:22:05 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:22:05 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:22:05 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:22:06 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:22:15 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:22:15 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:22:16 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:22:16 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:22:17 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:22:17 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:22:17 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:22:18 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:22:18 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:22:18 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:22:19 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:22:19 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:22:19 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:22:19 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:22:20 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:22:20 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:22:20 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:22:21 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:22:21 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:22:22 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:22:22 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:22:53 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:22:53 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:22:53 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:22:54 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:22:54 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:22:54 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:22:55 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:22:55 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:22:55 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:22:56 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:22:56 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:22:56 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:22:56 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:22:57 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:22:57 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:22:57 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:22:58 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:22:58 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:22:58 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:22:59 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:22:59 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:23:30 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:23:30 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:23:30 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:23:31 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:23:31 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:23:31 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:23:32 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:23:32 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:23:33 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:23:33 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:23:33 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:23:33 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:23:34 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:23:34 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:23:34 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:23:35 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:23:35 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:23:35 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:23:36 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:23:36 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:23:36 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:24:08 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:24:08 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:24:09 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:24:09 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:24:10 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:24:10 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:24:10 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:24:11 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:24:11 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:24:11 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:24:12 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:24:12 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:24:12 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:24:12 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:24:13 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:24:13 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:24:13 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:24:14 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:24:14 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:24:15 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:24:15 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:24:46 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:24:46 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:24:47 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:24:47 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:24:47 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:24:48 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:24:48 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:24:49 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:24:49 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:24:50 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:24:50 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:24:50 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:24:51 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:24:51 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:24:52 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:24:52 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:24:53 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:24:53 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:24:54 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:24:54 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:24:55 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:25:26 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:25:26 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:25:27 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:25:27 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:25:28 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:25:28 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:25:29 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:25:29 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:25:30 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:25:31 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:25:31 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:25:31 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:25:32 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:25:32 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:25:33 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:25:33 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:25:34 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:25:34 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:25:35 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:25:35 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:25:36 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:26:07 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:26:08 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:26:08 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:26:09 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:26:09 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:26:10 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:26:10 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:26:11 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:26:11 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:26:12 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:26:13 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:26:13 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:26:13 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:26:14 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:26:14 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:26:15 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:26:15 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:26:16 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:26:17 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:26:17 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:26:18 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:26:49 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:26:49 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:26:50 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:26:50 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:26:51 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:26:52 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:26:52 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:26:53 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:26:53 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:26:54 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:26:54 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:26:54 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:26:55 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:26:55 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:26:56 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:26:56 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:26:57 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:26:57 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:26:58 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:26:59 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:26:59 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:27:30 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:27:31 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:27:31 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:27:32 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:27:32 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:27:33 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:27:33 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:27:34 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:27:34 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:27:35 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:27:35 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:27:35 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:27:36 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:27:36 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:27:37 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:27:37 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:27:38 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:27:38 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:27:39 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:27:39 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:27:40 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:28:11 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:28:11 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:28:12 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:28:12 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:28:13 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:28:13 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:28:14 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:28:14 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:28:15 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:28:15 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:28:16 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:28:16 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:28:16 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:28:17 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:28:17 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:28:18 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:28:18 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:28:19 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:28:19 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:28:20 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:28:20 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:28:51 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:28:52 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:28:52 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:28:53 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:28:53 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:28:54 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:28:55 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:28:55 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:28:56 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:28:56 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:28:57 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:28:57 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:28:57 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:28:58 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:28:58 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:28:59 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:28:59 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:29:00 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:29:00 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:29:01 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:29:01 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:29:32 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:29:33 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:29:33 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:29:34 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:29:34 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:29:35 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:29:35 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:29:36 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:29:36 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:29:37 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:29:37 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:29:37 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:29:38 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:29:38 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:29:39 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:29:39 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:29:40 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:29:40 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:29:41 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:29:41 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:29:42 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:30:13 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:30:13 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:30:14 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:30:14 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:30:15 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:30:15 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:30:16 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:30:16 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:30:17 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:30:17 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:30:18 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:30:18 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:30:18 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:30:19 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:30:19 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:30:20 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:30:20 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:30:21 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:30:21 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:30:22 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:30:22 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:30:53 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:30:54 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:30:54 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:30:55 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:30:55 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:30:56 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:30:56 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:30:57 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:30:57 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:30:58 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:30:58 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:30:58 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:30:59 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:30:59 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:31:00 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:31:00 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:31:01 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:31:01 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:31:02 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:31:02 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:31:03 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:31:34 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 18:31:34 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 18:31:35 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 18:31:35 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 18:31:36 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:31:37 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:31:38 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:31:38 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 18:31:38 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 18:31:39 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:31:39 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 18:31:39 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 18:31:40 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 18:31:40 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 18:31:41 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 18:31:42 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 18:31:42 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 18:31:43 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 18:31:43 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 18:31:44 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 18:31:44 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 18:55:34 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 18:55:34 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 18:55:35 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 18:55:36 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 18:55:36 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+[E 251004 22:27:14 smartConnect:221] Error occurred while making a POST request to https://apiconnect.angelone.in/rest/secure/angelbroking/order/v1/getLtpData. Headers: {'Content-type': 'application/json', 'X-ClientLocalIP': '127.0.0.1', 'X-ClientPublicIP': '106.193.147.98', 'X-MACAddress': 'f0:9e:4a:c3:51:7b', 'Accept': 'application/json', 'X-PrivateKey': 'S3r4XTTV', 'X-UserType': 'USER', 'X-SourceID': 'WEB', 'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJ1c2VybmFtZSI6Ik01ODY0NzgiLCJyb2xlcyI6MCwidXNlcnR5cGUiOiJVU0VSIiwidG9rZW4iOiJleUpoYkdjaU9pSlNVekkxTmlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKMWMyVnlYM1I1Y0dVaU9pSmpiR2xsYm5RaUxDSjBiMnRsYmw5MGVYQmxJam9pZEhKaFpHVmZZV05qWlhOelgzUnZhMlZ1SWl3aVoyMWZhV1FpT2pFeExDSnpiM1Z5WTJVaU9pSXpJaXdpWkdWMmFXTmxYMmxrSWpvaU1ERTBaVGxsWTJZdE1HRTRNaTB6WmpFd0xUazBNakF0TkdVellqYzBNR0UxWm1JMElpd2lhMmxrSWpvaWRISmhaR1ZmYTJWNVgzWXlJaXdpYjIxdVpXMWhibUZuWlhKcFpDSTZNVEVzSW5CeWIyUjFZM1J6SWpwN0ltUmxiV0YwSWpwN0luTjBZWFIxY3lJNkltRmpkR2wyWlNKOUxDSnRaaUk2ZXlKemRHRjBkWE1pT2lKaFkzUnBkbVVpZlgwc0ltbHpjeUk2SW5SeVlXUmxYMnh2WjJsdVgzTmxjblpwWTJVaUxDSnpkV0lpT2lKTk5UZzJORGM0SWl3aVpYaHdJam94TnpVNU5qWTROamMwTENKdVltWWlPakUzTlRrMU9ESXdPVFFzSW1saGRDSTZNVGMxT1RVNE1qQTVOQ3dpYW5ScElqb2lNakkyWlRReU9UZ3RPRFZsTlMwME1tWmtMV0UxWm1JdE5ETmpZak01T0RJM09HWmpJaXdpVkc5clpXNGlPaUlpZlEuc0U3ZXV3Z3lHY2JsampXMUxnclVWT1NDRTBHT3pyQ1JDTU1sR2lPQndJSFU1V1FrMzZiRThuSkNNZFhUZEwwZV9yampSMWdtWFM2cDFCdm5XekdXUjFTWTRxSXlkdDB3UmJJVDM4SjdYelFiTXBfNk5reGZ1UXhORGgwZ2tvOHFLRkFvR2dxamdFN3NLemJjelFqYWlGV0paOFo2WjdoXzBDQ2dHWlVmTEpJIiwiQVBJLUtFWSI6IlMzcjRYVFRWIiwiWC1PTEQtQVBJLUtFWSI6dHJ1ZSwiaWF0IjoxNzU5NTgyMjc0LCJleHAiOjE3NTk2MDI2MDB9.rZAB4ETu9br8UWV_f8erB-Z54zv9vC9m3nXT1N-ww3TqQfwy463O2zzCMnjwWb3n-XWjvYqIpUxW2qYvtbACUA'}, Request: {'exchange': 'NSE', 'tradingsymbol': 'HDFCBANK-EQ', 'symboltoken': '1333'}, Response: HTTPSConnectionPool(host='apiconnect.angelone.in', port=443): Read timed out. (read timeout=7)
+2025-10-04 22:27:14 - AngelProvider - ERROR - LTP error for HDFCBANK-EQ: HTTPSConnectionPool(host='apiconnect.angelone.in', port=443): Read timed out. (read timeout=7)
+2025-10-04 22:27:18 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:27:18 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:27:19 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:27:20 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:27:20 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:27:20 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:27:21 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:27:21 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:27:22 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:27:23 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:27:23 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:27:24 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:27:25 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:27:25 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:27:26 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:27:58 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:27:58 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:27:59 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:27:59 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:28:00 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:28:00 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:28:01 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:28:01 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:28:02 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:28:02 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:28:03 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:28:03 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:28:03 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:28:04 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:28:04 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:28:05 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:28:05 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:28:06 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:28:06 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:28:07 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:28:07 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:28:39 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:28:39 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:28:40 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:28:40 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:28:41 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:28:41 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:28:42 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:28:43 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:28:43 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:28:44 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:28:44 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:28:44 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:28:45 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:28:45 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:28:46 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:28:46 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:28:47 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:28:47 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:28:48 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:28:49 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:28:49 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:29:20 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:29:21 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:29:21 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:29:22 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:29:22 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:29:23 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:29:23 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:29:24 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:29:24 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:29:25 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:29:25 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:29:25 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:29:26 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:29:26 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:29:27 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:29:27 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:29:28 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:29:29 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:29:29 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:29:30 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:29:30 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:30:01 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:30:02 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:30:02 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:30:03 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:30:03 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:30:04 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:30:05 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:30:05 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:30:06 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:30:06 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:30:07 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:30:07 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:30:07 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:30:08 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:30:08 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:30:09 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:30:09 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:30:10 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:30:10 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:30:11 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:30:11 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:30:42 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:30:43 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:30:44 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:30:44 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:30:45 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:30:45 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:30:45 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:30:46 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:30:47 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:30:47 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:30:48 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:30:48 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:30:48 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:30:49 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:30:49 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:30:50 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:30:51 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:30:51 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:30:52 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:30:52 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:30:53 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:31:24 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:31:25 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:31:25 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:31:26 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:31:26 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:31:27 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:31:27 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:31:27 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:31:28 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:31:28 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:31:29 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:31:29 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:31:29 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:31:29 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:31:30 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:31:30 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:31:30 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:31:31 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:31:31 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:31:31 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:31:32 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:31:35 - console_handler - INFO - ================================================================================
+2025-10-04 22:31:35 - console_handler - INFO - Enhanced logging initialized
+2025-10-04 22:31:35 - console_handler - INFO - Log file: logs\2025-10-04/app.log
+2025-10-04 22:31:35 - console_handler - INFO - ================================================================================
+2025-10-04 22:31:35 - trade_logger - INFO - TradeLogger initialized. File: logs/trades\trades_2025-10-04.xlsx
+2025-10-04 22:31:35 - TradingBot - INFO - ⚙️  System: STARTUP - System initialization in progress...
+2025-10-04 22:31:35 - TradingBot - INFO - ⚙️  System: INIT - Loading credentials...
+2025-10-04 22:31:35 - TradingBot - ERROR - ❌ Critical error: 'NoneType' object is not callable
+2025-10-04 22:31:50 - console_handler - INFO - ================================================================================
+2025-10-04 22:31:50 - console_handler - INFO - Enhanced logging initialized
+2025-10-04 22:31:50 - console_handler - INFO - Log file: logs\2025-10-04/app.log
+2025-10-04 22:31:50 - console_handler - INFO - ================================================================================
+2025-10-04 22:31:50 - trade_logger - INFO - TradeLogger initialized. File: logs/trades\trades_2025-10-04.xlsx
+2025-10-04 22:31:50 - TradingBot - INFO - ⚙️  System: STARTUP - System initialization in progress...
+2025-10-04 22:31:50 - TradingBot - INFO - ⚙️  System: INIT - Loading credentials...
+2025-10-04 22:31:50 - TradingBot - INFO - ⚙️  System: INIT - Credentials loaded
+2025-10-04 22:31:50 - TradingBot - INFO - ⚙️  System: INIT - Connecting to Angel One API...
+2025-10-04 22:31:50 - CredentialsManager - INFO - Credentials manager initialized
+2025-10-04 22:31:51 - AngelProvider - INFO - ✓ Loaded 136336 tokens
+2025-10-04 22:31:51 - CredentialsManager - INFO - Credentials loaded
+2025-10-04 22:31:51 - AngelProvider - INFO - Credentials loaded
+2025-10-04 22:31:51 - AngelProvider - INFO - Angel One provider initialized (paper_mode={'api_key': '', 'client_id': '', 'password': '', 'totp': ''})
+2025-10-04 22:31:51 - TradingBot - INFO - ✗ Connection: DISCONNECTED Angel One API - Using fallback mode
+2025-10-04 22:31:51 - TradingBot - INFO - ⚙️  System: INIT - Initializing analyzer...
+2025-10-04 22:31:51 - TradingBot - INFO - ⚙️  System: INIT - Initializing paper trading system...
+2025-10-04 22:31:51 - order_manager.paper_trader - INFO - 💰 PaperTrader started with cash ₹100,000.00 and leverage x5.0
+2025-10-04 22:31:51 - order_manager.paper_trader - INFO - Intraday trading enabled: SHORT SELLING supported
+2025-10-04 22:31:51 - AngelProvider - WARNING - Not connected to Angel One
+2025-10-04 22:31:51 - TradingBot - WARNING - ⚠️  Could not fetch portfolio: 'list' object has no attribute 'get'
+2025-10-04 22:31:51 - TradingBot - INFO - ⚙️  System: READY - All systems initialized successfully
+2025-10-04 22:32:00 - AngelProvider - INFO - ✓ Successfully logged in to Angel One - JWT token stored
+2025-10-04 22:32:00 - AngelProvider - INFO - ✓ Now fetching REAL market data
+2025-10-04 22:32:04 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:32:04 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:32:04 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:32:05 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:32:05 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:32:05 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:32:06 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:32:06 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:32:06 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:32:07 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:32:07 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:32:07 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:32:08 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:32:12 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:32:12 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:32:13 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:32:13 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:32:14 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:32:14 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:32:14 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:32:15 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:32:15 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:32:15 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:32:16 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:32:16 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:32:22 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:32:22 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:32:22 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:32:23 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:32:23 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:32:24 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:32:24 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:32:24 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:32:25 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:32:25 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:32:25 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:32:25 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:32:26 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:32:26 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:32:26 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:32:27 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:32:27 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:32:27 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:32:28 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:32:28 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:32:28 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:32:59 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:33:00 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:33:00 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:33:00 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:33:01 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:33:01 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:33:01 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:33:02 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:33:02 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:33:02 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:33:03 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:33:03 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:33:03 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:33:03 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:33:04 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:33:04 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:33:04 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:33:05 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:33:05 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:33:05 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:33:06 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:33:37 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:33:37 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:33:37 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:33:38 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:33:38 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:33:38 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:33:39 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:33:39 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:33:39 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:33:40 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:33:40 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:33:40 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:33:40 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:33:41 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:33:41 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:33:42 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:33:42 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:33:42 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:33:43 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:33:43 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:33:43 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:34:14 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:34:15 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:34:15 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:34:16 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:34:16 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:34:17 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:34:18 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:34:18 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:34:19 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:34:19 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:34:20 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:34:20 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:34:20 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:34:21 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:34:21 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:34:22 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:34:22 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:34:23 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:34:24 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:34:24 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:34:25 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:34:58 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:34:59 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:34:59 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:34:59 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:35:00 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:35:00 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:35:01 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:35:02 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:35:02 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:35:03 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:35:03 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:35:03 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:35:04 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:35:04 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:35:05 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:35:05 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:35:06 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:35:06 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:35:07 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:35:08 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:35:08 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:35:39 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:35:40 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:35:40 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:35:41 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:35:41 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:35:42 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:35:42 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:35:43 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:35:43 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:35:44 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:35:44 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:35:44 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:35:45 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:35:45 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:35:46 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:35:46 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:35:47 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:35:47 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:35:48 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:35:48 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:35:49 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:36:20 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:36:21 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:36:21 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:36:22 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:36:22 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:36:23 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:36:23 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:36:24 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:36:24 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:36:25 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:36:25 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:36:25 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:36:26 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:36:26 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:36:27 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:36:27 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:36:28 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:36:28 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:36:29 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:36:30 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:36:30 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:37:01 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:37:02 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:37:02 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:37:03 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:37:03 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:37:04 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:37:04 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:37:05 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:37:05 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:37:06 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:37:06 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:37:06 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:37:08 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:37:08 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:37:09 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:37:10 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:37:10 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:37:11 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:37:11 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:37:12 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:37:12 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:37:43 - AngelProvider - INFO - ✓ REAL LTP for NMDC-EQ: ₹77.10
+2025-10-04 22:37:44 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND-EQ: ₹202.65
+2025-10-04 22:37:44 - AngelProvider - INFO - ✓ REAL LTP for INFY-EQ: ₹1446.60
+2025-10-04 22:37:45 - AngelProvider - INFO - ✓ REAL LTP for PHOENIXLTD-EQ: ₹1562.50
+2025-10-04 22:37:46 - AngelProvider - INFO - ✓ REAL LTP for HINDPETRO-EQ: ₹446.30
+2025-10-04 22:37:46 - AngelProvider - INFO - ✓ REAL LTP for NTPC-EQ: ₹342.00
+2025-10-04 22:37:46 - AngelProvider - INFO - ✓ REAL LTP for AFCONS-EQ: ₹449.85
+2025-10-04 22:37:47 - AngelProvider - INFO - ✓ REAL LTP for RPOWER-EQ: ₹46.48
+2025-10-04 22:37:48 - AngelProvider - INFO - ✓ REAL LTP for YESBANK-EQ: ₹21.85
+2025-10-04 22:37:48 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK-EQ: ₹965.15
+2025-10-04 22:37:49 - AngelProvider - INFO - ✓ REAL LTP for BPCL-EQ: ₹341.55
+2025-10-04 22:37:49 - AngelProvider - INFO - ✓ Fetched 11 holdings from Angel One
+2025-10-04 22:37:49 - AngelProvider - INFO - ✓ Funds: Available ₹0.00
+2025-10-04 22:37:50 - AngelProvider - INFO - ✓ REAL LTP for RELIANCE: ₹1363.40
+2025-10-04 22:37:50 - AngelProvider - INFO - ✓ REAL LTP for INFY: ₹1446.60
+2025-10-04 22:37:51 - AngelProvider - INFO - ✓ REAL LTP for TCS: ₹2901.90
+2025-10-04 22:37:51 - AngelProvider - INFO - ✓ REAL LTP for HDFCBANK: ₹965.15
+2025-10-04 22:37:52 - AngelProvider - INFO - ✓ REAL LTP for ICICIBANK: ₹1365.20
+2025-10-04 22:37:52 - AngelProvider - INFO - ✓ REAL LTP for SBIN: ₹867.30
+2025-10-04 22:37:52 - AngelProvider - INFO - ✓ REAL LTP for CASTROLIND: ₹202.65
+2025-10-04 22:37:53 - AngelProvider - INFO - ✓ REAL LTP for BPCL: ₹341.55
+2025-10-04 22:37:56 - console_handler - INFO - ================================================================================
+2025-10-04 22:37:56 - console_handler - INFO - Enhanced logging initialized
+2025-10-04 22:37:56 - console_handler - INFO - Log file: logs\2025-10-04/app.log
+2025-10-04 22:37:56 - console_handler - INFO - ================================================================================
+2025-10-04 22:37:56 - trade_logger - INFO - TradeLogger initialized. File: logs/trades\trades_2025-10-04.xlsx
+2025-10-04 22:37:56 - TradingBot - INFO - ⚙️  System: STARTUP - System initialization in progress...
+2025-10-04 22:37:56 - TradingBot - INFO - ⚙️  System: INIT - Loading credentials...
+2025-10-04 22:37:56 - TradingBot - ERROR - ❌ Critical error: 'NoneType' object is not callable

@@ -1,0 +1,114 @@
+2025-09-27 06:19:06,025 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 06:19:06,025 - TradingBot.Main - INFO - Starting...
+2025-09-27 06:19:07,393 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 06:19:07,829 - AngelProvider - INFO - Angel One provider initialized
+2025-09-27 06:19:07,829 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 06:19:07,980 - TradingBot.Main - INFO - UI constructed; entering mainloop
+2025-09-27 09:19:54,939 - TradingBot.Main - INFO - Application closed
+2025-09-27 09:32:52,190 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 09:32:52,190 - TradingBot.Main - INFO - Starting...
+2025-09-27 09:32:53,260 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 09:32:53,622 - AngelProvider - INFO - Angel One provider initialized
+2025-09-27 09:32:53,623 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 09:39:07,118 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 09:39:07,118 - TradingBot.Main - INFO - Starting...
+2025-09-27 09:39:08,218 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 09:39:08,538 - AngelProvider - INFO - Angel One provider initialized
+2025-09-27 09:39:08,538 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 09:39:08,711 - TradingBot.Main - INFO - UI constructed; entering mainloop
+2025-09-27 09:39:12,768 - CredentialsManager - INFO - New encryption key generated
+2025-09-27 09:39:12,768 - CredentialsManager - INFO - Secure credentials manager initialized
+2025-09-27 09:44:57,608 - CredentialsManager - INFO - Credentials saved securely
+2025-09-27 09:45:04,212 - CredentialsManager - INFO - Secure credentials manager initialized
+2025-09-27 09:45:04,218 - CredentialsManager - INFO - Credentials loaded successfully
+2025-09-27 09:50:07,998 - TradingBot.Main - INFO - Application closed
+2025-09-27 18:02:20,060 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 18:02:20,062 - TradingBot.Main - INFO - Starting...
+2025-09-27 18:02:21,206 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 18:02:21,612 - AngelProvider - INFO - Angel One provider initialized
+2025-09-27 18:02:21,612 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 18:02:21,756 - TradingBot.Main - INFO - UI constructed; entering mainloop
+2025-09-27 18:07:52,349 - TradingBot.Main - INFO - Application closed
+2025-09-27 18:08:02,093 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 18:08:02,095 - TradingBot.Main - INFO - Starting...
+2025-09-27 18:08:03,276 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 18:08:03,588 - AngelProvider - INFO - Angel One provider initialized
+2025-09-27 18:08:03,588 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 18:08:03,736 - TradingBot.Main - INFO - UI constructed; entering mainloop
+2025-09-27 18:08:13,376 - CredentialsManager - INFO - Secure credentials manager initialized
+2025-09-27 18:12:56,028 - CredentialsManager - INFO - Secure credentials manager initialized
+2025-09-27 18:15:44,668 - CredentialsManager - ERROR - Credentials save error: [Errno 13] Permission denied: 'config\\encrypted_credentials.dat'
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\config\credentials_manager.py", line 83, in save_credentials
+    with open(self.credentials_file, 'wb') as f:
+PermissionError: [Errno 13] Permission denied: 'config\\encrypted_credentials.dat'
+2025-09-27 18:28:24,704 - TradingBot.Main - INFO - Application closed
+2025-09-27 18:30:01,239 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 18:30:01,241 - TradingBot.Main - INFO - Starting...
+2025-09-27 18:30:02,338 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 18:30:02,654 - AngelProvider - INFO - Angel One provider initialized
+2025-09-27 18:30:02,654 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 18:32:49,698 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 18:32:49,698 - TradingBot.Main - INFO - Starting...
+2025-09-27 18:32:50,681 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 18:32:51,098 - AngelProvider - INFO - Angel One provider initialized
+2025-09-27 18:32:51,098 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 18:35:49,064 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 18:35:49,064 - TradingBot.Main - INFO - Starting...
+2025-09-27 18:35:50,134 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 18:35:50,501 - AngelProvider - INFO - Angel One provider initialized
+2025-09-27 18:35:50,501 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 18:42:19,711 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 18:42:19,711 - TradingBot.Main - INFO - Starting...
+2025-09-27 18:42:21,358 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 18:42:21,671 - AngelProvider - INFO - Angel One provider initialized
+2025-09-27 18:42:21,671 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 18:46:37,838 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 18:46:37,838 - TradingBot.Main - INFO - Starting...
+2025-09-27 18:46:38,918 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 18:46:39,219 - AngelProvider - INFO - Angel One provider initialized
+2025-09-27 18:46:39,219 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 18:46:39,339 - TradingBot.Main - INFO - UI constructed; entering mainloop
+2025-09-27 18:46:44,176 - CredentialsManager - INFO - Secure credentials manager initialized
+2025-09-27 18:48:53,328 - CredentialsManager - ERROR - Credentials save error: [Errno 13] Permission denied: 'config\\encrypted_credentials.dat'
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\config\credentials_manager.py", line 83, in save_credentials
+    with open(self.credentials_file, 'wb') as f:
+PermissionError: [Errno 13] Permission denied: 'config\\encrypted_credentials.dat'
+2025-09-27 18:50:24,731 - CredentialsManager - ERROR - Credentials save error: [Errno 13] Permission denied: 'config\\encrypted_credentials.dat'
+Traceback (most recent call last):
+  File "c:\Users\Dell\tradingbot_new\config\credentials_manager.py", line 83, in save_credentials
+    with open(self.credentials_file, 'wb') as f:
+PermissionError: [Errno 13] Permission denied: 'config\\encrypted_credentials.dat'
+2025-09-27 18:52:20,606 - TradingBot.Main - INFO - Application closed
+2025-09-27 19:05:33,943 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 19:05:33,943 - TradingBot.Main - INFO - Starting...
+2025-09-27 19:05:35,142 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 19:05:35,472 - AngelProvider - INFO - Angel One provider initialized
+2025-09-27 19:05:35,472 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 19:05:35,596 - TradingBot.Main - INFO - UI constructed; entering mainloop
+2025-09-27 19:05:38,994 - CredentialsManager - INFO - New encryption key generated
+2025-09-27 19:05:39,002 - CredentialsManager - INFO - Secure credentials manager initialized
+2025-09-27 19:06:42,062 - CredentialsManager - INFO - Credentials saved securely
+2025-09-27 19:06:50,160 - CredentialsManager - INFO - Secure credentials manager initialized
+2025-09-27 19:06:50,170 - CredentialsManager - INFO - Credentials loaded successfully
+2025-09-27 19:06:50,190 - AngelProvider - INFO - SmartConnect initialized successfully
+2025-09-27 19:26:11,266 - TradingBot.Main - INFO - Application closed
+2025-09-27 19:40:56,401 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 19:40:56,401 - TradingBot.Main - INFO - Starting...
+2025-09-27 19:44:15,899 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 19:44:15,899 - TradingBot.Main - INFO - Starting...
+2025-09-27 19:48:10,572 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 19:48:10,572 - TradingBot.Main - INFO - Starting...
+2025-09-27 19:48:10,932 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 19:48:11,218 - AngelProvider - INFO - AngelProvider initialized
+2025-09-27 19:48:11,218 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts
+2025-09-27 19:48:11,468 - TradingBot.Main - INFO - UI constructed; entering mainloop
+2025-09-27 19:48:15,962 - CredentialsManager - INFO - Secure credentials manager initialized
+2025-09-27 19:48:16,035 - CredentialsManager - INFO - Credentials loaded successfully
+2025-09-27 19:49:52,409 - TradingBot.Main - INFO - Application closed
+2025-09-27 21:59:18,775 - TradingBot - INFO - Logging initialized - Version 3.0.0 Build 20250926001
+2025-09-27 21:59:18,775 - TradingBot.Main - INFO - Starting...
+2025-09-27 21:59:19,975 - numexpr.utils - INFO - NumExpr defaulting to 8 threads.
+2025-09-27 21:59:20,275 - AngelProvider - INFO - Angel One provider initialized (paper_mode=True)
+2025-09-27 21:59:20,275 - PaperTrader - INFO - PaperTrader initialized with balance Rs100,000.00 | Leverage x5.0 for intraday shorts

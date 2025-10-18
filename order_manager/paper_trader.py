@@ -19,6 +19,8 @@ import os
 import threading
 import logging
 import time as time_module
+from core.capital_tracker import get_capital_tracker
+from core.cumulative_trade_logger import get_cumulative_logger
 
 # Optional Excel support
 try:
@@ -68,6 +70,15 @@ class PaperTrader:
         if self.excel_file:
             logger.info(f"Trade log: {self.excel_file}")
     
+
+        # Cumulative tracking systems
+        self.capital_tracker = get_capital_tracker(
+            initial_capital=starting_cash
+        )
+        self.cumulative_logger = get_cumulative_logger()
+        
+        # Use cumulative balance instead of local cash
+        self.cash = self.capital_tracker.get_current_balance()
     def set_data_provider(self, provider):
         """Set data provider for live price fetching"""
         self.data_provider = provider
@@ -419,6 +430,8 @@ class PaperTrader:
         
         for attempt in range(max_retries):
             try:
+                # ✅ Rate limiting throttle
+                time.sleep(0.1)  # Small delay for paper trading
                 price = self.data_provider.get_ltp(symbol, 'NSE')
                 if price and price > 0:
                     return price
