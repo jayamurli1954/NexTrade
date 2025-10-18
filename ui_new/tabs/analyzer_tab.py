@@ -3,22 +3,71 @@
 # ==============================================================================
 # FILE: analyzer_tab.py
 # LOCATION: c:\Users\Dell\tradingbot_new\ui_new\tabs\analyzer_tab.py
-# VERSION: 1.3.0 - Deterministic analyzer (consistent results)
-# LAST UPDATED: 2025-10-13
+# VERSION: 1.5.0 - Background threading (NO UI FREEZING!)
+# LAST UPDATED: 2025-10-18
 #
 # FEATURES:
 # - Top 10 stocks only
-# - Single action button (BUY or SELL based on signal)
-# - Deterministic algorithm (same results every time)
-# - No random behavior
+# - Background thread analysis (UI stays responsive!)
+# - Progress updates during scan
+# - Deterministic algorithm (consistent results)
+# - Can switch tabs during analysis
 # ==============================================================================
 
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QTableWidget, QTableWidgetItem, 
-                             QHeaderView, QSpinBox, QMessageBox)
-from PyQt5.QtCore import Qt
+                             QHeaderView, QSpinBox, QMessageBox, QApplication)
+from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QColor
 from analyzer.enhanced_analyzer import EnhancedAnalyzer
+
+
+class AnalyzerThread(QThread):
+    """
+    Background thread for stock analysis
+    Prevents UI freezing during long scans
+    """
+    # Signals to communicate with main UI
+    progress_update = pyqtSignal(str)  # Progress message
+    analysis_complete = pyqtSignal(list)  # Results
+    analysis_error = pyqtSignal(str)  # Error message
+    
+    def __init__(self, analyzer, watchlist, threshold):
+        super().__init__()
+        self.analyzer = analyzer
+        self.watchlist = watchlist
+        self.threshold = threshold
+        self.is_running = True
+    
+    def run(self):
+        """Run analysis in background"""
+        try:
+            # Emit starting message
+            self.progress_update.emit(f"🔍 Starting analysis of {len(self.watchlist)} stocks...")
+            
+            # Analyze all stocks
+            results = self.analyzer.analyze_watchlist(self.watchlist)
+            
+            # Check if thread was stopped
+            if not self.is_running:
+                return
+            
+            # Sort by confidence
+            results.sort(key=lambda x: x['confidence'], reverse=True)
+            
+            # Emit completion
+            self.analysis_complete.emit(results)
+            
+        except Exception as e:
+            # Emit error
+            self.analysis_error.emit(str(e))
+    
+    def stop(self):
+        """Stop the analysis thread"""
+        self.is_running = False
+        self.quit()
+        self.wait()
+
 
 class AnalyzerTab(QWidget):
     """
@@ -26,9 +75,11 @@ class AnalyzerTab(QWidget):
     
     Features:
     - Shows TOP 10 stocks only
+    - Background thread analysis (no UI freezing!)
     - Single action button (BUY or SELL based on signal)
     - Ranked by confidence score
     - Deterministic analysis (consistent results)
+    - Progress indicator during scan
     """
     
     def __init__(self, parent, conn_mgr, paper_trading_tab=None):
@@ -39,6 +90,9 @@ class AnalyzerTab(QWidget):
         
         self.scan_results = []
         self.analyzer = EnhancedAnalyzer(data_provider=self.conn_mgr)
+        
+        # Thread management
+        self.analyzer_thread = None
         
         self.init_ui()
     
@@ -72,8 +126,8 @@ class AnalyzerTab(QWidget):
         header.addWidget(self.threshold_spin)
         
         # Scan button
-        scan_btn = QPushButton("🔍 Scan Now")
-        scan_btn.setStyleSheet("""
+        self.scan_btn = QPushButton("🔍 Scan Now")
+        self.scan_btn.setStyleSheet("""
             background: #2196F3; 
             color: white; 
             font-size: 16px; 
@@ -82,11 +136,18 @@ class AnalyzerTab(QWidget):
             border-radius: 8px;
             border: none;
         """)
-        scan_btn.clicked.connect(self.scan_stocks)
-        scan_btn.setCursor(Qt.PointingHandCursor)
-        header.addWidget(scan_btn)
+        self.scan_btn.clicked.connect(self.scan_stocks)
+        self.scan_btn.setCursor(Qt.PointingHandCursor)
+        header.addWidget(self.scan_btn)
         
         layout.addLayout(header)
+        
+        # Progress indicator
+        self.progress_label = QLabel("")
+        self.progress_label.setStyleSheet("color: #2196F3; font-weight: bold; font-size: 14px; padding: 5px;")
+        self.progress_label.setAlignment(Qt.AlignCenter)
+        self.progress_label.setMinimumHeight(30)
+        layout.addWidget(self.progress_label)
         
         # Results table
         self.table = QTableWidget()
@@ -147,25 +208,61 @@ class AnalyzerTab(QWidget):
         layout.addWidget(self.status_label)
     
     def scan_stocks(self):
-        """Scan stocks and show TOP 10 results only - DETERMINISTIC"""
-        self.status_label.setText("🔍 Scanning stocks...")
-        self.parent.statusBar().showMessage("🔍 Analyzing stocks...", 2000)
+        """Start background analysis - UI STAYS RESPONSIVE!"""
         
+        # Check if already scanning
+        if self.analyzer_thread and self.analyzer_thread.isRunning():
+            QMessageBox.warning(
+                self,
+                "Scan in Progress",
+                "Please wait for the current scan to complete."
+            )
+            return
+        
+        # Update UI
+        self.status_label.setText("🔍 Preparing to scan...")
+        self.progress_label.setText("🔍 Initializing analysis...")
+        self.scan_btn.setEnabled(False)  # Disable button during scan
+        
+        # Get parameters
         threshold = self.threshold_spin.value()
         watchlist = self.conn_mgr.get_stock_list()
-        ltp_data = self.conn_mgr.get_ltp_batch(watchlist)
         
-# Use REAL enhanced analyzer
-        self.scan_results = self.analyzer.analyze_watchlist(watchlist)        
-        # Sort by confidence (highest first)
-        self.scan_results.sort(key=lambda x: x['confidence'], reverse=True)
+        # Create and start background thread
+        self.analyzer_thread = AnalyzerThread(self.analyzer, watchlist, threshold)
         
-        # ⭐ KEEP ONLY TOP 10
+        # Connect signals
+        self.analyzer_thread.progress_update.connect(self.on_progress_update)
+        self.analyzer_thread.analysis_complete.connect(self.on_analysis_complete)
+        self.analyzer_thread.analysis_error.connect(self.on_analysis_error)
+        
+        # Start analysis in background
+        self.analyzer_thread.start()
+        
+        # Update status
+        self.parent.statusBar().showMessage("🔍 Analyzing stocks in background...", 2000)
+    
+    def on_progress_update(self, message):
+        """Handle progress updates from thread"""
+        self.progress_label.setText(message)
+        QApplication.processEvents()  # Keep UI responsive
+    
+    def on_analysis_complete(self, results):
+        """Handle completion of analysis"""
+        threshold = self.threshold_spin.value()
+        
+        # Store results
+        self.scan_results = results
+        
+        # Keep only top 10
         total_found = len(self.scan_results)
         self.scan_results = self.scan_results[:10]
         
         # Display results
         self.display_results()
+        
+        # Update progress
+        self.progress_label.setText(f"✅ Analysis complete! Found {total_found} signals, showing top 10")
         
         # Update status
         if self.scan_results:
@@ -178,12 +275,28 @@ class AnalyzerTab(QWidget):
             )
         else:
             self.status_label.setText(
-                f"⚠️  No stocks found with confidence ≥ {threshold}%"
+                f"⚠️ No stocks found with confidence ≥ {threshold}%"
             )
+            self.progress_label.setText(f"⚠️ No signals found (threshold: {threshold}%)")
             self.parent.statusBar().showMessage(
-                f"⚠️  No stocks meet criteria", 
+                f"⚠️ No stocks meet criteria", 
                 3000
             )
+        
+        # Re-enable scan button
+        self.scan_btn.setEnabled(True)
+    
+    def on_analysis_error(self, error_msg):
+        """Handle analysis errors"""
+        self.progress_label.setText(f"❌ Error: {error_msg}")
+        self.status_label.setText("❌ Analysis failed. Please try again.")
+        self.scan_btn.setEnabled(True)
+        
+        QMessageBox.critical(
+            self,
+            "Analysis Error",
+            f"An error occurred during analysis:\n\n{error_msg}"
+        )
     
     def display_results(self):
         """Display TOP 10 scan results"""
@@ -355,3 +468,9 @@ class AnalyzerTab(QWidget):
             f"✅ {action} trade executed for {result['symbol']}", 
             5000
         )
+    
+    def closeEvent(self, event):
+        """Clean up thread when tab is closed"""
+        if self.analyzer_thread and self.analyzer_thread.isRunning():
+            self.analyzer_thread.stop()
+        event.accept()
