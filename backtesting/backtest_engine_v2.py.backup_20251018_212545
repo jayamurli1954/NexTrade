@@ -1,0 +1,531 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+BACKTESTING ENGINE v2.0.0 - Using Yahoo Finance Data
+Much better historical data access than Angel One API
+
+Features:
+- Uses yfinance for 10+ years of historical data
+- No API rate limits
+- Works offline after initial data fetch
+- Can test on any Indian stock (NSE/BSE)
+"""
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
+import logging
+import json
+from collections import defaultdict
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("BacktestEngineV2")
+
+# Try to import yfinance
+try:
+    import yfinance as yf
+    YFINANCE_AVAILABLE = True
+except ImportError:
+    YFINANCE_AVAILABLE = False
+    logger.error("yfinance not installed! Run: pip install yfinance")
+
+
+class BacktestEngineV2:
+    """
+    Backtesting engine using Yahoo Finance data
+    Much more reliable than Angel One API for backtesting
+    """
+    
+    def __init__(self, initial_capital=100000, position_size_pct=0.02):
+        """
+        Initialize backtest engine
+        
+        Args:
+            initial_capital: Starting capital (default: ₹100,000)
+            position_size_pct: Risk per trade as % of capital (default: 2%)
+        """
+        if not YFINANCE_AVAILABLE:
+            raise ImportError("yfinance is required. Install with: pip install yfinance")
+        
+        self.initial_capital = initial_capital
+        self.current_capital = initial_capital
+        self.position_size_pct = position_size_pct
+        
+        # Trade tracking
+        self.trades = []
+        self.open_positions = {}
+        self.closed_trades = []
+        
+        # Performance metrics
+        self.metrics = {
+            'total_trades': 0,
+            'winning_trades': 0,
+            'losing_trades': 0,
+            'win_rate': 0.0,
+            'total_profit': 0.0,
+            'total_loss': 0.0,
+            'avg_profit': 0.0,
+            'avg_loss': 0.0,
+            'profit_factor': 0.0,
+            'max_drawdown': 0.0,
+            'max_drawdown_pct': 0.0,
+            'sharpe_ratio': 0.0,
+            'total_return_pct': 0.0,
+            'final_capital': 0.0
+        }
+        
+        logger.info(f"BacktestV2 initialized - Capital: ₹{initial_capital:,.0f}, Risk: {position_size_pct*100}%")
+    
+    def fetch_data(self, symbol, start_date, end_date):
+        """
+        Fetch historical data from Yahoo Finance
+        
+        Args:
+            symbol: Stock symbol (e.g., 'RELIANCE' becomes 'RELIANCE.NS')
+            start_date: Start date
+            end_date: End date
+        
+        Returns:
+            DataFrame with OHLCV data
+        """
+        # Add .NS suffix for NSE stocks
+        yf_symbol = f"{symbol}.NS" if not symbol.endswith('.NS') else symbol
+        
+        try:
+            logger.info(f"Fetching data for {yf_symbol}...")
+            ticker = yf.Ticker(yf_symbol)
+            df = ticker.history(start=start_date, end=end_date)
+            
+            if df.empty:
+                logger.warning(f"No data for {yf_symbol}")
+                return None
+            
+            # Rename columns to match our format
+            df = df.rename(columns={
+                'Open': 'open',
+                'High': 'high',
+                'Low': 'low',
+                'Close': 'close',
+                'Volume': 'volume'
+            })
+            
+            # Keep only OHLCV
+            df = df[['open', 'high', 'low', 'close', 'volume']]
+            
+            logger.info(f"✅ Fetched {len(df)} days of data for {symbol}")
+            return df
+            
+        except Exception as e:
+            logger.error(f"Error fetching {symbol}: {e}")
+            return None
+    
+    def run_backtest(self, symbols, start_date, end_date):
+        """
+        Run backtest on list of symbols
+        
+        Args:
+            symbols: List of stock symbols (without .NS suffix)
+            start_date: Start date (datetime or string 'YYYY-MM-DD')
+            end_date: End date (datetime or string 'YYYY-MM-DD')
+        
+        Returns:
+            Dictionary with backtest results
+        """
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+        if isinstance(end_date, str):
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        
+        total_days = (end_date - start_date).days
+        logger.info(f"Starting backtest: {len(symbols)} symbols, {total_days} days ({total_days/365:.1f} years)")
+        
+        # Track daily capital
+        self.daily_capital = []
+        
+        # Backtest each symbol
+        for idx, symbol in enumerate(symbols):
+            logger.info(f"[{idx+1}/{len(symbols)}] Backtesting {symbol}...")
+            
+            try:
+                self._backtest_symbol(symbol, start_date, end_date)
+            except Exception as e:
+                logger.error(f"Error backtesting {symbol}: {e}")
+                continue
+        
+        # Calculate metrics
+        self._calculate_metrics()
+        
+        # Generate report
+        report = self._generate_report()
+        
+        logger.info(f"Backtest complete - {self.metrics['total_trades']} trades, Win rate: {self.metrics['win_rate']:.1f}%")
+        
+        return report
+    
+    def _backtest_symbol(self, symbol, start_date, end_date):
+        """
+        Backtest a single symbol
+        """
+        # Fetch data (with extra buffer for indicators)
+        fetch_start = start_date - timedelta(days=100)
+        df = self.fetch_data(symbol, fetch_start, end_date)
+        
+        if df is None or df.empty:
+            return
+        
+        # Filter to actual backtest period
+        test_df = df[(df.index >= start_date) & (df.index <= end_date)]
+        
+        if len(test_df) < 30:
+            logger.warning(f"Insufficient data for {symbol}")
+            return
+        
+        # Iterate through each trading day
+        for current_date in test_df.index:
+            # Get historical data up to current date
+            historical_df = df[df.index <= current_date]
+            
+            if len(historical_df) < 30:
+                continue
+            
+            # Generate signal
+            signal = self._analyze_at_date(symbol, historical_df, current_date)
+            
+            # Check open positions
+            if symbol in self.open_positions:
+                self._check_exit(symbol, test_df.loc[current_date], current_date)
+            elif signal:
+                self._open_position(symbol, signal, test_df.loc[current_date], current_date)
+            
+            # Track capital
+            self.daily_capital.append({
+                'date': current_date,
+                'capital': self._calculate_current_capital(test_df, current_date)
+            })
+    
+    def _analyze_at_date(self, symbol, historical_df, current_date):
+        """
+        Analyze symbol and generate signal
+        Uses same logic as your enhanced_analyzer
+        """
+        try:
+            from indicators.ta import rsi, ema, fibonacci_retracement, bollinger_bands
+            
+            close = historical_df['close']
+            high = historical_df['high']
+            low = historical_df['low']
+            volume = historical_df['volume']
+            
+            if len(close) < 30:
+                return None
+            
+            # Calculate indicators
+            rsi_values = rsi(close, period=14)
+            current_rsi = rsi_values.iloc[-1] if not rsi_values.empty else 50
+            
+            ema_short = ema(close, 8)
+            ema_long = ema(close, 21)
+            
+            current_ema_short = ema_short.iloc[-1] if not ema_short.empty else close.iloc[-1]
+            current_ema_long = ema_long.iloc[-1] if not ema_long.empty else close.iloc[-1]
+            
+            period_high = high.max()
+            period_low = low.min()
+            fib_levels = fibonacci_retracement(period_high, period_low)
+            
+            current_price = close.iloc[-1]
+            current_atr = current_price * 0.02  # 2% volatility proxy
+            
+            current_volume = volume.iloc[-1]
+            avg_volume = volume.mean()
+            volume_ratio = current_volume / avg_volume if avg_volume > 0 else 0
+            
+            bb_upper, bb_middle, bb_lower = bollinger_bands(close)
+            current_bb_upper = bb_upper.iloc[-1] if not bb_upper.empty else current_price * 1.02
+            current_bb_lower = bb_lower.iloc[-1] if not bb_lower.empty else current_price * 0.98
+            
+            # Generate signal
+            signal = self._generate_signal(
+                symbol, current_price, current_rsi, 
+                current_ema_short, current_ema_long,
+                fib_levels, volume_ratio,
+                current_bb_upper, current_bb_lower,
+                current_atr
+            )
+            
+            return signal
+            
+        except Exception as e:
+            logger.error(f"Error analyzing {symbol}: {e}")
+            return None
+    
+    def _generate_signal(self, symbol, price, rsi, ema_short, ema_long, 
+                        fib_levels, volume_ratio, bb_upper, bb_lower, atr):
+        """
+        Generate BUY/SELL signal based on indicators
+        """
+        buy_score = 0
+        sell_score = 0
+        
+        # BUY conditions
+        if rsi <= 30:
+            buy_score += 20
+        elif rsi <= 40:
+            buy_score += 10
+        
+        if ema_short > ema_long:
+            buy_score += 20
+        
+        if volume_ratio >= 1.2:
+            buy_score += 10
+        
+        if price <= bb_lower:
+            buy_score += 8
+        
+        if price <= fib_levels['level_618'] * 1.02:
+            buy_score += 25
+        
+        # SELL conditions
+        if rsi >= 70:
+            sell_score += 20
+        elif rsi >= 60:
+            sell_score += 10
+        
+        if ema_short < ema_long:
+            sell_score += 20
+        
+        if volume_ratio >= 1.2:
+            sell_score += 10
+        
+        if price >= bb_upper:
+            sell_score += 8
+        
+        if price >= fib_levels['level_618'] * 0.98:
+            sell_score += 25
+        
+        # Determine action
+        if buy_score > sell_score and buy_score >= 50:
+            return {
+                'symbol': symbol,
+                'action': 'BUY',
+                'price': price,
+                'confidence': min(0.95, buy_score / 100),
+                'stop_loss': price - (1.5 * atr),
+                'target': price + (3.0 * atr)
+            }
+        elif sell_score > buy_score and sell_score >= 50:
+            return {
+                'symbol': symbol,
+                'action': 'SELL',
+                'price': price,
+                'confidence': min(0.95, sell_score / 100),
+                'stop_loss': price + (1.5 * atr),
+                'target': price - (3.0 * atr)
+            }
+        
+        return None
+    
+    def _open_position(self, symbol, signal, price_data, date):
+        """Open new position"""
+        entry_price = signal['price']
+        risk_amount = self.current_capital * self.position_size_pct
+        risk_per_share = abs(entry_price - signal['stop_loss'])
+        
+        if risk_per_share <= 0:
+            return
+        
+        quantity = int(risk_amount / risk_per_share)
+        if quantity <= 0:
+            return
+        
+        position_value = entry_price * quantity
+        if position_value > self.current_capital * 0.95:
+            return
+        
+        self.open_positions[symbol] = {
+            'symbol': symbol,
+            'action': signal['action'],
+            'entry_date': date,
+            'entry_price': entry_price,
+            'quantity': quantity,
+            'stop_loss': signal['stop_loss'],
+            'target': signal['target'],
+            'confidence': signal['confidence'],
+            'position_value': position_value
+        }
+        
+        logger.info(f"OPEN {signal['action']}: {symbol} @ ₹{entry_price:.2f} x {quantity}")
+    
+    def _check_exit(self, symbol, price_data, date):
+        """Check if position should be closed"""
+        if symbol not in self.open_positions:
+            return
+        
+        position = self.open_positions[symbol]
+        current_price = price_data['close']
+        
+        exit_reason = None
+        exit_price = current_price
+        
+        # Check stop loss / target
+        if position['action'] == 'BUY':
+            if current_price <= position['stop_loss']:
+                exit_reason = 'STOP_LOSS'
+                exit_price = position['stop_loss']
+            elif current_price >= position['target']:
+                exit_reason = 'TARGET'
+                exit_price = position['target']
+        else:  # SELL
+            if current_price >= position['stop_loss']:
+                exit_reason = 'STOP_LOSS'
+                exit_price = position['stop_loss']
+            elif current_price <= position['target']:
+                exit_reason = 'TARGET'
+                exit_price = position['target']
+        
+        # Timeout after 30 days
+        days_held = (date - position['entry_date']).days
+        if days_held >= 30 and not exit_reason:
+            exit_reason = 'TIMEOUT'
+            exit_price = current_price
+        
+        if exit_reason:
+            self._close_position(symbol, exit_price, exit_reason, date)
+    
+    def _close_position(self, symbol, exit_price, exit_reason, date):
+        """Close position and record trade"""
+        position = self.open_positions[symbol]
+        
+        # Calculate P&L
+        if position['action'] == 'BUY':
+            pnl = (exit_price - position['entry_price']) * position['quantity']
+            pnl_pct = ((exit_price / position['entry_price']) - 1) * 100
+        else:
+            pnl = (position['entry_price'] - exit_price) * position['quantity']
+            pnl_pct = ((position['entry_price'] / exit_price) - 1) * 100
+        
+        self.current_capital += pnl
+        
+        trade = {
+            'symbol': symbol,
+            'action': position['action'],
+            'entry_date': position['entry_date'],
+            'entry_price': position['entry_price'],
+            'exit_date': date,
+            'exit_price': exit_price,
+            'exit_reason': exit_reason,
+            'quantity': position['quantity'],
+            'pnl': pnl,
+            'pnl_pct': pnl_pct,
+            'confidence': position['confidence'],
+            'days_held': (date - position['entry_date']).days
+        }
+        
+        self.closed_trades.append(trade)
+        del self.open_positions[symbol]
+        
+        logger.info(f"CLOSE: {symbol} @ ₹{exit_price:.2f} | {exit_reason} | P&L: ₹{pnl:,.0f} ({pnl_pct:+.2f}%)")
+    
+    def _calculate_current_capital(self, df, current_date):
+        """Calculate total capital including open positions"""
+        total = self.current_capital
+        
+        for symbol, position in self.open_positions.items():
+            if current_date in df.index:
+                current_price = df.loc[current_date, 'close']
+                if position['action'] == 'BUY':
+                    position_value = current_price * position['quantity']
+                else:
+                    position_value = position['position_value'] + (position['entry_price'] - current_price) * position['quantity']
+                total += position_value - position['position_value']
+        
+        return total
+    
+    def _calculate_metrics(self):
+        """Calculate performance metrics"""
+        if not self.closed_trades:
+            logger.warning("No closed trades")
+            return
+        
+        df_trades = pd.DataFrame(self.closed_trades)
+        
+        self.metrics['total_trades'] = len(df_trades)
+        self.metrics['winning_trades'] = len(df_trades[df_trades['pnl'] > 0])
+        self.metrics['losing_trades'] = len(df_trades[df_trades['pnl'] <= 0])
+        self.metrics['win_rate'] = (self.metrics['winning_trades'] / self.metrics['total_trades']) * 100
+        
+        winning = df_trades[df_trades['pnl'] > 0]
+        losing = df_trades[df_trades['pnl'] <= 0]
+        
+        self.metrics['total_profit'] = winning['pnl'].sum() if len(winning) > 0 else 0
+        self.metrics['total_loss'] = abs(losing['pnl'].sum()) if len(losing) > 0 else 0
+        self.metrics['avg_profit'] = winning['pnl'].mean() if len(winning) > 0 else 0
+        self.metrics['avg_loss'] = abs(losing['pnl'].mean()) if len(losing) > 0 else 0
+        
+        if self.metrics['total_loss'] > 0:
+            self.metrics['profit_factor'] = self.metrics['total_profit'] / self.metrics['total_loss']
+        else:
+            self.metrics['profit_factor'] = float('inf') if self.metrics['total_profit'] > 0 else 0
+        
+        self.metrics['final_capital'] = self.current_capital
+        self.metrics['total_return_pct'] = ((self.current_capital / self.initial_capital) - 1) * 100
+        
+        # Drawdown
+        if self.daily_capital:
+            df_cap = pd.DataFrame(self.daily_capital)
+            df_cap['peak'] = df_cap['capital'].cummax()
+            df_cap['drawdown'] = df_cap['capital'] - df_cap['peak']
+            df_cap['drawdown_pct'] = (df_cap['drawdown'] / df_cap['peak']) * 100
+            
+            self.metrics['max_drawdown'] = df_cap['drawdown'].min()
+            self.metrics['max_drawdown_pct'] = df_cap['drawdown_pct'].min()
+        
+        # Sharpe
+        if len(df_trades) > 1:
+            returns = df_trades['pnl_pct'].values
+            self.metrics['sharpe_ratio'] = (returns.mean() / returns.std()) * np.sqrt(252) if returns.std() > 0 else 0
+    
+    def _generate_report(self):
+        """Generate report"""
+        return {
+            'summary': {
+                'initial_capital': self.initial_capital,
+                'final_capital': self.metrics['final_capital'],
+                'total_return': self.metrics['final_capital'] - self.initial_capital,
+                'total_return_pct': self.metrics['total_return_pct'],
+                'total_trades': self.metrics['total_trades'],
+                'win_rate': self.metrics['win_rate'],
+                'profit_factor': self.metrics['profit_factor'],
+                'sharpe_ratio': self.metrics['sharpe_ratio'],
+                'max_drawdown': self.metrics['max_drawdown'],
+                'max_drawdown_pct': self.metrics['max_drawdown_pct']
+            },
+            'trades': self.closed_trades,
+            'metrics': self.metrics
+        }
+    
+    def save_report(self, report, filename='backtest_report_v2.json'):
+        """Save report to file"""
+        def convert_datetime(obj):
+            if isinstance(obj, (datetime, pd.Timestamp)):
+                return obj.isoformat()
+            return obj
+        
+        trades_serializable = []
+        for trade in report['trades']:
+            trade_copy = trade.copy()
+            trade_copy['entry_date'] = convert_datetime(trade_copy['entry_date'])
+            trade_copy['exit_date'] = convert_datetime(trade_copy['exit_date'])
+            trades_serializable.append(trade_copy)
+        
+        report['trades'] = trades_serializable
+        
+        with open(filename, 'w') as f:
+            json.dump(report, f, indent=2)
+        
+        logger.info(f"Report saved to {filename}")
+        return filename
