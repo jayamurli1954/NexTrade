@@ -83,10 +83,10 @@ class ScrollingTicker(QWidget):
                     symbol_color = QColor(255, 80, 80)  # Bright red
                     price_color = QColor(255, 80, 80)   # Bright red
 
-            # Add symbol with extra spacing, price, and separator with spacing
+            # Add symbol, price, and separator with generous spacing
             full_ticker_string_parts.append((f"{symbol}:  ", symbol_color))  # Symbol with 2 spaces after colon
-            full_ticker_string_parts.append((f"{price_str}  ", price_color))  # Price with 2 spaces after
-            full_ticker_string_parts.append(("|  ", QColor(150, 150, 150)))  # Separator with spacing
+            full_ticker_string_parts.append((f"{price_str}    ", price_color))  # Price with 4 spaces after
+            full_ticker_string_parts.append(("|    ", QColor(150, 150, 150)))  # Separator with 4 spaces after
         
         if not full_ticker_string_parts:
             return # Nothing to draw
@@ -96,8 +96,8 @@ class ScrollingTicker(QWidget):
         for text_part, _ in full_ticker_string_parts:
             total_content_width += metrics.width(text_part)
         
-        # Add some buffer space at the end of the content before it loops
-        buffer_space = 100 # Pixels of empty space between repetitions
+        # Add generous buffer space at the end of the content before it loops
+        buffer_space = 200  # Pixels of empty space between repetitions (increased for better spacing)
         total_content_width_with_buffer = total_content_width + buffer_space
         
         # Adjust offset to loop seamlessly
