@@ -85,7 +85,7 @@ class ScrollingTicker(QWidget):
 
             # Add symbol, price, and separator with fixed pixel spacing for clarity
             full_ticker_string_parts.append((f"{symbol}: ", symbol_color, 0))  # Symbol with colon
-            full_ticker_string_parts.append((f"{price_str}", price_color, 50))  # Price with 50px padding before
+            full_ticker_string_parts.append((f"{price_str}", price_color, 75))  # Price with 75px padding before (increased for longer symbols)
             full_ticker_string_parts.append(("|", QColor(150, 150, 150), 50))  # Separator with 50px padding before
         
         if not full_ticker_string_parts:
