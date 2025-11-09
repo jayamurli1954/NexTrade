@@ -42,13 +42,15 @@ class ScrollingTicker(QWidget):
         self.update()
         
     def paintEvent(self, event):
+        from PyQt5.QtGui import QColor
+
         painter = QPainter(self)
         painter.setFont(self.font)
         painter.setRenderHint(QPainter.Antialiasing)
         painter.setRenderHint(QPainter.TextAntialiasing)
 
-        # Fill background to prevent artifacts
-        painter.fillRect(self.rect(), self.palette().window())
+        # Fill background with dark color for contrast
+        painter.fillRect(self.rect(), QColor(30, 30, 40))  # Dark blue-gray background
         
         metrics = self.fontMetrics()
         text_height = metrics.height()
@@ -64,19 +66,20 @@ class ScrollingTicker(QWidget):
             price_str = f"{current_price:.2f}" if isinstance(current_price, (int, float)) else str(current_price)
 
             # Determine color for price part
-            price_color = Qt.white
+            from PyQt5.QtGui import QColor
+            price_color = QColor(255, 255, 255)  # White
             if (symbol in self.previous_prices and
                 isinstance(current_price, (int, float)) and
                 isinstance(self.previous_prices[symbol], (int, float))):
                 prev_price = self.previous_prices[symbol]
                 if current_price > prev_price:
-                    price_color = Qt.green
+                    price_color = QColor(0, 255, 100)  # Bright green
                 elif current_price < prev_price:
-                    price_color = Qt.red
+                    price_color = QColor(255, 80, 80)  # Bright red
 
-            full_ticker_string_parts.append((f"{symbol}: ", Qt.white))
+            full_ticker_string_parts.append((f"{symbol}: ", QColor(200, 200, 255)))  # Light blue for symbols
             full_ticker_string_parts.append((price_str, price_color))
-            full_ticker_string_parts.append(("   |   ", Qt.white))  # More spacing around separator
+            full_ticker_string_parts.append(("   |   ", QColor(150, 150, 150)))  # Gray separator
         
         if not full_ticker_string_parts:
             return # Nothing to draw
