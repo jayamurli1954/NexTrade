@@ -283,14 +283,33 @@ class ConnectionManager:
             print(f"ℹ️  [DEBUG] Token for BSE:SENSEX: {self.token_map.get('BSE:SENSEX')}")
             print(f"ℹ️  [DEBUG] Token for NSE:INDIAVIX: {self.token_map.get('NSE:INDIAVIX')}")
             
-            # Get credentials
+            # Get credentials - try encrypted storage first, then config.json
             self.api_key = self.config.get('api_key', '')
             self.client_code = self.config.get('client_id', '')
             password = self.config.get('password', '')
             totp_secret = self.config.get('totp_token', '')
-            
+
+            # If password/totp missing, try loading from encrypted storage
+            if not password or not totp_secret:
+                try:
+                    from config.credentials_manager import SecureCredentialsManager
+                    cred_mgr = SecureCredentialsManager()
+                    success, creds = cred_mgr.load_credentials()
+
+                    if success and creds:
+                        print("✅ Loaded credentials from encrypted storage")
+                        # Use encrypted credentials (override config.json)
+                        self.api_key = creds.get('api_key', self.api_key)
+                        self.client_code = creds.get('client_code', self.client_code)
+                        password = creds.get('password', password)
+                        totp_secret = creds.get('totp_secret', totp_secret)
+                    else:
+                        print("⚠️  Could not load encrypted credentials")
+                except Exception as e:
+                    print(f"⚠️  Encrypted credentials unavailable: {e}")
+
             if not all([self.api_key, self.client_code, password]):
-                print("⚠️  Missing credentials in config")
+                print("⚠️  Missing credentials (need API Key, Client Code, and Password)")
                 return False
             
             # Create SmartConnect instance
