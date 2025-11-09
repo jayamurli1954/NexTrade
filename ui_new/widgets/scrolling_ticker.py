@@ -65,21 +65,28 @@ class ScrollingTicker(QWidget):
 
             price_str = f"{current_price:.2f}" if isinstance(current_price, (int, float)) else str(current_price)
 
-            # Determine color for price part
+            # Determine color based on price trend (up/down)
             from PyQt5.QtGui import QColor
-            price_color = QColor(255, 255, 255)  # White
+            symbol_color = QColor(255, 255, 255)  # Default white
+            price_color = QColor(255, 255, 255)   # Default white
+
             if (symbol in self.previous_prices and
                 isinstance(current_price, (int, float)) and
                 isinstance(self.previous_prices[symbol], (int, float))):
                 prev_price = self.previous_prices[symbol]
                 if current_price > prev_price:
-                    price_color = QColor(0, 255, 100)  # Bright green
+                    # Price went up - show green
+                    symbol_color = QColor(0, 255, 100)  # Bright green
+                    price_color = QColor(0, 255, 100)   # Bright green
                 elif current_price < prev_price:
-                    price_color = QColor(255, 80, 80)  # Bright red
+                    # Price went down - show red
+                    symbol_color = QColor(255, 80, 80)  # Bright red
+                    price_color = QColor(255, 80, 80)   # Bright red
 
-            full_ticker_string_parts.append((f"{symbol}: ", QColor(200, 200, 255)))  # Light blue for symbols
-            full_ticker_string_parts.append((price_str, price_color))
-            full_ticker_string_parts.append(("   |   ", QColor(150, 150, 150)))  # Gray separator
+            # Add symbol with extra spacing, price, and separator with spacing
+            full_ticker_string_parts.append((f"{symbol}:  ", symbol_color))  # Symbol with 2 spaces after colon
+            full_ticker_string_parts.append((f"{price_str}  ", price_color))  # Price with 2 spaces after
+            full_ticker_string_parts.append(("|  ", QColor(150, 150, 150)))  # Separator with spacing
         
         if not full_ticker_string_parts:
             return # Nothing to draw
