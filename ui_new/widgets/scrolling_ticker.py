@@ -26,7 +26,7 @@ class ScrollingTicker(QWidget):
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.scroll)
-        self.timer.start(30)  # Scroll speed
+        self.timer.start(40)  # Scroll speed (slower for better readability)
         
         self.font = QFont("Arial", 12, QFont.Bold) # Reduced font size to 12
         
@@ -42,9 +42,15 @@ class ScrollingTicker(QWidget):
         self.update()
         
     def paintEvent(self, event):
+        from PyQt5.QtGui import QColor
+
         painter = QPainter(self)
         painter.setFont(self.font)
         painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.TextAntialiasing)
+
+        # Fill background with dark color for contrast
+        painter.fillRect(self.rect(), QColor(30, 30, 40))  # Dark blue-gray background
         
         metrics = self.fontMetrics()
         text_height = metrics.height()
@@ -53,33 +59,45 @@ class ScrollingTicker(QWidget):
         # Build the full ticker string and calculate its total width
         full_ticker_string_parts = []
         for symbol, current_price in self.current_prices.items():
+            # Skip symbols with None or invalid prices
+            if current_price is None or (isinstance(current_price, str) and current_price.lower() in ['none', 'n/a', '']):
+                continue
+
             price_str = f"{current_price:.2f}" if isinstance(current_price, (int, float)) else str(current_price)
-            
-            # Determine color for price part
-            price_color = Qt.white
-            if (symbol in self.previous_prices and 
-                isinstance(current_price, (int, float)) and 
+
+            # Determine color based on price trend (up/down)
+            from PyQt5.QtGui import QColor
+            symbol_color = QColor(255, 255, 255)  # Default white
+            price_color = QColor(255, 255, 255)   # Default white
+
+            if (symbol in self.previous_prices and
+                isinstance(current_price, (int, float)) and
                 isinstance(self.previous_prices[symbol], (int, float))):
                 prev_price = self.previous_prices[symbol]
                 if current_price > prev_price:
-                    price_color = Qt.green
+                    # Price went up - show green
+                    symbol_color = QColor(0, 255, 100)  # Bright green
+                    price_color = QColor(0, 255, 100)   # Bright green
                 elif current_price < prev_price:
-                    price_color = Qt.red
-            
-            full_ticker_string_parts.append((f"{symbol}: ", Qt.white))
-            full_ticker_string_parts.append((price_str, price_color))
-            full_ticker_string_parts.append((" | ", Qt.white))
+                    # Price went down - show red
+                    symbol_color = QColor(255, 80, 80)  # Bright red
+                    price_color = QColor(255, 80, 80)   # Bright red
+
+            # Add symbol, price, and separator with fixed pixel spacing for clarity
+            full_ticker_string_parts.append((f"{symbol}: ", symbol_color, 0))  # Symbol with colon
+            full_ticker_string_parts.append((f"{price_str}", price_color, 75))  # Price with 75px padding before (increased for longer symbols)
+            full_ticker_string_parts.append(("|", QColor(150, 150, 150), 50))  # Separator with 50px padding before
         
         if not full_ticker_string_parts:
             return # Nothing to draw
             
         # Calculate the total width of one full cycle of the ticker content
         total_content_width = 0
-        for text_part, _ in full_ticker_string_parts:
-            total_content_width += metrics.width(text_part)
+        for text_part, _, padding in full_ticker_string_parts:
+            total_content_width += padding + metrics.width(text_part)
         
-        # Add some buffer space at the end of the content before it loops
-        buffer_space = 100 # Pixels of empty space between repetitions
+        # Add generous buffer space at the end of the content before it loops
+        buffer_space = 200  # Pixels of empty space between repetitions (increased for better spacing)
         total_content_width_with_buffer = total_content_width + buffer_space
         
         # Adjust offset to loop seamlessly
@@ -95,9 +113,11 @@ class ScrollingTicker(QWidget):
         current_draw_x = start_drawing_x
         while current_draw_x < self.width() + total_content_width_with_buffer: # Draw enough to cover the visible area and beyond for seamless loop
             x_pos_in_block = current_draw_x
-            for text_part, color in full_ticker_string_parts:
+            for text_part, color, padding in full_ticker_string_parts:
+                x_pos_in_block += padding  # Add padding before drawing
                 painter.setPen(color)
-                painter.drawText(x_pos_in_block, y_pos, text_part)
+                # Use integer positions to avoid sub-pixel rendering artifacts
+                painter.drawText(int(x_pos_in_block), int(y_pos), text_part)
                 x_pos_in_block += metrics.width(text_part)
             
             # Move to the start of the next full block repetition

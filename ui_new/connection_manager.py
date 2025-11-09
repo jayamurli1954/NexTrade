@@ -164,15 +164,24 @@ class ConnectionManager:
         if not self.tokens_loaded:
             print("⏳ Loading symbol tokens (first time only)...")
             self.load_symbol_tokens()
-            
-            # Manually add INDIAVIX token if not found by load_symbol_tokens
-            if "NSE:INDIAVIX" not in self.token_map:
-                self.token_map["NSE:INDIAVIX"] = "99926017"
-                print("✅ Manually added NSE:INDIAVIX token.")
+
+            # Manually add index tokens if not found by load_symbol_tokens
+            # These indices need exact tokens for WebSocket subscription
+            index_tokens = {
+                "NSE:NIFTY": "99926000",      # Nifty 50 index
+                "NSE:BANKNIFTY": "99926009",  # Bank Nifty index
+                "BSE:SENSEX": "99919000",     # Sensex index
+                "NSE:INDIAVIX": "99926017"    # India VIX
+            }
+
+            for key, token in index_tokens.items():
+                if key not in self.token_map:
+                    self.token_map[key] = token
+                    print(f"✅ Manually added {key} token: {token}")
 
             # Build reverse map
             self.token_to_symbol_map = {token: key.split(':')[1] for key, token in self.token_map.items()}
-            
+
             self.tokens_loaded = True
     
     def load_symbol_tokens(self):
@@ -283,14 +292,33 @@ class ConnectionManager:
             print(f"ℹ️  [DEBUG] Token for BSE:SENSEX: {self.token_map.get('BSE:SENSEX')}")
             print(f"ℹ️  [DEBUG] Token for NSE:INDIAVIX: {self.token_map.get('NSE:INDIAVIX')}")
             
-            # Get credentials
+            # Get credentials - try encrypted storage first, then config.json
             self.api_key = self.config.get('api_key', '')
             self.client_code = self.config.get('client_id', '')
             password = self.config.get('password', '')
             totp_secret = self.config.get('totp_token', '')
-            
+
+            # If password/totp missing, try loading from encrypted storage
+            if not password or not totp_secret:
+                try:
+                    from config.credentials_manager import SecureCredentialsManager
+                    cred_mgr = SecureCredentialsManager()
+                    success, creds = cred_mgr.load_credentials()
+
+                    if success and creds:
+                        print("✅ Loaded credentials from encrypted storage")
+                        # Use encrypted credentials (override config.json)
+                        self.api_key = creds.get('api_key', self.api_key)
+                        self.client_code = creds.get('client_code', self.client_code)
+                        password = creds.get('password', password)
+                        totp_secret = creds.get('totp_secret', totp_secret)
+                    else:
+                        print("⚠️  Could not load encrypted credentials")
+                except Exception as e:
+                    print(f"⚠️  Encrypted credentials unavailable: {e}")
+
             if not all([self.api_key, self.client_code, password]):
-                print("⚠️  Missing credentials in config")
+                print("⚠️  Missing credentials (need API Key, Client Code, and Password)")
                 return False
             
             # Create SmartConnect instance
@@ -464,12 +492,17 @@ class ConnectionManager:
             print(f"ℹ️  [DEBUG] Symbol: {symbol}, Exchange: {exchange}, Key: {key}, Token: {token}")
 
             if token:
-                if exchange_upper == "NSE":
+                # Special handling for indices - NSE indices use NFO exchange type for WebSocket
+                symbol_upper = symbol.upper()
+                if symbol_upper in ["NIFTY", "BANKNIFTY", "NIFTY50", "FINNIFTY", "MIDCPNIFTY", "INDIAVIX"]:
+                    exchange_type = 2  # NFO for NSE indices
+                    print(f"ℹ️  [DEBUG] Using NFO exchange type (2) for NSE index {symbol_upper}")
+                elif exchange_upper == "NSE":
                     exchange_type = 1
                 elif exchange_upper == "NFO":
                     exchange_type = 2
                 elif exchange_upper == "BSE":
-                    exchange_type = 4
+                    exchange_type = 4  # BSE indices use BSE exchange type
                 else:
                     print(f"⚠️  [DEBUG] Unsupported exchange: {exchange_upper}")
                     continue # Skip unsupported exchanges

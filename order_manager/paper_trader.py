@@ -64,21 +64,28 @@ class PaperTrader:
             self._init_excel_file()
         else:
             self.excel_file = None
-        
+
+        # ✅ FIXED: Initialize cumulative tracking systems with correct parameter
+        try:
+            self.capital_tracker = get_capital_tracker(
+                initial_capital=self.initial_cash  # Fixed: Use self.initial_cash instead of undefined starting_cash
+            )
+            self.cumulative_logger = get_cumulative_logger()
+
+            # Use cumulative balance instead of local cash
+            cumulative_balance = self.capital_tracker.get_current_balance()
+            if cumulative_balance > 0:
+                self.cash = cumulative_balance
+                logger.info(f"✓ Using cumulative balance: ₹{cumulative_balance:,.2f}")
+        except Exception as e:
+            logger.warning(f"⚠️ Cumulative tracking unavailable: {e}")
+            logger.info(f"Using initial cash: ₹{self.initial_cash:,.2f}")
+
         logger.info(f"PaperTrader started: Cash ₹{self.cash:,.2f}, Leverage {self.leverage}x")
         logger.info(f"Real-time monitoring: SL/Target checks every {self.monitoring_interval}s")
         if self.excel_file:
             logger.info(f"Trade log: {self.excel_file}")
-    
 
-        # Cumulative tracking systems
-        self.capital_tracker = get_capital_tracker(
-            initial_capital=starting_cash
-        )
-        self.cumulative_logger = get_cumulative_logger()
-        
-        # Use cumulative balance instead of local cash
-        self.cash = self.capital_tracker.get_current_balance()
     def set_data_provider(self, provider):
         """Set data provider for live price fetching"""
         self.data_provider = provider

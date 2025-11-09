@@ -14,14 +14,25 @@
 # - FIXED: SELL trades now display correctly
 # ==============================================================================
 
-from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QPushButton, QTableWidget, QTableWidgetItem, 
-                             QHeaderView, QTabWidget, QMessageBox, QComboBox)
+from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+                             QPushButton, QTableWidget, QTableWidgetItem,
+                             QHeaderView, QTabWidget, QMessageBox, QComboBox,
+                             QDialog, QTextEdit, QScrollArea)
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QFont
 from datetime import datetime
 import json
 import os
+import sys
+
+# ✅ NEW: Performance analytics integration
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+try:
+    from enhancements.order_manager.performance_analyzer import PerformanceAnalyzer
+    PERFORMANCE_ANALYTICS_AVAILABLE = True
+except ImportError:
+    PERFORMANCE_ANALYTICS_AVAILABLE = False
+    print("⚠️ Performance analytics not available - install with: pip install pandas numpy")
 
 class PaperTradingTab(QWidget):
     """
@@ -80,24 +91,39 @@ class PaperTradingTab(QWidget):
         self.update_stats()
         header.addWidget(self.stats_label)
         
+        # ✅ NEW: Performance Report button
+        if PERFORMANCE_ANALYTICS_AVAILABLE:
+            perf_btn = QPushButton("📊 Performance")
+            perf_btn.setStyleSheet("""
+                font-size: 14px;
+                font-weight: bold;
+                padding: 8px 20px;
+                border-radius: 6px;
+                background-color: #4CAF50;
+                color: white;
+            """)
+            perf_btn.clicked.connect(self.show_performance_report)
+            perf_btn.setCursor(Qt.PointingHandCursor)
+            header.addWidget(perf_btn)
+
         # Export button
         export_btn = QPushButton("📥 Export")
         export_btn.setStyleSheet("""
-            font-size: 14px; 
-            font-weight: bold; 
-            padding: 8px 20px; 
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px 20px;
             border-radius: 6px;
         """)
         export_btn.clicked.connect(self.export_trades)
         export_btn.setCursor(Qt.PointingHandCursor)
         header.addWidget(export_btn)
-        
+
         # Clear button
         clear_btn = QPushButton("🗑️ Clear History")
         clear_btn.setStyleSheet("""
-            font-size: 14px; 
-            font-weight: bold; 
-            padding: 8px 20px; 
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px 20px;
             border-radius: 6px;
         """)
         clear_btn.clicked.connect(self.clear_history)
@@ -756,5 +782,260 @@ class PaperTradingTab(QWidget):
             self.save_trades()
             self.refresh_history()
             self.update_stats()
-            
+
             QMessageBox.information(self, "Cleared", "Trade history cleared")
+
+    def show_performance_report(self):
+        """
+        ✅ NEW: Show advanced performance analytics report
+
+        Displays:
+        - Sharpe Ratio, Sortino Ratio, Calmar Ratio
+        - Maximum Drawdown
+        - Win Rate & Profit Factor
+        - Average Win/Loss
+        - Trade Duration Analysis
+        - BUY vs SELL performance
+        """
+        if not PERFORMANCE_ANALYTICS_AVAILABLE:
+            QMessageBox.warning(
+                self,
+                "Not Available",
+                "Performance analytics not available.\n"
+                "Install required packages:\n"
+                "pip install pandas numpy"
+            )
+            return
+
+        if not self.closed_trades:
+            QMessageBox.information(
+                self,
+                "No Data",
+                "No closed trades to analyze.\n"
+                "Complete some trades first to see performance metrics."
+            )
+            return
+
+        try:
+            # Generate performance report
+            analyzer = PerformanceAnalyzer(self.closed_trades)
+            report = analyzer.generate_report()
+
+            # Create dialog
+            dialog = QDialog(self)
+            dialog.setWindowTitle("📊 Performance Analytics Report")
+            dialog.setMinimumSize(900, 700)
+
+            layout = QVBoxLayout(dialog)
+
+            # Report text display
+            text_edit = QTextEdit()
+            text_edit.setReadOnly(True)
+            text_edit.setFont(QFont("Courier New", 10))
+
+            # Format report as HTML
+            html = self._format_performance_report_html(report)
+            text_edit.setHtml(html)
+
+            layout.addWidget(text_edit)
+
+            # Close button
+            close_btn = QPushButton("Close")
+            close_btn.setStyleSheet("padding: 10px 30px; font-size: 14px;")
+            close_btn.clicked.connect(dialog.accept)
+            layout.addWidget(close_btn)
+
+            dialog.exec_()
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Failed to generate performance report:\n{str(e)}"
+            )
+            import traceback
+            traceback.print_exc()
+
+    def _format_performance_report_html(self, report):
+        """Format performance report as HTML"""
+        if report.get('status') == 'NO_DATA':
+            return "<h2>No data available for analysis</h2>"
+
+        summary = report.get('summary', {})
+        risk_adj = report.get('risk_adjusted_returns', {})
+        dd = report.get('drawdown', {})
+        win = report.get('win_metrics', {})
+        dur = report.get('duration_analysis', {})
+        action = report.get('action_analysis', {})
+
+        html = f"""
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; padding: 20px; }}
+                h1 {{ color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }}
+                h2 {{ color: #34495e; margin-top: 30px; border-bottom: 2px solid #95a5a6; padding-bottom: 5px; }}
+                .metric {{ margin: 10px 0; padding: 10px; background: #ecf0f1; border-left: 4px solid #3498db; }}
+                .good {{ color: #27ae60; font-weight: bold; }}
+                .bad {{ color: #e74c3c; font-weight: bold; }}
+                .neutral {{ color: #7f8c8d; }}
+                .highlight {{ background: #fff3cd; padding: 5px; border-radius: 3px; }}
+                table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
+                th {{ background: #34495e; color: white; padding: 12px; text-align: left; }}
+                td {{ padding: 10px; border-bottom: 1px solid #ddd; }}
+                tr:hover {{ background: #f5f5f5; }}
+            </style>
+        </head>
+        <body>
+            <h1>📊 Trading Performance Report</h1>
+
+            <h2>📈 Summary</h2>
+            <div class="metric">
+                <strong>Total Trades:</strong> {summary.get('total_trades', 0)}
+            </div>
+            <div class="metric">
+                <strong>Total P&L:</strong> <span class="{'good' if summary.get('total_pnl', 0) > 0 else 'bad'}">
+                ₹{summary.get('total_pnl', 0):.2f}</span>
+            </div>
+            <div class="metric">
+                <strong>Total P&L %:</strong> <span class="{'good' if summary.get('total_pnl_pct', 0) > 0 else 'bad'}">
+                {summary.get('total_pnl_pct', 0):.2f}%</span>
+            </div>
+
+            <h2>💎 Risk-Adjusted Returns</h2>
+            <div class="metric">
+                <strong>Sharpe Ratio:</strong> <span class="highlight">{risk_adj.get('sharpe_ratio', 0):.3f}</span>
+                <br><small>Higher is better. &gt;1 is good, &gt;2 is excellent</small>
+            </div>
+            <div class="metric">
+                <strong>Sortino Ratio:</strong> {risk_adj.get('sortino_ratio', 0):.3f}
+                <br><small>Focuses on downside risk only</small>
+            </div>
+            <div class="metric">
+                <strong>Calmar Ratio:</strong> {risk_adj.get('calmar_ratio', 0):.3f}
+                <br><small>Return / Max Drawdown. Higher is better.</small>
+            </div>
+
+            <h2>📉 Drawdown Analysis</h2>
+            <div class="metric">
+                <strong>Maximum Drawdown:</strong> <span class="bad">{dd.get('max_dd_pct', 0):.2f}%</span>
+                (₹{dd.get('max_dd_amount', 0):.2f})
+            </div>
+            <div class="metric">
+                <strong>Peak:</strong> ₹{dd.get('peak', 0):.2f}
+            </div>
+            <div class="metric">
+                <strong>Trough:</strong> ₹{dd.get('trough', 0):.2f}
+            </div>
+            <div class="metric">
+                <strong>Recovery Time:</strong> {dd.get('recovery_time', 'N/A')}
+            </div>
+
+            <h2>🎯 Win/Loss Metrics</h2>
+            <table>
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Win Rate</td>
+                    <td class="{'good' if win.get('win_rate', 0) >= 50 else 'bad'}">
+                    {win.get('win_rate', 0):.2f}%</td>
+                </tr>
+                <tr>
+                    <td>Winning Trades</td>
+                    <td>{win.get('winning_trades', 0)}</td>
+                </tr>
+                <tr>
+                    <td>Losing Trades</td>
+                    <td>{win.get('losing_trades', 0)}</td>
+                </tr>
+                <tr>
+                    <td>Profit Factor</td>
+                    <td class="{'good' if win.get('profit_factor', 0) > 1 else 'bad'}">
+                    {win.get('profit_factor', 0):.3f}</td>
+                </tr>
+                <tr>
+                    <td>Average Win</td>
+                    <td class="good">₹{win.get('avg_win', 0):.2f}</td>
+                </tr>
+                <tr>
+                    <td>Average Loss</td>
+                    <td class="bad">₹{win.get('avg_loss', 0):.2f}</td>
+                </tr>
+                <tr>
+                    <td>Largest Win</td>
+                    <td class="good">₹{win.get('largest_win', 0):.2f}</td>
+                </tr>
+                <tr>
+                    <td>Largest Loss</td>
+                    <td class="bad">₹{win.get('largest_loss', 0):.2f}</td>
+                </tr>
+            </table>
+
+            <h2>⏱️ Trade Duration</h2>
+            <div class="metric">
+                <strong>Average Duration:</strong> {dur.get('avg_duration_hours', 0):.2f} hours
+            </div>
+            <div class="metric">
+                <strong>Median Duration:</strong> {dur.get('median_duration_hours', 0):.2f} hours
+            </div>
+            <div class="metric">
+                <strong>Winning Trades Avg:</strong> {dur.get('winning_avg_duration', 0):.2f} hours
+            </div>
+            <div class="metric">
+                <strong>Losing Trades Avg:</strong> {dur.get('losing_avg_duration', 0):.2f} hours
+            </div>
+
+            <h2>🔄 BUY vs SELL Analysis</h2>
+            <table>
+                <tr>
+                    <th>Action</th>
+                    <th>Count</th>
+                    <th>Win Rate</th>
+                    <th>Total P&L</th>
+                    <th>Avg P&L</th>
+                </tr>
+        """
+
+        if action and 'buy' in action:
+            buy = action['buy']
+            html += f"""
+                <tr>
+                    <td><strong>BUY</strong></td>
+                    <td>{buy.get('count', 0)}</td>
+                    <td>{buy.get('win_rate', 0):.2f}%</td>
+                    <td class="{'good' if buy.get('total_pnl', 0) > 0 else 'bad'}">
+                    ₹{buy.get('total_pnl', 0):.2f}</td>
+                    <td>₹{buy.get('avg_pnl', 0):.2f}</td>
+                </tr>
+            """
+
+        if action and 'sell' in action:
+            sell = action['sell']
+            html += f"""
+                <tr>
+                    <td><strong>SELL</strong></td>
+                    <td>{sell.get('count', 0)}</td>
+                    <td>{sell.get('win_rate', 0):.2f}%</td>
+                    <td class="{'good' if sell.get('total_pnl', 0) > 0 else 'bad'}">
+                    ₹{sell.get('total_pnl', 0):.2f}</td>
+                    <td>₹{sell.get('avg_pnl', 0):.2f}</td>
+                </tr>
+            """
+
+        html += """
+            </table>
+
+            <div style="margin-top: 30px; padding: 15px; background: #d4edda; border-left: 4px solid #28a745;">
+                <strong>💡 Interpretation Guide:</strong><br>
+                • <strong>Sharpe Ratio &gt; 1:</strong> Good risk-adjusted returns<br>
+                • <strong>Win Rate &gt; 50%:</strong> Majority of trades profitable<br>
+                • <strong>Profit Factor &gt; 1.5:</strong> Strong trading strategy<br>
+                • <strong>Max Drawdown &lt; 20%:</strong> Good risk management
+            </div>
+        </body>
+        </html>
+        """
+
+        return html
