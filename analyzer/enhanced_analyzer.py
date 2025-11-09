@@ -28,6 +28,14 @@ import logging
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import requests
 
+# ✅ NEW: Enhanced input sanitization for security
+try:
+    from utils.input_sanitizer import InputSanitizer, InputValidationError
+    INPUT_SANITIZER_AVAILABLE = True
+except ImportError:
+    INPUT_SANITIZER_AVAILABLE = False
+    logging.warning("⚠️ Input sanitizer not available - using basic validation")
+
 logger = logging.getLogger("EnhancedAnalyzer")
 
 
@@ -105,16 +113,26 @@ class EnhancedAnalyzer:
         Comprehensive analysis with LIVE LTP, technical indicators, and optional fundamentals
         """
         try:
-            # ✅ FIXED: Input validation (Peer Review 3)
-            if not symbol or not isinstance(symbol, str):
-                raise ValueError(f"Invalid symbol: {symbol}")
-            
-            symbol = symbol.strip().upper()
-            if not symbol.replace('-', '').replace('_', '').isalnum():
-                raise ValueError(f"Symbol contains invalid characters: {symbol}")
-            
-            if exchange not in ['NSE', 'BSE', 'NFO', 'MCX', 'CDS']:
-                raise ValueError(f"Invalid exchange: {exchange}")
+            # ✅ ENHANCED: Use input sanitizer for security validation
+            if INPUT_SANITIZER_AVAILABLE:
+                try:
+                    sanitizer = InputSanitizer()
+                    symbol = sanitizer.sanitize_symbol(symbol)
+                    exchange = sanitizer.sanitize_exchange(exchange)
+                except InputValidationError as e:
+                    logger.error(f"Input validation failed: {e}")
+                    return None
+            else:
+                # Fallback to basic validation
+                if not symbol or not isinstance(symbol, str):
+                    raise ValueError(f"Invalid symbol: {symbol}")
+
+                symbol = symbol.strip().upper()
+                if not symbol.replace('-', '').replace('_', '').isalnum():
+                    raise ValueError(f"Symbol contains invalid characters: {symbol}")
+
+                if exchange not in ['NSE', 'BSE', 'NFO', 'MCX', 'CDS']:
+                    raise ValueError(f"Invalid exchange: {exchange}")
 
             # Rate limiting for historical data API
             time.sleep(0.5)
