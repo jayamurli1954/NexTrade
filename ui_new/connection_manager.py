@@ -164,15 +164,24 @@ class ConnectionManager:
         if not self.tokens_loaded:
             print("⏳ Loading symbol tokens (first time only)...")
             self.load_symbol_tokens()
-            
-            # Manually add INDIAVIX token if not found by load_symbol_tokens
-            if "NSE:INDIAVIX" not in self.token_map:
-                self.token_map["NSE:INDIAVIX"] = "99926017"
-                print("✅ Manually added NSE:INDIAVIX token.")
+
+            # Manually add index tokens if not found by load_symbol_tokens
+            # These indices need exact tokens for WebSocket subscription
+            index_tokens = {
+                "NSE:NIFTY": "99926000",      # Nifty 50 index
+                "NSE:BANKNIFTY": "99926009",  # Bank Nifty index
+                "BSE:SENSEX": "99919000",     # Sensex index
+                "NSE:INDIAVIX": "99926017"    # India VIX
+            }
+
+            for key, token in index_tokens.items():
+                if key not in self.token_map:
+                    self.token_map[key] = token
+                    print(f"✅ Manually added {key} token: {token}")
 
             # Build reverse map
             self.token_to_symbol_map = {token: key.split(':')[1] for key, token in self.token_map.items()}
-            
+
             self.tokens_loaded = True
     
     def load_symbol_tokens(self):
