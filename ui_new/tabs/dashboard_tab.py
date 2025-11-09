@@ -203,9 +203,32 @@ class DashboardTab(QWidget):
         button_layout.addWidget(refresh_btn)
         
         layout.addLayout(button_layout)
-        
+
+        # Top Gainers and Losers Section
+        gainers_losers_section = QVBoxLayout()
+        gainers_losers_section.setSpacing(10)
+
+        section_title = QLabel("📊 Top Gainers & Losers")
+        section_title.setStyleSheet("font-size: 20px; font-weight: bold; margin-top: 20px;")
+        gainers_losers_section.addWidget(section_title)
+
+        # Container for gainers and losers cards
+        gainers_losers_container = QHBoxLayout()
+        gainers_losers_container.setSpacing(20)
+
+        # Top Gainers Card
+        self.gainers_card = self.create_gainers_losers_card("🚀 Top Gainers", "#4CAF50")
+        gainers_losers_container.addWidget(self.gainers_card)
+
+        # Top Losers Card
+        self.losers_card = self.create_gainers_losers_card("📉 Top Losers", "#F44336")
+        gainers_losers_container.addWidget(self.losers_card)
+
+        gainers_losers_section.addLayout(gainers_losers_container)
+        layout.addLayout(gainers_losers_section)
+
         layout.addStretch()
-        
+
         # Initial refresh
         self.refresh_dashboard()
         
@@ -223,8 +246,9 @@ class DashboardTab(QWidget):
                 prices[symbol] = price
             else:
                 prices[symbol] = "N/A"
-        
-        self.ticker.update_prices(prices)    
+
+        self.ticker.update_prices(prices)
+        self.update_gainers_losers()    
     def create_stat_card(self, title, value, color):
         """Create a statistics card"""
         card = QWidget()
@@ -253,9 +277,116 @@ class DashboardTab(QWidget):
         
         # Store reference to value label for updates
         card.value_label = value_label
-        
+
         return card
-    
+
+    def create_gainers_losers_card(self, title, color):
+        """Create a card for displaying top gainers or losers"""
+        card = QWidget()
+        card.setStyleSheet(f"""
+            QWidget {{
+                background: {color};
+                border-radius: 15px;
+                padding: 20px;
+            }}
+        """)
+
+        card_layout = QVBoxLayout(card)
+        card_layout.setSpacing(10)
+
+        # Title
+        title_label = QLabel(title)
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
+        card_layout.addWidget(title_label)
+
+        # Content label for the list
+        content_label = QLabel("Waiting for data...")
+        content_label.setAlignment(Qt.AlignLeft)
+        content_label.setStyleSheet("""
+            font-size: 14px;
+            font-weight: normal;
+            color: white;
+            padding: 10px;
+            line-height: 1.6;
+        """)
+        content_label.setWordWrap(True)
+        card_layout.addWidget(content_label)
+
+        # Store reference to content label for updates
+        card.content_label = content_label
+
+        return card
+
+    def update_gainers_losers(self):
+        """Calculate and update top gainers and losers"""
+        if not self.conn_mgr.get_connection_status()['broker_connected']:
+            self.gainers_card.content_label.setText("Not connected")
+            self.losers_card.content_label.setText("Not connected")
+            return
+
+        # Get current and previous prices from ticker
+        current_prices = self.ticker.current_prices
+        previous_prices = self.ticker.previous_prices
+
+        if not current_prices or not previous_prices:
+            self.gainers_card.content_label.setText("Waiting for data...")
+            self.losers_card.content_label.setText("Waiting for data...")
+            return
+
+        # Calculate percentage changes
+        changes = []
+        for symbol in current_prices:
+            if symbol in previous_prices:
+                current = current_prices[symbol]
+                previous = previous_prices[symbol]
+
+                # Skip if prices are invalid
+                if (current is None or previous is None or
+                    current == "N/A" or previous == "N/A" or
+                    not isinstance(current, (int, float)) or
+                    not isinstance(previous, (int, float)) or
+                    previous == 0):
+                    continue
+
+                # Calculate percentage change
+                pct_change = ((current - previous) / previous) * 100
+                changes.append({
+                    'symbol': symbol,
+                    'current': current,
+                    'previous': previous,
+                    'change': pct_change
+                })
+
+        if not changes:
+            self.gainers_card.content_label.setText("No data available")
+            self.losers_card.content_label.setText("No data available")
+            return
+
+        # Sort by change percentage
+        changes.sort(key=lambda x: x['change'], reverse=True)
+
+        # Get top 5 gainers and losers
+        top_gainers = changes[:5]
+        top_losers = changes[-5:]
+        top_losers.reverse()  # Show biggest loser first
+
+        # Format gainers text
+        gainers_text = ""
+        for i, item in enumerate(top_gainers, 1):
+            gainers_text += f"{i}. {item['symbol']}: ₹{item['current']:.2f} "
+            gainers_text += f"(+{item['change']:.2f}%)\n"
+
+        # Format losers text
+        losers_text = ""
+        for i, item in enumerate(top_losers, 1):
+            losers_text += f"{i}. {item['symbol']}: ₹{item['current']:.2f} "
+            losers_text += f"({item['change']:.2f}%)\n"
+
+        # Update cards
+        self.gainers_card.content_label.setText(gainers_text.strip() or "No gainers")
+        self.losers_card.content_label.setText(losers_text.strip() or "No losers")
+
     def toggle_connection(self):
         """Toggle broker connection"""
         status = self.conn_mgr.get_connection_status()
