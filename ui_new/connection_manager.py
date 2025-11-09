@@ -167,17 +167,18 @@ class ConnectionManager:
 
             # Manually add index tokens if not found by load_symbol_tokens
             # These indices need exact tokens for WebSocket subscription
+            # Using correct Angel One index tokens
             index_tokens = {
-                "NSE:NIFTY": "99926000",      # Nifty 50 index
-                "NSE:BANKNIFTY": "99926009",  # Bank Nifty index
-                "BSE:SENSEX": "99919000",     # Sensex index
-                "NSE:INDIAVIX": "99926017"    # India VIX
+                "NSE:NIFTY": "99926000",      # Nifty 50 index (Correct)
+                "NSE:BANKNIFTY": "99926009",  # Bank Nifty index (Correct)
+                "BSE:SENSEX": "99919000",     # Sensex index (Correct)
+                "NSE:INDIAVIX": "99926017"    # India VIX (Correct)
             }
 
+            # Force update with correct tokens (override any wrong fallback values)
             for key, token in index_tokens.items():
-                if key not in self.token_map:
-                    self.token_map[key] = token
-                    print(f"✅ Manually added {key} token: {token}")
+                self.token_map[key] = token
+                print(f"✅ Added/Updated {key} token: {token}")
 
             # Build reverse map
             self.token_to_symbol_map = {token: key.split(':')[1] for key, token in self.token_map.items()}
@@ -213,7 +214,7 @@ class ConnectionManager:
                             
                             key = f"{exch_seg}:{clean_symbol}"
                             self.token_map[key] = token
-                            if clean_symbol in ["SENSEX", "INDIA_VIX", "NIFTY", "BANKNIFTY"]: # Added NIFTY, BANKNIFTY for debug
+                            if clean_symbol in ["SENSEX", "INDIAVIX", "NIFTY", "BANKNIFTY"]: # Added indices for debug
                                 print(f"ℹ️  [DEBUG] Loaded token for {key}: {token}")
                 
                 print(f"✅ Loaded {len(self.token_map)} symbol tokens from Angel One")
@@ -262,14 +263,15 @@ class ConnectionManager:
             'NSE:TORNTPHARM': '3518', 'NSE:TRENT': '1964', 'NSE:TVSMOTOR': '8479',
             'NSE:ULTRACEMCO': '11532', 'NSE:UNIONBANK': '5423', 'NSE:VBL': '13540',
             'NSE:VEDL': '3063', 'NSE:WIPRO': '3787', 'NSE:ATGL': '25152',
-            'BSE:SENSEX': '99919000', # Fallback for SENSEX
-            'NSE:INDIA_VIX': '99926017', # Fallback for INDIA_VIX
-            'NSE:NIFTY': '99901000', # Fallback for NIFTY
-            'NSE:BANKNIFTY': '99904000' # Fallback for BANKNIFTY
+            # Correct index tokens for Angel One
+            'BSE:SENSEX': '99919000',
+            'NSE:INDIAVIX': '99926017',  # Fixed: was INDIA_VIX
+            'NSE:NIFTY': '99926000',     # Fixed: correct token
+            'NSE:BANKNIFTY': '99926009'  # Fixed: correct token
         }
         print(f"✅ Loaded {len(self.token_map)} fallback tokens")
         for key, token in self.token_map.items():
-            if key.split(':')[1] in ["SENSEX", "INDIA_VIX", "NIFTY", "BANKNIFTY"]:
+            if key.split(':')[1] in ["SENSEX", "INDIAVIX", "NIFTY", "BANKNIFTY"]:
                 print(f"ℹ️  [DEBUG] Fallback token for {key}: {token}")
         self.token_to_symbol_map = {token: key.split(':')[1] for key, token in self.token_map.items()} # Build reverse map
     
