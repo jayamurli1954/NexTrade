@@ -53,19 +53,23 @@ class ScrollingTicker(QWidget):
         # Build the full ticker string and calculate its total width
         full_ticker_string_parts = []
         for symbol, current_price in self.current_prices.items():
+            # Skip symbols with None or invalid prices
+            if current_price is None or (isinstance(current_price, str) and current_price.lower() in ['none', 'n/a', '']):
+                continue
+
             price_str = f"{current_price:.2f}" if isinstance(current_price, (int, float)) else str(current_price)
-            
+
             # Determine color for price part
             price_color = Qt.white
-            if (symbol in self.previous_prices and 
-                isinstance(current_price, (int, float)) and 
+            if (symbol in self.previous_prices and
+                isinstance(current_price, (int, float)) and
                 isinstance(self.previous_prices[symbol], (int, float))):
                 prev_price = self.previous_prices[symbol]
                 if current_price > prev_price:
                     price_color = Qt.green
                 elif current_price < prev_price:
                     price_color = Qt.red
-            
+
             full_ticker_string_parts.append((f"{symbol}: ", Qt.white))
             full_ticker_string_parts.append((price_str, price_color))
             full_ticker_string_parts.append((" | ", Qt.white))

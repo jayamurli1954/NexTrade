@@ -492,12 +492,17 @@ class ConnectionManager:
             print(f"ℹ️  [DEBUG] Symbol: {symbol}, Exchange: {exchange}, Key: {key}, Token: {token}")
 
             if token:
-                if exchange_upper == "NSE":
+                # Special handling for indices - NSE indices use NFO exchange type for WebSocket
+                symbol_upper = symbol.upper()
+                if symbol_upper in ["NIFTY", "BANKNIFTY", "NIFTY50", "FINNIFTY", "MIDCPNIFTY", "INDIAVIX"]:
+                    exchange_type = 2  # NFO for NSE indices
+                    print(f"ℹ️  [DEBUG] Using NFO exchange type (2) for NSE index {symbol_upper}")
+                elif exchange_upper == "NSE":
                     exchange_type = 1
                 elif exchange_upper == "NFO":
                     exchange_type = 2
                 elif exchange_upper == "BSE":
-                    exchange_type = 4
+                    exchange_type = 4  # BSE indices use BSE exchange type
                 else:
                     print(f"⚠️  [DEBUG] Unsupported exchange: {exchange_upper}")
                     continue # Skip unsupported exchanges
