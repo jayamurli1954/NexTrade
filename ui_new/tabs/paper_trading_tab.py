@@ -83,8 +83,6 @@ class PaperTradingTab(QWidget):
         # Export button
         export_btn = QPushButton("📥 Export")
         export_btn.setStyleSheet("""
-            background: #FF9800; 
-            color: white; 
             font-size: 14px; 
             font-weight: bold; 
             padding: 8px 20px; 
@@ -97,8 +95,6 @@ class PaperTradingTab(QWidget):
         # Clear button
         clear_btn = QPushButton("🗑️ Clear History")
         clear_btn.setStyleSheet("""
-            background: #f44336; 
-            color: white; 
             font-size: 14px; 
             font-weight: bold; 
             padding: 8px 20px; 
@@ -116,10 +112,8 @@ class PaperTradingTab(QWidget):
             QTabWidget::pane {
                 border: 2px solid #ddd;
                 border-radius: 5px;
-                background: white;
             }
             QTabBar::tab {
-                background: #f0f0f0;
                 padding: 10px 20px;
                 margin-right: 2px;
                 border-top-left-radius: 5px;
@@ -128,8 +122,6 @@ class PaperTradingTab(QWidget):
                 font-weight: bold;
             }
             QTabBar::tab:selected {
-                background: #2196F3;
-                color: white;
             }
         """)
         
@@ -164,13 +156,10 @@ class PaperTradingTab(QWidget):
         table = QTableWidget()
         table.setStyleSheet("""
             QTableWidget { 
-                background: white; 
                 gridline-color: #e0e0e0;
                 font-size: 14px;
             }
             QHeaderView::section { 
-                background: #4CAF50; 
-                color: white; 
                 font-weight: bold; 
                 font-size: 15px; 
                 padding: 10px; 
@@ -202,13 +191,10 @@ class PaperTradingTab(QWidget):
         table = QTableWidget()
         table.setStyleSheet("""
             QTableWidget { 
-                background: white; 
                 gridline-color: #e0e0e0;
                 font-size: 14px;
             }
             QHeaderView::section { 
-                background: #607D8B; 
-                color: white; 
                 font-weight: bold; 
                 font-size: 15px; 
                 padding: 10px; 
@@ -250,24 +236,26 @@ class PaperTradingTab(QWidget):
         # Generate order ID
         order_id = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S%f')[:17]}"
         
-        # Create trade entry
+        # Create trade entry - CONVERT ALL NUMPY TYPES TO PYTHON FLOATS
         trade = {
             'order_id': order_id,
-            'symbol': trade_data['symbol'],
-            'action': trade_data['action'],
-            'entry_price': trade_data['entry_price'],
+            'symbol': str(trade_data['symbol']),
+            'action': str(trade_data['action']),
+            'entry_price': float(trade_data['entry_price']),
             'entry_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            'target': trade_data['target'],
-            'stop_loss': trade_data['stop_loss'],
-            'quantity': trade_data.get('quantity', 1),
+            'target': float(trade_data['target']),
+            'stop_loss': float(trade_data['stop_loss']),
+            'quantity': int(trade_data.get('quantity', 1)),
             'status': 'OPEN',
             'exit_price': None,
             'exit_time': None,
             'exit_reason': None,
-            'pnl': 0,
-            'pnl_pct': 0,
-            'confidence': trade_data.get('confidence', 0)
+            'pnl': 0.0,
+            'pnl_pct': 0.0,
+            'confidence': float(trade_data.get('confidence', 0))
         }
+        
+        print(f"🔍 DEBUG: Trade created - Entry: ₹{trade['entry_price']:.2f}, Target: ₹{trade['target']:.2f}, SL: ₹{trade['stop_loss']:.2f}")
         
         # Add to active trades
         self.active_trades.append(trade)
@@ -300,9 +288,9 @@ class PaperTradingTab(QWidget):
         
         for trade in self.active_trades:
             symbol = trade['symbol']
-            current_ltp = ltp_data.get(symbol, 0)
+            current_ltp = ltp_data.get(symbol)
             
-            if current_ltp == 0:
+            if current_ltp is None:
                 continue
             
             entry_price = trade['entry_price']
@@ -333,11 +321,13 @@ class PaperTradingTab(QWidget):
                     exit_reason = "STOP LOSS HIT"
             
             if should_exit:
-                # Close trade
-                trade['exit_price'] = current_ltp
+                # Close trade - ENSURE PROPER TYPES
+                trade['exit_price'] = float(current_ltp)
                 trade['exit_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                trade['exit_reason'] = exit_reason
+                trade['exit_reason'] = str(exit_reason)
                 trade['status'] = 'CLOSED'
+                
+                print(f"🔍 DEBUG: Closing {trade['symbol']} - Entry: ₹{trade['entry_price']:.2f}, Exit: ₹{trade['exit_price']:.2f}")
                 
                 # Calculate P&L
                 if action == 'BUY':
@@ -392,7 +382,9 @@ class PaperTradingTab(QWidget):
         ltp_data = self.conn_mgr.get_ltp_batch(symbols)
         
         for row, trade in enumerate(self.active_trades):
-            current_ltp = ltp_data.get(trade['symbol'], trade['entry_price'])
+            current_ltp = ltp_data.get(trade['symbol'])
+            if current_ltp is None:
+                current_ltp = trade['entry_price']
             
             # Calculate current P&L
             if trade['action'] == 'BUY':
@@ -438,8 +430,6 @@ class PaperTradingTab(QWidget):
             # Exit button
             exit_btn = QPushButton("❌ Exit")
             exit_btn.setStyleSheet("""
-                background: #FF5722; 
-                color: white; 
                 font-size: 12px; 
                 padding: 5px 10px; 
                 border-radius: 4px;
@@ -525,7 +515,9 @@ class PaperTradingTab(QWidget):
         if reply == QMessageBox.Yes:
             # Get current LTP
             ltp = self.conn_mgr.get_ltp(trade['symbol'])
-            
+            if ltp is None:
+                QMessageBox.warning(self, "Price Unavailable", f"Could not retrieve the current price for {trade['symbol']}. Please try again.")
+                return            
             # Close trade
             trade['exit_price'] = ltp
             trade['exit_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -635,6 +627,116 @@ class PaperTradingTab(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Export Error", f"Error: {e}")
     
+    
+    
+    def open_manual_trade_dialog(self):
+        """Open dialog for manual trade entry"""
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QPushButton, QMessageBox
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Manual Trade Entry")
+        dialog.setMinimumWidth(400)
+        
+        layout = QVBoxLayout(dialog)
+        
+        # Symbol
+        symbol_layout = QHBoxLayout()
+        symbol_layout.addWidget(QLabel("Symbol:"))
+        symbol_input = QLineEdit()
+        symbol_input.setPlaceholderText("e.g., RELIANCE")
+        symbol_layout.addWidget(symbol_input)
+        layout.addLayout(symbol_layout)
+        
+        # Action
+        action_layout = QHBoxLayout()
+        action_layout.addWidget(QLabel("Action:"))
+        action_input = QComboBox()
+        action_input.addItems(["BUY", "SELL"])
+        action_layout.addWidget(action_input)
+        layout.addLayout(action_layout)
+        
+        # Entry Price
+        entry_layout = QHBoxLayout()
+        entry_layout.addWidget(QLabel("Entry Price:"))
+        entry_input = QLineEdit()
+        entry_input.setPlaceholderText("e.g., 2500.50")
+        entry_layout.addWidget(entry_input)
+        layout.addLayout(entry_layout)
+        
+        # Target
+        target_layout = QHBoxLayout()
+        target_layout.addWidget(QLabel("Target:"))
+        target_input = QLineEdit()
+        target_input.setPlaceholderText("e.g., 2600.00")
+        target_layout.addWidget(target_input)
+        layout.addLayout(target_layout)
+        
+        # Stop Loss
+        sl_layout = QHBoxLayout()
+        sl_layout.addWidget(QLabel("Stop Loss:"))
+        sl_input = QLineEdit()
+        sl_input.setPlaceholderText("e.g., 2450.00")
+        sl_layout.addWidget(sl_input)
+        layout.addLayout(sl_layout)
+        
+        # Quantity
+        qty_layout = QHBoxLayout()
+        qty_layout.addWidget(QLabel("Quantity:"))
+        qty_input = QLineEdit()
+        qty_input.setText("1")
+        qty_layout.addWidget(qty_input)
+        layout.addLayout(qty_layout)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        submit_btn = QPushButton("Add Trade")
+        submit_btn.setStyleSheet("padding: 8px 20px; border-radius: 4px;")
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setStyleSheet("padding: 8px 20px; border-radius: 4px;")
+        
+        button_layout.addWidget(submit_btn)
+        button_layout.addWidget(cancel_btn)
+        layout.addLayout(button_layout)
+        
+        # Connect buttons
+        def submit_trade():
+            try:
+                symbol = symbol_input.text().strip().upper()
+                action = action_input.currentText()
+                entry_price = float(entry_input.text())
+                target = float(target_input.text())
+                stop_loss = float(sl_input.text())
+                quantity = int(qty_input.text())
+                
+                if not symbol:
+                    QMessageBox.warning(dialog, "Error", "Please enter a symbol")
+                    return
+                
+                # Create trade data
+                trade_data = {
+                    'symbol': symbol,
+                    'action': action,
+                    'entry_price': entry_price,
+                    'target': target,
+                    'stop_loss': stop_loss,
+                    'quantity': quantity,
+                    'confidence': 0.0
+                }
+                
+                # Add trade
+                self.add_trade(trade_data)
+                
+                QMessageBox.information(dialog, "Success", f"Manual trade added: {action} {symbol}")
+                dialog.accept()
+                
+            except ValueError as e:
+                QMessageBox.warning(dialog, "Error", f"Invalid input: {str(e)}")
+        
+        submit_btn.clicked.connect(submit_trade)
+        cancel_btn.clicked.connect(dialog.reject)
+        
+        dialog.exec_()
+
     def clear_history(self):
         """Clear trade history"""
         if not self.closed_trades:

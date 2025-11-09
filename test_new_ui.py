@@ -43,6 +43,21 @@ def main():
     # Create Qt application
     app = QApplication(sys.argv)
     
+    # Apply dark theme
+    stylesheet = ""  # Dark theme disabled
+    app.setStyleSheet(stylesheet)
+
+    # Load custom stylesheet
+    try:
+        with open('style.qss', 'r') as f:
+            custom_stylesheet = f.read()
+        app.setStyleSheet(app.styleSheet() + custom_stylesheet)
+        print("✅ Custom stylesheet 'style.qss' loaded successfully.")
+    except FileNotFoundError:
+        print("⚠️ Custom stylesheet 'style.qss' not found. Using default dark theme.")
+    except Exception as e:
+        print(f"❌ Error loading custom stylesheet: {e}")
+    
     # Create and show window IMMEDIATELY
     window = MainWindow(conn_mgr, trade_logger)
     window.show()

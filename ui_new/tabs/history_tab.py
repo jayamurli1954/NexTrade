@@ -37,8 +37,6 @@ class HistoryTab(QWidget):
         # Refresh button
         refresh_btn = QPushButton("🔄 Refresh")
         refresh_btn.setStyleSheet("""
-            background: #2196F3; 
-            color: white; 
             font-size: 16px; 
             font-weight: bold; 
             padding: 10px 25px; 
@@ -51,8 +49,6 @@ class HistoryTab(QWidget):
         # Export button
         export_btn = QPushButton("📥 Export")
         export_btn.setStyleSheet("""
-            background: #FF9800; 
-            color: white; 
             font-size: 16px; 
             font-weight: bold; 
             padding: 10px 25px; 
@@ -68,15 +64,12 @@ class HistoryTab(QWidget):
         self.table = QTableWidget()
         self.table.setStyleSheet("""
             QTableWidget { 
-                background: white; 
                 border: 2px solid #ddd; 
                 border-radius: 5px; 
                 font-size: 15px;
                 gridline-color: #e0e0e0;
             }
             QHeaderView::section { 
-                background: #607D8B; 
-                color: white; 
                 font-weight: bold; 
                 font-size: 16px; 
                 padding: 10px; 

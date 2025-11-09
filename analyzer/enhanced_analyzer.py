@@ -52,10 +52,10 @@ class EnhancedAnalyzer:
         self.ema_long_period = self.config.get('ema_long_period', 21)
         self.analysis_period = self.config.get('analysis_period', 50)
         
-        # ✅ FIXED: Use environment variable for API key
-        self.newsapi_key = os.getenv('NEWSAPI_KEY', None)
+        # ✅ FIXED: Use config for API key
+        self.newsapi_key = self.config.get('NEWSAPI_KEY', None)
         if not self.newsapi_key:
-            logger.warning("⚠️ NEWSAPI_KEY not found - sentiment analysis disabled")
+            logger.warning("⚠️ NEWSAPI_KEY not found in config - sentiment analysis disabled")
         
         self.sentiment_analyzer = SentimentIntensityAnalyzer()
         
@@ -329,46 +329,49 @@ class EnhancedAnalyzer:
             'atr': round(current_atr, 2)
         }
 
+        buy_weights = self.config.get('strategy_weights', {}).get('buy', {})
+        sell_weights = self.config.get('strategy_weights', {}).get('sell', {})
+
         buy_conditions = []
         buy_score = 0
 
         # Technical scoring
         if current_price <= fib_levels['level_618'] * 1.02:
             buy_conditions.append("Near Golden Ratio (61.8%)")
-            buy_score += 25
+            buy_score += buy_weights.get('fib_618', 25)
         elif current_price <= fib_levels['level_500'] * 1.02:
             buy_conditions.append("At Fib 50%")
-            buy_score += 20
+            buy_score += buy_weights.get('fib_500', 20)
 
         if current_rsi <= self.rsi_oversold:
             buy_conditions.append(f"RSI oversold ({current_rsi:.1f})")
-            buy_score += 20
+            buy_score += buy_weights.get('rsi_oversold', 20)
         elif current_rsi <= 40:
             buy_conditions.append(f"RSI < 40")
-            buy_score += 10
+            buy_score += buy_weights.get('rsi_mid', 10)
 
         if ema_short > ema_long:
             buy_conditions.append("EMA uptrend")
-            buy_score += 20
+            buy_score += buy_weights.get('ema_uptrend', 20)
         elif ema_short > ema_long * 0.99:
             buy_conditions.append("EMA near crossover")
-            buy_score += 10
+            buy_score += buy_weights.get('ema_crossover', 10)
 
         if volume_ratio >= self.volume_threshold:
             buy_conditions.append(f"Volume {volume_ratio:.1f}x")
-            buy_score += 10
+            buy_score += buy_weights.get('volume_spike', 10)
 
         if current_price <= bb_lower:
             buy_conditions.append("At lower BB")
-            buy_score += 8
+            buy_score += buy_weights.get('bb_lower', 8)
 
         if sentiment > 0.2:
             buy_conditions.append(f"Sentiment +{sentiment:.2f}")
-            buy_score += 7
+            buy_score += buy_weights.get('sentiment_positive', 7)
 
         # ✅ NEW: Fundamentals contribution
         if fundamentals_score > 0:
-            fundamental_points = int(fundamentals_score * 0.20)  # Max 20 points from fundamentals
+            fundamental_points = int(fundamentals_score * (buy_weights.get('fundamentals_strong', 20) / 100.0))
             if fundamental_points >= 10:
                 buy_conditions.append(f"Strong fundamentals ({fundamentals_score:.0f}/100)")
             buy_score += fundamental_points
@@ -379,41 +382,41 @@ class EnhancedAnalyzer:
 
         if current_price >= fib_levels['level_618'] * 0.98:
             sell_conditions.append("Near Golden Ratio resistance")
-            sell_score += 25
+            sell_score += sell_weights.get('fib_618', 25)
         elif current_price >= fib_levels['level_786'] * 0.98:
             sell_conditions.append("At Fib 78.6%")
-            sell_score += 20
+            sell_score += sell_weights.get('fib_786', 20)
 
         if current_rsi >= self.rsi_overbought:
             sell_conditions.append(f"RSI overbought ({current_rsi:.1f})")
-            sell_score += 20
+            sell_score += sell_weights.get('rsi_overbought', 20)
         elif current_rsi >= 60:
             sell_conditions.append(f"RSI > 60")
-            sell_score += 10
+            sell_score += sell_weights.get('rsi_mid', 10)
 
         if ema_short < ema_long:
             sell_conditions.append("EMA downtrend")
-            sell_score += 20
+            sell_score += sell_weights.get('ema_downtrend', 20)
         elif ema_short < ema_long * 1.01:
             sell_conditions.append("EMA near crossover")
-            sell_score += 10
+            sell_score += sell_weights.get('ema_crossover', 10)
 
         if volume_ratio >= self.volume_threshold:
             sell_conditions.append(f"Volume {volume_ratio:.1f}x")
-            sell_score += 10
+            sell_score += sell_weights.get('volume_spike', 10)
 
         if current_price >= bb_upper:
             sell_conditions.append("At upper BB")
-            sell_score += 8
+            sell_score += sell_weights.get('bb_upper', 8)
 
         if sentiment < -0.2:
             sell_conditions.append(f"Sentiment {sentiment:.2f}")
-            sell_score += 7
+            sell_score += sell_weights.get('sentiment_negative', 7)
 
         # ✅ NEW: Weak fundamentals support SELL
         if fundamentals_score > 0 and fundamentals_score < 40:
             sell_conditions.append(f"Weak fundamentals ({fundamentals_score:.0f}/100)")
-            sell_score += 10
+            sell_score += sell_weights.get('fundamentals_weak', 10)
 
         # Determine signal
         if buy_score > sell_score and buy_score >= 50:

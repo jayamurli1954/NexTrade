@@ -61,12 +61,18 @@ class SettingsTab(QWidget):
         self.client_id_input.setStyleSheet("font-size: 16px; padding: 8px;")
         a_layout.addWidget(self.client_id_input, 1, 1)
         
+        a_layout.addWidget(QLabel("News API Key:"), 2, 0)
+        self.news_api_key_input = QLineEdit(config.get('NEWSAPI_KEY', ''))
+        self.news_api_key_input.setEchoMode(QLineEdit.Password)
+        self.news_api_key_input.setStyleSheet("font-size: 16px; padding: 8px;")
+        a_layout.addWidget(self.news_api_key_input, 2, 1)
+        
         api.setLayout(a_layout)
         layout.addWidget(api)
         
         # Save button
         save = QPushButton("💾 Save Settings")
-        save.setStyleSheet("background: #4CAF50; color: white; font-size: 19px; font-weight: bold; padding: 12px; border-radius: 8px;")
+        save.setStyleSheet("font-size: 19px; font-weight: bold; padding: 12px; border-radius: 8px;")
         save.setMinimumHeight(50)
         save.clicked.connect(self.save_settings)
         layout.addWidget(save)
@@ -80,7 +86,8 @@ class SettingsTab(QWidget):
             'risk_per_trade': self.risk_input.value(),
             'auto_trading': self.auto_checkbox.isChecked(),
             'api_key': self.api_key_input.text(),
-            'client_id': self.client_id_input.text()
+            'client_id': self.client_id_input.text(),
+            'NEWSAPI_KEY': self.news_api_key_input.text()
         }
         
         if self.conn_mgr.update_config(new_config):

@@ -58,6 +58,7 @@ class ConnectionManager:
         
         # Token mapping: NSE:SYMBOL -> token
         self.token_map = {}
+        self.token_to_symbol_map = {} # NEW: Reverse map for faster lookup
         self.tokens_loaded = False  # NEW: Track if tokens are loaded
         
         # Real-time LTP data from WebSocket
@@ -163,10 +164,19 @@ class ConnectionManager:
         if not self.tokens_loaded:
             print("⏳ Loading symbol tokens (first time only)...")
             self.load_symbol_tokens()
+            
+            # Manually add INDIAVIX token if not found by load_symbol_tokens
+            if "NSE:INDIAVIX" not in self.token_map:
+                self.token_map["NSE:INDIAVIX"] = "99926017"
+                print("✅ Manually added NSE:INDIAVIX token.")
+
+            # Build reverse map
+            self.token_to_symbol_map = {token: key.split(':')[1] for key, token in self.token_map.items()}
+            
             self.tokens_loaded = True
     
     def load_symbol_tokens(self):
-        """Load symbol tokens from Angel One master file"""
+        """Load symbol tokens from Angel One master file for multiple exchanges."""
         try:
             import requests
             
@@ -176,21 +186,26 @@ class ConnectionManager:
             if response.status_code == 200:
                 data = response.json()
                 
-                # Build token map with NSE:SYMBOL format
+                # Supported exchanges
+                exchanges = ["NSE", "NFO", "BSE"]
+                
                 for item in data:
-                    if item.get('exch_seg') == 'NSE':
+                    exch_seg = item.get('exch_seg')
+                    if exch_seg in exchanges:
                         symbol = item.get('symbol', '')
                         token = item.get('token', '')
                         
                         if symbol and token:
-                            # Handle -EQ suffix
-                            if symbol.endswith('-EQ'):
+                            # Handle -EQ suffix for NSE
+                            if exch_seg == 'NSE' and symbol.endswith('-EQ'):
                                 clean_symbol = symbol.replace('-EQ', '').upper()
                             else:
                                 clean_symbol = symbol.upper()
                             
-                            key = f"NSE:{clean_symbol}"
+                            key = f"{exch_seg}:{clean_symbol}"
                             self.token_map[key] = token
+                            if clean_symbol in ["SENSEX", "INDIA_VIX", "NIFTY", "BANKNIFTY"]: # Added NIFTY, BANKNIFTY for debug
+                                print(f"ℹ️  [DEBUG] Loaded token for {key}: {token}")
                 
                 print(f"✅ Loaded {len(self.token_map)} symbol tokens from Angel One")
                 return True
@@ -237,9 +252,17 @@ class ConnectionManager:
             'NSE:TCS': '11536', 'NSE:TECHM': '13538', 'NSE:TITAN': '3506',
             'NSE:TORNTPHARM': '3518', 'NSE:TRENT': '1964', 'NSE:TVSMOTOR': '8479',
             'NSE:ULTRACEMCO': '11532', 'NSE:UNIONBANK': '5423', 'NSE:VBL': '13540',
-            'NSE:VEDL': '3063', 'NSE:WIPRO': '3787', 'NSE:ATGL': '25152'
+            'NSE:VEDL': '3063', 'NSE:WIPRO': '3787', 'NSE:ATGL': '25152',
+            'BSE:SENSEX': '99919000', # Fallback for SENSEX
+            'NSE:INDIA_VIX': '99926017', # Fallback for INDIA_VIX
+            'NSE:NIFTY': '99901000', # Fallback for NIFTY
+            'NSE:BANKNIFTY': '99904000' # Fallback for BANKNIFTY
         }
         print(f"✅ Loaded {len(self.token_map)} fallback tokens")
+        for key, token in self.token_map.items():
+            if key.split(':')[1] in ["SENSEX", "INDIA_VIX", "NIFTY", "BANKNIFTY"]:
+                print(f"ℹ️  [DEBUG] Fallback token for {key}: {token}")
+        self.token_to_symbol_map = {token: key.split(':')[1] for key, token in self.token_map.items()} # Build reverse map
     
     def connect_broker(self, smart_api_instance=None):
         """Connect to Angel One broker and start WebSocket"""
@@ -256,6 +279,9 @@ class ConnectionManager:
         try:
             # Ensure tokens are loaded before connecting
             self.ensure_tokens_loaded()
+            
+            print(f"ℹ️  [DEBUG] Token for BSE:SENSEX: {self.token_map.get('BSE:SENSEX')}")
+            print(f"ℹ️  [DEBUG] Token for NSE:INDIAVIX: {self.token_map.get('NSE:INDIAVIX')}")
             
             # Get credentials
             self.api_key = self.config.get('api_key', '')
@@ -306,6 +332,27 @@ class ConnectionManager:
             print(f"⚠️  Connection error: {e}")
             return False
     
+    def subscribe_initial_symbols(self, symbols_with_exchange):
+        """
+        Subscribe to a list of symbols (e.g., ticker symbols) after WebSocket is connected.
+        This is called from the UI after successful broker connection.
+        `symbols_with_exchange` should be a list of tuples: [(symbol, exchange), (symbol, exchange, token), ...]
+        """
+        if self.websocket_connected:
+            # Prepare symbols for subscription, prioritizing provided tokens
+            symbols_to_subscribe = []
+            for item in symbols_with_exchange:
+                if len(item) == 3: # (symbol, exchange, token)
+                    symbol, exchange, token = item
+                    symbols_to_subscribe.append((symbol, exchange, token))
+                else: # (symbol, exchange)
+                    symbol, exchange = item
+                    symbols_to_subscribe.append((symbol, exchange))
+            
+            self.subscribe_symbols(symbols_to_subscribe)
+        else:
+            print("⚠️  WebSocket not connected yet, cannot subscribe initial symbols.")
+
     def start_websocket(self):
         """Start WebSocket in separate thread - PREVENTS UI FREEZING!"""
         if not all([self.auth_token, self.feed_token, self.api_key, self.client_code]):
@@ -348,32 +395,34 @@ class ConnectionManager:
         self.websocket_connected = True
         
         # Subscribe to all stocks in watchlist
-        self.subscribe_symbols(self.stock_list)
+        watchlist_with_exchange = [(symbol, "NSE") for symbol in self.stock_list]
+        self.subscribe_symbols(watchlist_with_exchange)
     
     def _on_ws_data(self, wsapp, message):
         """WebSocket data received - update LTP cache (runs in background thread)"""
         try:
+            # print(f"ℹ️  [DEBUG] WebSocket data received: {message}") # This can be very noisy
             # Message is already parsed by SmartWebSocketV2
             if isinstance(message, dict):
                 token = str(message.get('token', ''))
                 ltp = message.get('last_traded_price', 0)
                 
                 if token and ltp:
-                    # Find symbol for this token
-                    for key, tok in self.token_map.items():
-                        if tok == token:
-                            symbol = key.split(':')[1]  # Extract symbol from NSE:SYMBOL
-                            
-                            # Update LTP cache (thread-safe)
-                            with self.ltp_lock:
-                                self.ltp_data[symbol] = {
-                                    'ltp': ltp / 100.0,  # Angel One sends price * 100
-                                    'timestamp': time.time(),
-                                    'token': token
-                                }
-                            break
+                    symbol = self.token_to_symbol_map.get(token) # Use reverse map
+                    if symbol:
+                        if symbol in ["NIFTY", "BANKNIFTY", "SENSEX", "INDIAVIX"]: # NEW DEBUG PRINT
+                            print(f"ℹ️  [DEBUG] WebSocket data for {symbol}: {ltp / 100.0}")
+                        
+                        # Update LTP cache (thread-safe)
+                        with self.ltp_lock:
+                            self.ltp_data[symbol] = {
+                                'ltp': ltp / 100.0,  # Angel One sends price * 100
+                                'timestamp': time.time(),
+                                'token': token
+                            }
+                        # print(f"ℹ️  [DEBUG] Updated LTP for {symbol}: {self.ltp_data[symbol]['ltp']}")
         except Exception as e:
-            pass  # Silent - don't spam console
+            print(f"⚠️  [DEBUG] Error in _on_ws_data: {e}")
     
     def _on_ws_error(self, wsapp, error):
         """WebSocket error"""
@@ -384,43 +433,70 @@ class ConnectionManager:
         print("🔌 WebSocket disconnected")
         self.websocket_connected = False
     
-    def subscribe_symbols(self, symbols):
-        """Subscribe to symbols on WebSocket"""
+    def subscribe_symbols(self, symbols_with_exchange):
+        """
+        Subscribe to symbols on WebSocket.
+        `symbols_with_exchange` should be a list of tuples: [(symbol, exchange), ...]
+        """
         if not self.websocket or not self.websocket_connected:
-            print("⚠️  WebSocket not connected, cannot subscribe")
+            print("⚠️  [DEBUG] WebSocket not connected, cannot subscribe")
             return False
         
-        # Ensure tokens are loaded
         self.ensure_tokens_loaded()
         
-        # Build token list for subscription
-        token_list = []
-        for symbol in symbols:
-            key = f"NSE:{symbol.upper()}"
-            token = self.token_map.get(key)
+        print(f"ℹ️  [DEBUG] Attempting to subscribe to: {symbols_with_exchange}")
+
+        # Group tokens by exchange type
+        tokens_by_exchange = {}
+        
+        for item in symbols_with_exchange:
+            if len(item) == 3: # (symbol, exchange, token)
+                symbol, exchange, token = item
+                exchange_upper = exchange.upper()
+                key = f"{exchange_upper}:{symbol.upper()}"
+                self.token_map[key] = token # Add to token_map for consistency
+            else: # (symbol, exchange)
+                symbol, exchange = item
+                exchange_upper = exchange.upper()
+                key = f"{exchange_upper}:{symbol.upper()}"
+                token = self.token_map.get(key)
+            
+            print(f"ℹ️  [DEBUG] Symbol: {symbol}, Exchange: {exchange}, Key: {key}, Token: {token}")
+
             if token:
-                token_list.append(token)
-        
-        if not token_list:
-            print("⚠️  No valid tokens found for subscription")
+                if exchange_upper == "NSE":
+                    exchange_type = 1
+                elif exchange_upper == "NFO":
+                    exchange_type = 2
+                elif exchange_upper == "BSE":
+                    exchange_type = 4
+                else:
+                    print(f"⚠️  [DEBUG] Unsupported exchange: {exchange_upper}")
+                    continue # Skip unsupported exchanges
+
+                if exchange_type not in tokens_by_exchange:
+                    tokens_by_exchange[exchange_type] = []
+                tokens_by_exchange[exchange_type].append(token)
+
+        if not tokens_by_exchange:
+            print("⚠️  [DEBUG] No valid tokens found for subscription")
             return False
-        
-        # Prepare subscription data
+            
         correlation_id = "ltp_subscription"
         mode = 1  # LTP_MODE
-        token_data = [{
-            "exchangeType": 1,  # NSE_CM
-            "tokens": token_list
-        }]
-        
-        try:
-            self.websocket.subscribe(correlation_id, mode, token_data)
-            print(f"✅ Subscribed to {len(token_list)} stocks via WebSocket")
-            return True
-        except Exception as e:
-            print(f"⚠️  Subscription error: {e}")
-            return False
-    
+
+        for exchange_type, tokens in tokens_by_exchange.items():
+            token_data = [{"exchangeType": exchange_type, "tokens": tokens}]
+            print(f"ℹ️  [DEBUG] Subscribing with token_data: {token_data}") # NEW DEBUG PRINT
+            try:
+                print(f"ℹ️  [DEBUG] Subscribing to exchange {exchange_type} with tokens: {tokens}")
+                self.websocket.subscribe(correlation_id, mode, token_data)
+                print(f"✅ Subscribed to {len(tokens)} symbols on exchange type {exchange_type}")
+            except Exception as e:
+                print(f"⚠️  [DEBUG] Subscription error for exchange type {exchange_type}: {e}")
+
+        return True
+
     def connect_analyzer(self, analyzer_instance=None):
         """Connect analyzer module"""
         if analyzer_instance:
@@ -449,24 +525,38 @@ class ConnectionManager:
                 if time.time() - data['timestamp'] < 10:
                     return data['ltp']
         
-        # Fallback to random if not in cache
-        import random
-        return round(random.uniform(1000, 5000), 2)
+        # Fallback to None if not in cache
+        return None
     
-    def get_ltp_batch(self, symbols):
-        """Get LTP for multiple symbols from WebSocket cache"""
+    def get_ltp_batch(self, symbols_with_exchange):
+        """
+        Get LTP for multiple symbols from WebSocket cache.
+        `symbols_with_exchange` should be a list of tuples: [(symbol, exchange), (symbol, exchange, token), ...]
+        """
         results = {}
         
         with self.ltp_lock:
-            for symbol in symbols:
-                symbol_upper = symbol.upper()
-                if symbol_upper in self.ltp_data:
-                    results[symbol] = self.ltp_data[symbol_upper]['ltp']
-                else:
-                    # Fallback to random
-                    import random
-                    results[symbol] = round(random.uniform(1000, 5000), 2)
-        
+            for item in symbols_with_exchange:
+                if len(item) == 3: # (symbol, exchange, token)
+                    symbol, exchange, token = item
+                    symbol_upper = symbol.upper()
+                    # If token is provided, we can directly use it to find the symbol in ltp_data
+                    # This assumes ltp_data keys are just symbols, not EXCH:SYMBOL
+                    # We need to ensure _on_ws_data populates ltp_data with just the symbol
+                    # For now, we'll rely on the symbol_upper as the key
+                    if symbol_upper in self.ltp_data:
+                        results[symbol] = self.ltp_data[symbol_upper]['ltp']
+                    else:
+                        results[symbol] = None
+                else: # (symbol, exchange)
+                    symbol, exchange = item
+                    symbol_upper = symbol.upper()
+                    if symbol_upper in self.ltp_data:
+                        results[symbol] = self.ltp_data[symbol_upper]['ltp']
+                    else:
+                        results[symbol] = None
+
+        print(f"ℹ️  [DEBUG] get_ltp_batch results: {results}")
         return results
     
     def get_holdings(self):

@@ -1,5 +1,4 @@
 # Credentials and sensitive data
-config/config.json
 config/credentials_path.txt
 .env
 

@@ -9,6 +9,7 @@
 from PyQt5.QtWidgets import QMainWindow, QTabWidget, QWidget, QStatusBar
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QIcon
+import qtawesome as qta
 
 # Import tabs
 from tabs.dashboard_tab import DashboardTab
@@ -36,36 +37,8 @@ class MainWindow(QMainWindow):
         self.conn_mgr = conn_mgr
         self.trade_logger = trade_logger
         
-        self.setWindowTitle("Angel One Trading Bot - Modular (8 Tabs)")
+        self.setWindowTitle("Angel One Trading Bot - Modular")
         self.setGeometry(100, 100, 1600, 900)
-        
-        # Apply styles
-        self.setStyleSheet("""
-            QMainWindow {
-                background: #f5f5f5;
-            }
-            QTabWidget::pane {
-                border: none;
-                background: white;
-            }
-            QTabBar::tab {
-                background: #e0e0e0;
-                color: #333;
-                padding: 12px 20px;
-                margin-right: 2px;
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QTabBar::tab:selected {
-                background: white;
-                color: #1976D2;
-            }
-            QTabBar::tab:hover {
-                background: #d0d0d0;
-            }
-        """)
         
         self.init_ui()
         
@@ -101,15 +74,16 @@ class MainWindow(QMainWindow):
         self.settings_tab = SettingsTab(self, self.conn_mgr)
         
         # Add tabs in order
-        self.tabs.addTab(self.dashboard_tab, "📊 Dashboard")
-        self.tabs.addTab(self.holdings_tab, "💼 Holdings")
-        self.tabs.addTab(self.watchlist_tab, "👁️ Watchlist")
-        self.tabs.addTab(self.positions_tab, "🟢 Live Positions")
-        self.tabs.addTab(self.history_tab, "📜 History")
-        self.tabs.addTab(self.analyzer_tab, "🔍 Analyzer")
-        self.tabs.addTab(self.paper_trading_tab, "📊 Paper Trading")  # NEW TAB
-        self.tabs.addTab(self.premarket_tab, "🌅 Pre-Market")
-        self.tabs.addTab(self.settings_tab, "⚙️ Settings")
+        icon_color = '#ecf0f1'  # Light gray color for icons
+        self.tabs.addTab(self.dashboard_tab, qta.icon('fa5s.tachometer-alt', color=icon_color), "Dashboard")
+        self.tabs.addTab(self.holdings_tab, qta.icon('fa5s.briefcase', color=icon_color), "Holdings")
+        self.tabs.addTab(self.watchlist_tab, qta.icon('fa5s.eye', color=icon_color), "Watchlist")
+        self.tabs.addTab(self.positions_tab, qta.icon('fa5s.chart-line', color=icon_color), "Live Positions")
+        self.tabs.addTab(self.history_tab, qta.icon('fa5s.history', color=icon_color), "History")
+        self.tabs.addTab(self.analyzer_tab, qta.icon('fa5s.search-dollar', color=icon_color), "Analyzer")
+        self.tabs.addTab(self.paper_trading_tab, qta.icon('fa5s.file-invoice-dollar', color=icon_color), "Paper Trading")
+        self.tabs.addTab(self.premarket_tab, qta.icon('fa5s.sun', color=icon_color), "Pre-Market")
+        self.tabs.addTab(self.settings_tab, qta.icon('fa5s.cog', color=icon_color), "Settings")
         
         # Status bar
         self.status_bar = QStatusBar()

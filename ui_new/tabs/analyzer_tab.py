@@ -128,8 +128,6 @@ class AnalyzerTab(QWidget):
         # Scan button
         self.scan_btn = QPushButton("🔍 Scan Now")
         self.scan_btn.setStyleSheet("""
-            background: #2196F3; 
-            color: white; 
             font-size: 16px; 
             font-weight: bold; 
             padding: 10px 25px; 
@@ -144,7 +142,7 @@ class AnalyzerTab(QWidget):
         
         # Progress indicator
         self.progress_label = QLabel("")
-        self.progress_label.setStyleSheet("color: #2196F3; font-weight: bold; font-size: 14px; padding: 5px;")
+        self.progress_label.setStyleSheet("font-weight: bold; font-size: 14px; padding: 5px;")
         self.progress_label.setAlignment(Qt.AlignCenter)
         self.progress_label.setMinimumHeight(30)
         layout.addWidget(self.progress_label)
@@ -153,15 +151,12 @@ class AnalyzerTab(QWidget):
         self.table = QTableWidget()
         self.table.setStyleSheet("""
             QTableWidget { 
-                background: white; 
                 border: 2px solid #ddd; 
                 border-radius: 5px; 
                 font-size: 15px;
                 gridline-color: #e0e0e0;
             }
             QHeaderView::section { 
-                background: #2196F3; 
-                color: white; 
                 font-weight: bold; 
                 font-size: 16px; 
                 padding: 10px; 
@@ -321,7 +316,7 @@ class AnalyzerTab(QWidget):
             self.table.setItem(row, 0, rank_item)
             
             # Symbol
-            symbol_item = QTableWidgetItem(result['symbol'])
+            symbol_item = QTableWidgetItem(result.get('symbol', ''))
             symbol_item.setTextAlignment(Qt.AlignCenter)
             symbol_item.setFont(symbol_item.font())
             self.table.setItem(row, 1, symbol_item)
@@ -357,7 +352,7 @@ class AnalyzerTab(QWidget):
             
             # Target / SL (combined)
             target_sl_item = QTableWidgetItem(
-                f"T: ₹{result.get('target', 0):.2f}\nSL: ₹{result['stop_loss']:.2f}"
+                f"T: ₹{result.get('target', 0):.2f}\nSL: ₹{result.get('stop_loss', 0):.2f}"
             )
             target_sl_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 5, target_sl_item)
@@ -367,43 +362,27 @@ class AnalyzerTab(QWidget):
                 action_btn = QPushButton("📈 Execute BUY")
                 action_btn.setStyleSheet("""
                     QPushButton {
-                        background: #4CAF50; 
-                        color: white; 
                         font-size: 13px; 
                         font-weight: bold;
                         padding: 8px 12px; 
                         border-radius: 5px;
                         border: none;
-                    }
-                    QPushButton:hover {
-                        background: #45a049;
-                    }
-                    QPushButton:pressed {
-                        background: #3d8b40;
                     }
                 """)
             else:  # SELL
                 action_btn = QPushButton("📉 Execute SELL")
                 action_btn.setStyleSheet("""
                     QPushButton {
-                        background: #f44336; 
-                        color: white; 
                         font-size: 13px; 
                         font-weight: bold;
                         padding: 8px 12px; 
                         border-radius: 5px;
                         border: none;
                     }
-                    QPushButton:hover {
-                        background: #da190b;
-                    }
-                    QPushButton:pressed {
-                        background: #c1170a;
-                    }
                 """)
             
             action_btn.clicked.connect(
-                lambda checked, r=result: self.execute_trade(r, r['signal'])
+                lambda checked, r=result: self.execute_trade(r, r.get('signal', r.get('action', 'HOLD')))
             )
             action_btn.setCursor(Qt.PointingHandCursor)
             self.table.setCellWidget(row, 6, action_btn)
@@ -413,60 +392,97 @@ class AnalyzerTab(QWidget):
     
     def execute_trade(self, result, action):
         """Execute trade and send to paper trading"""
+        print(f"🔍 DEBUG: execute_trade called for {result.get('symbol', 'UNKNOWN')} - {action}")
+        print(f"🔍 DEBUG: paper_trading_tab exists: {self.paper_trading_tab is not None}")
+        
         if not self.paper_trading_tab:
+            print("❌ DEBUG: paper_trading_tab is None!")
             QMessageBox.warning(
                 self,
                 "Not Available",
-                "Paper trading tab not initialized"
+                "Paper trading tab not initialized. Please restart the application."
             )
             return
+        
+        print(f"✅ DEBUG: paper_trading_tab is available, proceeding...")
         
         # Confirm with user
         reply = QMessageBox.question(
             self,
             'Confirm Trade',
             f"Execute {action} trade?\n\n"
-            f"Symbol: {result['symbol']}\n"
-            f"Entry Price: ₹{result['ltp']:.2f}\n"
-            f"Target: ₹{result['target']:.2f}\n"
-            f"Stop Loss: ₹{result['stop_loss']:.2f}\n"
-            f"Confidence: {result['confidence']}%",
+            f"Symbol: {result.get('symbol', '')}\n"
+            f"Entry Price: ₹{result.get('ltp', result.get('current_price', 0)):.2f}\n"
+            f"Target: ₹{result.get('target', 0):.2f}\n"
+            f"Stop Loss: ₹{result.get('stop_loss', 0):.2f}\n"
+            f"Confidence: {result.get('confidence', 0)}%",
             QMessageBox.Yes | QMessageBox.No
         )
         
         if reply == QMessageBox.No:
             return
         
-        # Prepare trade data
+        # FETCH FRESH LTP - DON'T TRUST ANALYZER DISPLAY!
+        symbol = result.get('symbol', '')
+        print(f"🔍 DEBUG: Fetching FRESH LTP for {symbol}...")
+        
+        try:
+            fresh_ltp = self.conn_mgr.get_ltp(symbol, 'NSE')
+            if fresh_ltp is None:
+                print(f"⚠️  DEBUG: Fresh LTP for {symbol} is None, using fallback.")
+                fresh_ltp = result.get('ltp', result.get('current_price', 0))
+            else:
+                print(f"✅ DEBUG: Fresh LTP for {symbol}: ₹{fresh_ltp:.2f}")
+        except Exception as e:
+            print(f"❌ DEBUG: Error getting fresh LTP: {e}")
+            fresh_ltp = result.get('ltp', result.get('current_price', 0))
+            print(f"⚠️  DEBUG: Using analyzer price as fallback: ₹{fresh_ltp:.2f}")
+        
+        # Prepare trade data with FRESH LTP
         trade_data = {
-            'symbol': result['symbol'],
+            'symbol': symbol,
             'action': action,
-            'entry_price': result['ltp'],
-            'target': result['target'],
-            'stop_loss': result['stop_loss'],
+            'entry_price': fresh_ltp,  # ← FRESH PRICE!
+            'target': result.get('target', 0),
+            'stop_loss': result.get('stop_loss', 0),
             'quantity': 1,
-            'confidence': result['confidence']
+            'confidence': result.get('confidence', 0)
         }
         
+        print(f"🔍 DEBUG: Trade data prepared - Entry: ₹{trade_data['entry_price']:.2f}, Target: ₹{trade_data['target']:.2f}, SL: ₹{trade_data['stop_loss']:.2f}")
+        
         # Add to paper trading
-        order_id = self.paper_trading_tab.add_trade(trade_data)
+        try:
+            print(f"🔍 DEBUG: Calling paper_trading_tab.add_trade with data: {trade_data}")
+            order_id = self.paper_trading_tab.add_trade(trade_data)
+            print(f"✅ DEBUG: Trade added successfully! Order ID: {order_id}")
+        except Exception as e:
+            print(f"❌ DEBUG: Error adding trade: {e}")
+            import traceback
+            traceback.print_exc()
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Failed to add trade: {str(e)}"
+            )
+            return
         
         # Show confirmation
         QMessageBox.information(
             self,
             "Trade Executed",
             f"✅ {action} order placed successfully!\n\n"
-            f"Symbol: {result['symbol']}\n"
-            f"Entry: ₹{result['ltp']:.2f}\n"
-            f"Target: ₹{result['target']:.2f}\n"
-            f"Stop Loss: ₹{result['stop_loss']:.2f}\n"
-            f"Confidence: {result['confidence']}%\n\n"
+            f"Symbol: {result.get('symbol', '')}\n"
+            f"Entry: ₹{result.get('ltp', result.get('current_price', 0)):.2f}\n"
+            f"Target: ₹{result.get('target', 0):.2f}\n"
+            f"Stop Loss: ₹{result.get('stop_loss', 0):.2f}\n"
+            f"Confidence: {result.get('confidence', 0)}%\n\n"
             f"Order ID: {order_id[-8:]}\n\n"
             f"Check the Paper Trading tab to monitor this trade."
         )
         
         self.parent.statusBar().showMessage(
-            f"✅ {action} trade executed for {result['symbol']}", 
+            f"✅ {action} trade executed for {result.get('symbol', '')}", 
             5000
         )
     

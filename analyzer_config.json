@@ -8,49 +8,55 @@
     "ema_short_period": 8,
     "ema_long_period": 21,
     "analysis_period": 50,
-    
-    "_comment_atr": "ATR (Average True Range) multipliers for stop-loss and targets",
     "atr_stop_loss_multiplier": 1.5,
     "atr_target_multiplier": 3.0,
-    
-    "_comment_fundamentals": "Set to true to enable fundamental analysis (requires yfinance)",
     "enable_fundamentals": true,
-    
-    "_comment_weights": "Weights for combining technical and fundamental scores",
     "technical_weight": 0.60,
-    "fundamental_weight": 0.40
+    "fundamental_weight": 0.40,
+    "strategy_weights": {
+      "buy": {
+        "fib_618": 25,
+        "fib_500": 20,
+        "rsi_oversold": 20,
+        "rsi_mid": 10,
+        "ema_uptrend": 20,
+        "ema_crossover": 10,
+        "volume_spike": 10,
+        "bb_lower": 8,
+        "sentiment_positive": 7,
+        "fundamentals_strong": 20
+      },
+      "sell": {
+        "fib_618": 25,
+        "fib_786": 20,
+        "rsi_overbought": 20,
+        "rsi_mid": 10,
+        "ema_downtrend": 20,
+        "ema_crossover": 10,
+        "volume_spike": 10,
+        "bb_upper": 8,
+        "sentiment_negative": 7,
+        "fundamentals_weak": 10
+      }
+    }
   },
-  
   "security": {
-    "_comment": "NEVER commit API keys to Git! Use environment variables instead",
-    "_instructions": [
-      "1. Create a .env file in project root (add to .gitignore)",
-      "2. Add: NEWSAPI_KEY=your_actual_key",
-      "3. Add: ANGEL_API_KEY=your_angel_key",
-      "4. Add: ANGEL_CLIENT_ID=your_client_id",
-      "5. Add: ANGEL_PASSWORD=your_password",
-      "6. Add: ANGEL_TOTP_SECRET=your_totp_secret",
-      "7. Install: pip install python-dotenv",
-      "8. In your code: from dotenv import load_dotenv; load_dotenv()"
-    ]
+    "_comment": "NEVER commit API keys to Git! Use environment variables or the settings UI instead.",
+    "NEWSAPI_KEY": ""
   },
-  
   "risk_management": {
     "max_position_size_pct": 5,
     "max_daily_loss_pct": 3,
     "max_open_positions": 10,
     "risk_per_trade_pct": 2
   },
-  
   "backtesting": {
-    "_comment": "Parameters for backtest engine",
     "initial_capital": 100000,
     "start_date": "2023-01-01",
     "end_date": "2024-12-31",
     "slippage_pct": 0.1,
     "commission_per_trade": 20
   },
-  
   "logging": {
     "log_level": "INFO",
     "log_to_file": true,

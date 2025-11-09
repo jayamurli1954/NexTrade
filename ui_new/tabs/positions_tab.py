@@ -42,8 +42,6 @@ class PositionsTab(QWidget):
         # Refresh button
         refresh_btn = QPushButton("🔄 Refresh")
         refresh_btn.setStyleSheet("""
-            background: #2196F3; 
-            color: white; 
             font-size: 16px; 
             font-weight: bold; 
             padding: 10px 25px; 
@@ -59,14 +57,11 @@ class PositionsTab(QWidget):
         self.table = QTableWidget()
         self.table.setStyleSheet("""
             QTableWidget { 
-                background: white; 
                 border: 2px solid #ddd; 
                 border-radius: 5px; 
                 font-size: 15px;
             }
             QHeaderView::section { 
-                background: #4CAF50; 
-                color: white; 
                 font-weight: bold; 
                 font-size: 16px; 
                 padding: 10px; 
@@ -150,8 +145,6 @@ class PositionsTab(QWidget):
             # Exit button
             exit_btn = QPushButton("❌ Exit")
             exit_btn.setStyleSheet("""
-                background: #f44336; 
-                color: white; 
                 font-size: 12px; 
                 padding: 5px 10px; 
                 border-radius: 4px;

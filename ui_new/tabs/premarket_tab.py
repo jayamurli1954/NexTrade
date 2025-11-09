@@ -18,7 +18,7 @@ class PreMarketTab(QWidget):
         
         text = QTextEdit()
         text.setReadOnly(True)
-        text.setStyleSheet("background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 12px; font-size: 16px;")
+        text.setStyleSheet("border: 1px solid #ddd; border-radius: 5px; padding: 12px; font-size: 16px;")
         text.append("🌅 Pre-Market Analysis (9:00 AM - 9:15 AM)")
         text.append("")
         text.append("📈 Gap Up Stocks: Analyzing...")
@@ -35,6 +35,6 @@ class PreMarketTab(QWidget):
         layout.addWidget(text)
         
         scan = QPushButton("🔍 Scan Pre-Market")
-        scan.setStyleSheet("background: #FF9800; color: white; font-size: 19px; font-weight: bold; padding: 12px; border-radius: 8px;")
+        scan.setStyleSheet("font-size: 19px; font-weight: bold; padding: 12px; border-radius: 8px;")
         scan.setMinimumHeight(50)
         layout.addWidget(scan)

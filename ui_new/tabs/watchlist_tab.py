@@ -60,8 +60,6 @@ class WatchlistTab(QWidget):
         # Add button
         add_btn = QPushButton("➕ Add")
         add_btn.setStyleSheet("""
-            background: #4CAF50; 
-            color: white; 
             font-size: 16px; 
             font-weight: bold; 
             padding: 8px 20px; 
@@ -78,15 +76,12 @@ class WatchlistTab(QWidget):
         self.table = QTableWidget()
         self.table.setStyleSheet("""
             QTableWidget { 
-                background: white; 
                 border: 2px solid #ddd; 
                 border-radius: 5px; 
                 font-size: 15px;
                 gridline-color: #e0e0e0;
             }
             QHeaderView::section { 
-                background: #9C27B0; 
-                color: white; 
                 font-weight: bold; 
                 font-size: 16px; 
                 padding: 10px; 
@@ -97,7 +92,6 @@ class WatchlistTab(QWidget):
                 border-bottom: 1px solid #f0f0f0;
             }
             QTableWidget::item:selected {
-                background: #E1BEE7;
             }
         """)
         
@@ -193,10 +187,13 @@ class WatchlistTab(QWidget):
         self.table.setRowCount(len(self.watchlist))
         
         # Batch fetch LTPs from WebSocket cache
-        ltp_data = self.conn_mgr.get_ltp_batch(self.watchlist)
+        watchlist_with_exchange = [(symbol, "NSE") for symbol in self.watchlist]
+        ltp_data = self.conn_mgr.get_ltp_batch(watchlist_with_exchange)
         
         for row, symbol in enumerate(self.watchlist):
-            ltp = ltp_data.get(symbol, 0)
+            ltp = ltp_data.get(symbol)
+            if ltp is None:
+                ltp = 0
             
             # Simulated data (you can enhance with real data)
             change = random.uniform(-50, 50)
@@ -228,8 +225,6 @@ class WatchlistTab(QWidget):
             # Remove button
             remove_btn = QPushButton("🗑️")
             remove_btn.setStyleSheet("""
-                background: #f44336; 
-                color: white; 
                 font-size: 14px; 
                 padding: 5px; 
                 border-radius: 5px;

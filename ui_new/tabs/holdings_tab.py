@@ -28,7 +28,7 @@ class HoldingsTab(QWidget):
         header.addStretch()
         
         refresh_btn = QPushButton("🔄 Refresh")
-        refresh_btn.setStyleSheet("background: #4CAF50; color: white; font-size: 16px; font-weight: bold; padding: 10px 20px; border-radius: 8px;")
+        refresh_btn.setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px 20px; border-radius: 8px;")
         refresh_btn.clicked.connect(self.refresh)
         header.addWidget(refresh_btn)
         layout.addLayout(header)
@@ -46,8 +46,8 @@ class HoldingsTab(QWidget):
         # Table
         self.table = QTableWidget()
         self.table.setStyleSheet("""
-            QTableWidget { background: white; border: 2px solid #ddd; border-radius: 5px; font-size: 15px; }
-            QHeaderView::section { background: #4CAF50; color: white; font-weight: bold; font-size: 16px; padding: 10px; border: none; }
+            QTableWidget { border: 2px solid #ddd; border-radius: 5px; font-size: 15px; }
+            QHeaderView::section { font-weight: bold; font-size: 16px; padding: 10px; border: none; }
             QTableWidget::item { padding: 10px; }
         """)
         self.table.setColumnCount(7)
@@ -61,11 +61,11 @@ class HoldingsTab(QWidget):
         layout = QVBoxLayout(card)
         
         t = QLabel(title)
-        t.setStyleSheet("color: white; font-size: 18px; font-weight: bold;")
+        t.setStyleSheet("font-size: 18px; font-weight: bold;")
         t.setAlignment(Qt.AlignCenter)
         
         v = QLabel(value)
-        v.setStyleSheet("color: white; font-size: 28px; font-weight: bold;")
+        v.setStyleSheet("font-size: 28px; font-weight: bold;")
         v.setAlignment(Qt.AlignCenter)
         v.setObjectName(f"value_{title}")
         

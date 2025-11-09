@@ -9,6 +9,7 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QMessageBox
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
+from ui_new.widgets.scrolling_ticker import ScrollingTicker
 
 class DashboardTab(QWidget):
     """Dashboard - Overview of trading bot status"""
@@ -25,10 +26,40 @@ class DashboardTab(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.refresh_dashboard)
         self.timer.start(10000)
+
+        # Timer for the ticker
+        self.ticker_timer = QTimer()
+        self.ticker_timer.timeout.connect(self.update_ticker)
+        self.ticker_timer.start(2000) # Update every 2 seconds
+
+        self.ticker_symbols = [
+            ("NIFTY", "NSE"),
+            ("BANKNIFTY", "NSE"),
+            ("SENSEX", "BSE"), # Use SENSEX as symbol, it has a token
+            ("INDIAVIX", "NSE"), # Use INDIAVIX as symbol for INDIAVIX
+            ("RELIANCE", "NSE"),
+            ("HDFCBANK", "NSE"),
+            ("BHARTIARTL", "NSE"),
+            ("TCS", "NSE"),
+            ("INFY", "NSE"),
+            ("ICICIBANK", "NSE"),
+            ("SBIN", "NSE"),
+            ("LT", "NSE"),
+            ("WIPRO", "NSE"),
+            ("TITAN", "NSE"),
+        ]
     
     def init_ui(self):
         layout = QVBoxLayout(self)
         layout.setSpacing(20)
+
+        # Scrolling Ticker
+        self.ticker = ScrollingTicker(self)
+        self.ticker.setFixedHeight(40)
+        self.ticker.setObjectName("scrollingTicker")
+        self.ticker.setStyleSheet("#scrollingTicker { border-bottom: 1px solid #4f5b62; }")
+        layout.addWidget(self.ticker)
+        self.ticker.hide() # Initially hidden
         
         # Top bar with connection status and connect button
         top_bar = QHBoxLayout()
@@ -51,19 +82,11 @@ class DashboardTab(QWidget):
         self.connect_btn.setMinimumHeight(60)
         self.connect_btn.setStyleSheet("""
             QPushButton {
-                background: #4CAF50;
-                color: white;
                 font-size: 18px;
                 font-weight: bold;
                 padding: 15px 30px;
                 border-radius: 10px;
                 border: none;
-            }
-            QPushButton:hover {
-                background: #45a049;
-            }
-            QPushButton:pressed {
-                background: #3d8b40;
             }
         """)
         self.connect_btn.setCursor(Qt.PointingHandCursor)
@@ -115,14 +138,13 @@ class DashboardTab(QWidget):
         status_section.setSpacing(10)
         
         status_title = QLabel("📊 System Status")
-        status_title.setStyleSheet("font-size: 20px; font-weight: bold; color: #333;")
+        status_title.setStyleSheet("font-size: 20px; font-weight: bold;")
         status_section.addWidget(status_title)
         
         self.status_list = QLabel()
         self.status_list.setStyleSheet("""
             font-size: 16px;
             padding: 15px;
-            background: white;
             border: 2px solid #ddd;
             border-radius: 8px;
             line-height: 1.8;
@@ -139,19 +161,11 @@ class DashboardTab(QWidget):
         self.start_btn = QPushButton("▶ Start")
         self.start_btn.setStyleSheet("""
             QPushButton {
-                background: #4CAF50;
-                color: white;
                 font-size: 18px;
                 font-weight: bold;
                 padding: 15px 40px;
                 border-radius: 10px;
                 border: none;
-            }
-            QPushButton:hover {
-                background: #45a049;
-            }
-            QPushButton:pressed {
-                background: #3d8b40;
             }
         """)
         self.start_btn.setCursor(Qt.PointingHandCursor)
@@ -162,19 +176,11 @@ class DashboardTab(QWidget):
         self.pause_btn = QPushButton("⏸ Pause")
         self.pause_btn.setStyleSheet("""
             QPushButton {
-                background: #FF9800;
-                color: white;
                 font-size: 18px;
                 font-weight: bold;
                 padding: 15px 40px;
                 border-radius: 10px;
                 border: none;
-            }
-            QPushButton:hover {
-                background: #f57c00;
-            }
-            QPushButton:pressed {
-                background: #e65100;
             }
         """)
         self.pause_btn.setCursor(Qt.PointingHandCursor)
@@ -185,19 +191,11 @@ class DashboardTab(QWidget):
         refresh_btn = QPushButton("🔄 Refresh")
         refresh_btn.setStyleSheet("""
             QPushButton {
-                background: #2196F3;
-                color: white;
                 font-size: 18px;
                 font-weight: bold;
                 padding: 15px 40px;
                 border-radius: 10px;
                 border: none;
-            }
-            QPushButton:hover {
-                background: #1976D2;
-            }
-            QPushButton:pressed {
-                background: #1565C0;
             }
         """)
         refresh_btn.setCursor(Qt.PointingHandCursor)
@@ -210,7 +208,23 @@ class DashboardTab(QWidget):
         
         # Initial refresh
         self.refresh_dashboard()
-    
+        
+    def update_ticker(self):
+        if not self.conn_mgr.get_connection_status()['broker_connected']:
+            return
+
+        ltp_data = self.conn_mgr.get_ltp_batch(self.ticker_symbols)
+
+        prices = {}
+        for item in self.ticker_symbols:
+            symbol = item[0] # Always the first element
+            price = ltp_data.get(symbol)
+            if price is not None:
+                prices[symbol] = price
+            else:
+                prices[symbol] = "N/A"
+        
+        self.ticker.update_prices(prices)    
     def create_stat_card(self, title, value, color):
         """Create a statistics card"""
         card = QWidget()
@@ -228,13 +242,13 @@ class DashboardTab(QWidget):
         # Title
         title_label = QLabel(title)
         title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("color: white; font-size: 18px; font-weight: bold;")
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold;")
         card_layout.addWidget(title_label)
         
         # Value
         value_label = QLabel(value)
         value_label.setAlignment(Qt.AlignCenter)
-        value_label.setStyleSheet("color: white; font-size: 32px; font-weight: bold;")
+        value_label.setStyleSheet("font-size: 32px; font-weight: bold;")
         card_layout.addWidget(value_label)
         
         # Store reference to value label for updates
@@ -269,6 +283,7 @@ class DashboardTab(QWidget):
             if success:
                 self.refresh_dashboard()
                 self.parent.statusBar().showMessage("✅ Connected to broker successfully!", 5000)
+                self.conn_mgr.subscribe_initial_symbols(self.ticker_symbols) # Subscribe ticker symbols
             else:
                 QMessageBox.critical(
                     self,
@@ -290,8 +305,6 @@ class DashboardTab(QWidget):
         if status['broker_connected']:
             self.connection_banner.setText("🟢 Broker: Connected")
             self.connection_banner.setStyleSheet("""
-                background: #4CAF50;
-                color: white;
                 font-size: 18px;
                 font-weight: bold;
                 padding: 15px;
@@ -302,26 +315,17 @@ class DashboardTab(QWidget):
             self.connect_btn.setText("🔌 Disconnect")
             self.connect_btn.setStyleSheet("""
                 QPushButton {
-                    background: #f44336;
-                    color: white;
                     font-size: 18px;
                     font-weight: bold;
                     padding: 15px 30px;
                     border-radius: 10px;
                     border: none;
                 }
-                QPushButton:hover {
-                    background: #da190b;
-                }
-                QPushButton:pressed {
-                    background: #c1170a;
-                }
             """)
+            self.ticker.show()
         else:
             self.connection_banner.setText("🔴 Broker: Disconnected")
             self.connection_banner.setStyleSheet("""
-                background: #f44336;
-                color: white;
                 font-size: 18px;
                 font-weight: bold;
                 padding: 15px;
@@ -332,21 +336,14 @@ class DashboardTab(QWidget):
             self.connect_btn.setText("🔌 Connect")
             self.connect_btn.setStyleSheet("""
                 QPushButton {
-                    background: #4CAF50;
-                    color: white;
                     font-size: 18px;
                     font-weight: bold;
                     padding: 15px 30px;
                     border-radius: 10px;
                     border: none;
                 }
-                QPushButton:hover {
-                    background: #45a049;
-                }
-                QPushButton:pressed {
-                    background: #3d8b40;
-                }
             """)
+            self.ticker.hide()
         
         # Update capital
         capital = self.conn_mgr.config.get('initial_capital', 100000)
