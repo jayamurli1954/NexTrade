@@ -26,7 +26,7 @@ class ScrollingTicker(QWidget):
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.scroll)
-        self.timer.start(30)  # Scroll speed
+        self.timer.start(40)  # Scroll speed (slower for better readability)
         
         self.font = QFont("Arial", 12, QFont.Bold) # Reduced font size to 12
         
@@ -83,10 +83,10 @@ class ScrollingTicker(QWidget):
                     symbol_color = QColor(255, 80, 80)  # Bright red
                     price_color = QColor(255, 80, 80)   # Bright red
 
-            # Add symbol, price, and separator with generous spacing
-            full_ticker_string_parts.append((f"{symbol}:  ", symbol_color))  # Symbol with 2 spaces after colon
-            full_ticker_string_parts.append((f"{price_str}    ", price_color))  # Price with 4 spaces after
-            full_ticker_string_parts.append(("|    ", QColor(150, 150, 150)))  # Separator with 4 spaces after
+            # Add symbol, price, and separator with very generous spacing
+            full_ticker_string_parts.append((f"{symbol}:      ", symbol_color))  # Symbol with 6 spaces after colon
+            full_ticker_string_parts.append((f"{price_str}      ", price_color))  # Price with 6 spaces after
+            full_ticker_string_parts.append(("|      ", QColor(150, 150, 150)))  # Separator with 6 spaces after
         
         if not full_ticker_string_parts:
             return # Nothing to draw
