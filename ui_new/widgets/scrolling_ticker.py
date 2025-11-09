@@ -83,18 +83,18 @@ class ScrollingTicker(QWidget):
                     symbol_color = QColor(255, 80, 80)  # Bright red
                     price_color = QColor(255, 80, 80)   # Bright red
 
-            # Add symbol, price, and separator with very generous spacing
-            full_ticker_string_parts.append((f"{symbol}:      ", symbol_color))  # Symbol with 6 spaces after colon
-            full_ticker_string_parts.append((f"{price_str}      ", price_color))  # Price with 6 spaces after
-            full_ticker_string_parts.append(("|      ", QColor(150, 150, 150)))  # Separator with 6 spaces after
+            # Add symbol, price, and separator with fixed pixel spacing for clarity
+            full_ticker_string_parts.append((f"{symbol}: ", symbol_color, 0))  # Symbol with colon
+            full_ticker_string_parts.append((f"{price_str}", price_color, 50))  # Price with 50px padding before
+            full_ticker_string_parts.append(("|", QColor(150, 150, 150), 50))  # Separator with 50px padding before
         
         if not full_ticker_string_parts:
             return # Nothing to draw
             
         # Calculate the total width of one full cycle of the ticker content
         total_content_width = 0
-        for text_part, _ in full_ticker_string_parts:
-            total_content_width += metrics.width(text_part)
+        for text_part, _, padding in full_ticker_string_parts:
+            total_content_width += padding + metrics.width(text_part)
         
         # Add generous buffer space at the end of the content before it loops
         buffer_space = 200  # Pixels of empty space between repetitions (increased for better spacing)
@@ -113,7 +113,8 @@ class ScrollingTicker(QWidget):
         current_draw_x = start_drawing_x
         while current_draw_x < self.width() + total_content_width_with_buffer: # Draw enough to cover the visible area and beyond for seamless loop
             x_pos_in_block = current_draw_x
-            for text_part, color in full_ticker_string_parts:
+            for text_part, color, padding in full_ticker_string_parts:
+                x_pos_in_block += padding  # Add padding before drawing
                 painter.setPen(color)
                 # Use integer positions to avoid sub-pixel rendering artifacts
                 painter.drawText(int(x_pos_in_block), int(y_pos), text_part)
