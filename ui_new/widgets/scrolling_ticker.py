@@ -45,6 +45,10 @@ class ScrollingTicker(QWidget):
         painter = QPainter(self)
         painter.setFont(self.font)
         painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.TextAntialiasing)
+
+        # Fill background to prevent artifacts
+        painter.fillRect(self.rect(), self.palette().window())
         
         metrics = self.fontMetrics()
         text_height = metrics.height()
@@ -72,7 +76,7 @@ class ScrollingTicker(QWidget):
 
             full_ticker_string_parts.append((f"{symbol}: ", Qt.white))
             full_ticker_string_parts.append((price_str, price_color))
-            full_ticker_string_parts.append((" | ", Qt.white))
+            full_ticker_string_parts.append(("   |   ", Qt.white))  # More spacing around separator
         
         if not full_ticker_string_parts:
             return # Nothing to draw
@@ -101,7 +105,8 @@ class ScrollingTicker(QWidget):
             x_pos_in_block = current_draw_x
             for text_part, color in full_ticker_string_parts:
                 painter.setPen(color)
-                painter.drawText(x_pos_in_block, y_pos, text_part)
+                # Use integer positions to avoid sub-pixel rendering artifacts
+                painter.drawText(int(x_pos_in_block), int(y_pos), text_part)
                 x_pos_in_block += metrics.width(text_part)
             
             # Move to the start of the next full block repetition
