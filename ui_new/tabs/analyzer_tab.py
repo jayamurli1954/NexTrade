@@ -438,6 +438,13 @@ class AnalyzerTab(QWidget):
             fresh_ltp = result.get('ltp', result.get('current_price', 0))
             print(f"⚠️  DEBUG: Using analyzer price as fallback: ₹{fresh_ltp:.2f}")
         
+        # Calculate quantity based on allocation
+        # Total available: ₹500,000 (₹100,000 initial + ₹400,000 margin)
+        # Max 5 trades = ₹100,000 per trade
+        # Quantity = 100,000 / CMP
+        allocation_per_trade = 100000
+        quantity = int(allocation_per_trade / fresh_ltp) if fresh_ltp > 0 else 1
+
         # Prepare trade data with FRESH LTP
         trade_data = {
             'symbol': symbol,
@@ -445,11 +452,11 @@ class AnalyzerTab(QWidget):
             'entry_price': fresh_ltp,  # ← FRESH PRICE!
             'target': result.get('target', 0),
             'stop_loss': result.get('stop_loss', 0),
-            'quantity': 1,
+            'quantity': quantity,
             'confidence': result.get('confidence', 0)
         }
-        
-        print(f"🔍 DEBUG: Trade data prepared - Entry: ₹{trade_data['entry_price']:.2f}, Target: ₹{trade_data['target']:.2f}, SL: ₹{trade_data['stop_loss']:.2f}")
+
+        print(f"🔍 DEBUG: Trade data prepared - Entry: ₹{trade_data['entry_price']:.2f}, Target: ₹{trade_data['target']:.2f}, SL: ₹{trade_data['stop_loss']:.2f}, Qty: {quantity}")
         
         # Add to paper trading
         try:

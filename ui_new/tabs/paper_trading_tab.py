@@ -391,10 +391,10 @@ class PaperTradingTab(QWidget):
             self.update_stats()
     
     def refresh_active_trades(self):
-        """Refresh active trades table - FIXED for SELL trades"""
+        """Refresh active trades table - FIXED for SELL trades + Auto-Exit"""
         self.active_table.setSortingEnabled(False)
-        self.active_table.setRowCount(len(self.active_trades))
-        
+        # Note: Row count will be adjusted dynamically as trades are processed
+
         if not self.active_trades:
             self.active_table.setRowCount(1)
             no_data = QTableWidgetItem("No active trades")
@@ -402,12 +402,23 @@ class PaperTradingTab(QWidget):
             self.active_table.setItem(0, 0, no_data)
             self.active_table.setSpan(0, 0, 1, 11)
             return
-        
+
+        # Check if we need to auto-exit trades at 3:15 PM
+        from datetime import datetime
+        current_time = datetime.now().time()
+        auto_exit_time = datetime.strptime("15:15", "%H:%M").time()
+
         # Get current LTPs
         symbols = [trade['symbol'] for trade in self.active_trades]
         ltp_data = self.conn_mgr.get_ltp_batch(symbols)
-        
-        for row, trade in enumerate(self.active_trades):
+
+        # List to track trades that need to be closed
+        trades_to_close = []
+
+        # Track display row (may differ from enumeration if trades are skipped)
+        display_row = 0
+
+        for trade_idx, trade in enumerate(self.active_trades):
             current_ltp = ltp_data.get(trade['symbol'])
             if current_ltp is None:
                 current_ltp = trade['entry_price']
@@ -417,9 +428,37 @@ class PaperTradingTab(QWidget):
                 pnl = (current_ltp - trade['entry_price']) * trade['quantity']
             else:  # SELL
                 pnl = (trade['entry_price'] - current_ltp) * trade['quantity']
-            
+
             pnl_pct = (pnl / (trade['entry_price'] * trade['quantity'])) * 100
-            
+
+            # Check auto-exit conditions (Target, Stop Loss, or 3:15 PM)
+            exit_reason = None
+
+            # Check if 3:15 PM or later
+            if current_time >= auto_exit_time:
+                exit_reason = "Time 3:15 PM"
+            # Check target hit
+            elif trade['action'] == 'BUY' and current_ltp >= trade['target']:
+                exit_reason = "Target Hit"
+            elif trade['action'] == 'SELL' and current_ltp <= trade['target']:
+                exit_reason = "Target Hit"
+            # Check stop loss hit
+            elif trade['action'] == 'BUY' and current_ltp <= trade['stop_loss']:
+                exit_reason = "Stop Loss Hit"
+            elif trade['action'] == 'SELL' and current_ltp >= trade['stop_loss']:
+                exit_reason = "Stop Loss Hit"
+
+            # If exit condition met, add to closure list
+            if exit_reason:
+                trades_to_close.append({
+                    'trade': trade,
+                    'current_ltp': current_ltp,
+                    'pnl': pnl,
+                    'reason': exit_reason
+                })
+                # Skip displaying this trade as it will be closed
+                continue
+
             # ⭐ FIX: Create all items properly
             items = [
                 QTableWidgetItem(trade['order_id'][-8:]),  # Last 8 chars
@@ -448,22 +487,61 @@ class PaperTradingTab(QWidget):
             elif pnl < 0:
                 pnl_item.setForeground(QColor(200, 0, 0))
             
+            # Set row count if needed (first valid row)
+            if display_row == 0:
+                # Estimate max rows needed (will be trimmed later if needed)
+                self.active_table.setRowCount(len(self.active_trades) - len(trades_to_close))
+
             # Center align and set all items
             for col, item in enumerate(items):
                 item.setTextAlignment(Qt.AlignCenter)
-                self.active_table.setItem(row, col, item)
-            
+                self.active_table.setItem(display_row, col, item)
+
             # Exit button
             exit_btn = QPushButton("❌ Exit")
             exit_btn.setStyleSheet("""
-                font-size: 12px; 
-                padding: 5px 10px; 
+                font-size: 12px;
+                padding: 5px 10px;
                 border-radius: 4px;
             """)
             exit_btn.clicked.connect(lambda checked, t=trade: self.manual_exit(t))
             exit_btn.setCursor(Qt.PointingHandCursor)
-            self.active_table.setCellWidget(row, 10, exit_btn)
-        
+            self.active_table.setCellWidget(display_row, 10, exit_btn)
+
+            # Increment display row
+            display_row += 1
+
+        # Process automatic exits (Target, Stop Loss, 3:15 PM)
+        if trades_to_close:
+            for item in trades_to_close:
+                trade = item['trade']
+                current_ltp = item['current_ltp']
+                pnl = item['pnl']
+                reason = item['reason']
+
+                # Update trade with exit details
+                trade['exit_price'] = current_ltp
+                trade['exit_time'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                trade['pnl'] = pnl
+                trade['status'] = f'Closed - {reason}'
+
+                # Move to closed trades
+                self.active_trades.remove(trade)
+                self.closed_trades.append(trade)
+
+                # Show notification
+                self.parent.statusBar().showMessage(
+                    f"🔔 Auto-Exit: {trade['symbol']} | {reason} | P&L: ₹{pnl:.2f}",
+                    5000
+                )
+
+            # Save and refresh
+            self.save_trades()
+            self.refresh_active_trades()  # Recursive call to refresh display
+            self.refresh_history()
+            self.update_stats()
+            return  # Exit after processing closures
+
         self.active_table.setSortingEnabled(True)
     
     def refresh_history(self):
