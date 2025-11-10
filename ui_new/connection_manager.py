@@ -64,6 +64,9 @@ class ConnectionManager:
         # Real-time LTP data from WebSocket
         self.ltp_data = {}
         self.ltp_lock = threading.Lock()
+
+        # Pending subscriptions (for symbols requested before WebSocket connects)
+        self.pending_subscriptions = []
         
         # WebSocket credentials
         self.auth_token = None
@@ -378,10 +381,12 @@ class ConnectionManager:
                 else: # (symbol, exchange)
                     symbol, exchange = item
                     symbols_to_subscribe.append((symbol, exchange))
-            
+
             self.subscribe_symbols(symbols_to_subscribe)
         else:
-            print("⚠️  WebSocket not connected yet, cannot subscribe initial symbols.")
+            # Store for later subscription when WebSocket connects
+            print("⏳ WebSocket not connected yet, storing symbols for subscription...")
+            self.pending_subscriptions.extend(symbols_with_exchange)
 
     def start_websocket(self):
         """Start WebSocket in separate thread - PREVENTS UI FREEZING!"""
@@ -423,10 +428,16 @@ class ConnectionManager:
         """WebSocket opened - subscribe to stocks"""
         print("🔌 WebSocket connected!")
         self.websocket_connected = True
-        
+
         # Subscribe to all stocks in watchlist
         watchlist_with_exchange = [(symbol, "NSE") for symbol in self.stock_list]
         self.subscribe_symbols(watchlist_with_exchange)
+
+        # Subscribe to any pending symbols (e.g., ticker indices requested before connection)
+        if self.pending_subscriptions:
+            print(f"📊 Subscribing to {len(self.pending_subscriptions)} pending symbols...")
+            self.subscribe_symbols(self.pending_subscriptions)
+            self.pending_subscriptions = []  # Clear after subscribing
     
     def _on_ws_data(self, wsapp, message):
         """WebSocket data received - update LTP cache (runs in background thread)"""
