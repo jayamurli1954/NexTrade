@@ -24,6 +24,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from indicators.ta import (rsi, ema, sma, fibonacci_retracement, bollinger_bands,
                            atr, stochastic, adx, obv, vwap, support_resistance)
 from indicators.candlestick_patterns import CandlestickPatterns
+from news.finbert_sentiment import get_finbert_analyzer
 import pandas as pd
 import numpy as np
 import logging
@@ -68,7 +69,16 @@ class EnhancedAnalyzer:
             logger.warning("⚠️ NEWSAPI_KEY not found in config - sentiment analysis disabled")
         
         self.sentiment_analyzer = SentimentIntensityAnalyzer()
-        
+
+        # ✅ NEW: FinBERT sentiment analyzer
+        try:
+            self.finbert_analyzer = get_finbert_analyzer()
+            self.finbert_enabled = True
+            logger.info("✅ FinBERT sentiment analysis enabled")
+        except Exception as e:
+            logger.warning(f"⚠️ FinBERT initialization failed: {e}")
+            self.finbert_enabled = False
+
         # ✅ NEW: Fundamentals analyzer (if available)
         self.fundamentals_enabled = self.config.get('enable_fundamentals', False)
         if self.fundamentals_enabled:
@@ -215,9 +225,12 @@ class EnhancedAnalyzer:
             patterns = CandlestickPatterns.analyze_patterns(df)
             logger.debug(f"{symbol} detected patterns: {[p['pattern'] for p in patterns]}")
 
-            # Get sentiment score
+            # Get sentiment score (VADER)
             sentiment = self._get_sentiment(symbol)
-            
+
+            # ✅ NEW: Get FinBERT sentiment analysis
+            finbert_sentiment = self._get_finbert_sentiment(symbol)
+
             # ✅ NEW: Get fundamentals score (if enabled)
             fundamentals_score = 0
             if self.fundamentals_enabled:
@@ -256,7 +269,8 @@ class EnhancedAnalyzer:
                 vwap_value=current_vwap,  # ✅ NEW: VWAP
                 support=support,  # ✅ NEW: Support level
                 resistance=resistance,  # ✅ NEW: Resistance level
-                patterns=patterns  # ✅ NEW: Candlestick patterns
+                patterns=patterns,  # ✅ NEW: Candlestick patterns
+                finbert_sentiment=finbert_sentiment  # ✅ NEW: FinBERT sentiment
             )
 
             if signal_data:
@@ -356,12 +370,41 @@ class EnhancedAnalyzer:
             logger.error(f"Sentiment error for {symbol}: {e}")
             return 0
 
+    def _get_finbert_sentiment(self, symbol):
+        """
+        Get FinBERT-based news sentiment analysis
+
+        Returns:
+            Dict with sentiment_score (-1 to 1), label, confidence, news_count
+        """
+        if not self.finbert_enabled:
+            return {
+                'sentiment_score': 0.0,
+                'sentiment_label': 'NEUTRAL',
+                'confidence': 0,
+                'news_count': 0
+            }
+
+        try:
+            result = self.finbert_analyzer.analyze_symbol_sentiment(symbol)
+            logger.debug(f"FinBERT {symbol}: {result['sentiment_label']} ({result['sentiment_score']:.3f}) | {result['news_count']} news | {result['confidence']}% confidence")
+            return result
+
+        except Exception as e:
+            logger.error(f"FinBERT sentiment error for {symbol}: {e}")
+            return {
+                'sentiment_score': 0.0,
+                'sentiment_label': 'NEUTRAL',
+                'confidence': 0,
+                'news_count': 0
+            }
+
     def _generate_golden_ratio_signal(self, symbol, current_price, current_rsi, ema_short, ema_long,
                                      fib_levels, volume_ratio, bb_upper, bb_lower, period_high,
                                      period_low, sentiment, fundamentals_score, price_change_1d,
                                      price_change_5d, current_atr, stoch_k=50, stoch_d=50,
                                      adx_value=20, obv_trend="NEUTRAL", vwap_value=None,
-                                     support=None, resistance=None, patterns=None):
+                                     support=None, resistance=None, patterns=None, finbert_sentiment=None):
         """
         ✅ ENHANCED: Now includes advanced technical indicators, fundamentals, candlestick patterns, and ATR-based stops
 
@@ -377,6 +420,16 @@ class EnhancedAnalyzer:
         # Default to empty list if no patterns provided
         if patterns is None:
             patterns = []
+
+        # Default for FinBERT sentiment if not provided
+        if finbert_sentiment is None:
+            finbert_sentiment = {
+                'sentiment_score': 0.0,
+                'sentiment_label': 'NEUTRAL',
+                'confidence': 0,
+                'news_count': 0
+            }
+
         signal = {
             'symbol': symbol,
             'current_price': round(current_price, 2),
@@ -390,6 +443,9 @@ class EnhancedAnalyzer:
             'fib_levels': {k: round(v, 2) for k, v in fib_levels.items()},
             'volume_ratio': round(volume_ratio, 2),
             'sentiment': round(sentiment, 2),
+            'finbert_sentiment': finbert_sentiment['sentiment_score'],
+            'finbert_label': finbert_sentiment['sentiment_label'],
+            'finbert_news_count': finbert_sentiment['news_count'],
             'fundamentals_score': round(fundamentals_score, 1),
             'price_change_1d': round(price_change_1d, 2),
             'price_change_5d': round(price_change_5d, 2),
@@ -480,6 +536,21 @@ class EnhancedAnalyzer:
             buy_score += strongest['strength']
             logger.debug(f"{symbol} BUY: Added {strongest['pattern']} (+{strongest['strength']} pts)")
 
+        # ✅ NEW: FinBERT News Sentiment for BUY
+        finbert_score = finbert_sentiment['sentiment_score']
+        finbert_conf = finbert_sentiment['confidence']
+        if finbert_score > 0.3 and finbert_sentiment['news_count'] > 0:
+            # Strong bullish sentiment
+            points = int(15 * (finbert_score / 1.0))  # Scale 0.3-1.0 to 0-15 points
+            buy_conditions.append(f"Bullish news ({finbert_sentiment['news_count']} articles)")
+            buy_score += points
+            logger.debug(f"{symbol} BUY: FinBERT BULLISH ({finbert_score:.3f}) +{points} pts | {finbert_sentiment['news_count']} news")
+        elif finbert_score > 0.1 and finbert_sentiment['news_count'] > 0:
+            # Moderate bullish sentiment
+            points = int(8 * (finbert_score / 0.3))
+            buy_score += points
+            logger.debug(f"{symbol} BUY: FinBERT positive ({finbert_score:.3f}) +{points} pts")
+
         # Sell scoring
         sell_conditions = []
         sell_score = 0
@@ -558,6 +629,19 @@ class EnhancedAnalyzer:
             sell_conditions.append(strongest['pattern'].replace('_', ' ').title())
             sell_score += strongest['strength']
             logger.debug(f"{symbol} SELL: Added {strongest['pattern']} (+{strongest['strength']} pts)")
+
+        # ✅ NEW: FinBERT News Sentiment for SELL
+        if finbert_score < -0.3 and finbert_sentiment['news_count'] > 0:
+            # Strong bearish sentiment
+            points = int(15 * (abs(finbert_score) / 1.0))  # Scale -0.3 to -1.0 to 0-15 points
+            sell_conditions.append(f"Bearish news ({finbert_sentiment['news_count']} articles)")
+            sell_score += points
+            logger.debug(f"{symbol} SELL: FinBERT BEARISH ({finbert_score:.3f}) +{points} pts | {finbert_sentiment['news_count']} news")
+        elif finbert_score < -0.1 and finbert_sentiment['news_count'] > 0:
+            # Moderate bearish sentiment
+            points = int(8 * (abs(finbert_score) / 0.3))
+            sell_score += points
+            logger.debug(f"{symbol} SELL: FinBERT negative ({finbert_score:.3f}) +{points} pts")
 
         # Determine signal
         if buy_score > sell_score and buy_score >= 50:

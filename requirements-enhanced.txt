@@ -24,13 +24,16 @@ cryptography>=41.0.0
 # ✅ NEW: Advanced Analytics (already have numpy and pandas above)
 scipy>=1.11.0  # For performance analytics calculations
 
+# ✅ NEW: ML/AI for FinBERT Sentiment Analysis
+transformers>=4.30.0
+torch>=2.0.0
+feedparser>=6.0.0  # For RSS news feeds
+
 # Optional: For future ML/AI enhancements
-# Uncomment these when implementing ML features:
+# Uncomment these when implementing additional ML features:
 # tensorflow>=2.13.0
 # scikit-learn>=1.3.0
 # xgboost>=1.7.0
-# transformers>=4.30.0
-# torch>=2.0.0
 
 # Optional: For advanced visualizations
 # Uncomment when implementing UI enhancements:
