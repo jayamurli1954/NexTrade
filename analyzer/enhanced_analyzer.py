@@ -23,6 +23,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from indicators.ta import (rsi, ema, sma, fibonacci_retracement, bollinger_bands,
                            atr, stochastic, adx, obv, vwap, support_resistance)
+from indicators.candlestick_patterns import CandlestickPatterns
 import pandas as pd
 import numpy as np
 import logging
@@ -210,6 +211,10 @@ class EnhancedAnalyzer:
             # Support/Resistance levels
             support, resistance = support_resistance(high_prices, low_prices, close_prices)
 
+            # ✅ NEW: Candlestick Pattern Detection
+            patterns = CandlestickPatterns.analyze_patterns(df)
+            logger.debug(f"{symbol} detected patterns: {[p['pattern'] for p in patterns]}")
+
             # Get sentiment score
             sentiment = self._get_sentiment(symbol)
             
@@ -250,7 +255,8 @@ class EnhancedAnalyzer:
                 obv_trend=obv_trend,  # ✅ NEW: OBV trend
                 vwap_value=current_vwap,  # ✅ NEW: VWAP
                 support=support,  # ✅ NEW: Support level
-                resistance=resistance  # ✅ NEW: Resistance level
+                resistance=resistance,  # ✅ NEW: Resistance level
+                patterns=patterns  # ✅ NEW: Candlestick patterns
             )
 
             if signal_data:
@@ -355,9 +361,9 @@ class EnhancedAnalyzer:
                                      period_low, sentiment, fundamentals_score, price_change_1d,
                                      price_change_5d, current_atr, stoch_k=50, stoch_d=50,
                                      adx_value=20, obv_trend="NEUTRAL", vwap_value=None,
-                                     support=None, resistance=None):
+                                     support=None, resistance=None, patterns=None):
         """
-        ✅ ENHANCED: Now includes advanced technical indicators, fundamentals, and ATR-based stops
+        ✅ ENHANCED: Now includes advanced technical indicators, fundamentals, candlestick patterns, and ATR-based stops
 
         New indicators integrated:
         - Stochastic Oscillator (momentum)
@@ -365,7 +371,12 @@ class EnhancedAnalyzer:
         - OBV (volume momentum)
         - VWAP (institutional price)
         - Support/Resistance levels
+        - Candlestick Patterns (Hammer, Engulfing, Morning/Evening Star, etc.)
         """
+
+        # Default to empty list if no patterns provided
+        if patterns is None:
+            patterns = []
         signal = {
             'symbol': symbol,
             'current_price': round(current_price, 2),
@@ -460,6 +471,15 @@ class EnhancedAnalyzer:
             buy_conditions.append(f"Near support ₹{support:.2f}")
             buy_score += 8
 
+        # ✅ NEW: Candlestick Patterns for BUY
+        bullish_patterns = [p for p in patterns if p['signal'] == 'BULLISH']
+        if bullish_patterns:
+            # Get strongest bullish pattern
+            strongest = max(bullish_patterns, key=lambda x: x['strength'])
+            buy_conditions.append(strongest['pattern'].replace('_', ' ').title())
+            buy_score += strongest['strength']
+            logger.debug(f"{symbol} BUY: Added {strongest['pattern']} (+{strongest['strength']} pts)")
+
         # Sell scoring
         sell_conditions = []
         sell_score = 0
@@ -529,6 +549,15 @@ class EnhancedAnalyzer:
         if resistance and current_price >= resistance * 0.98:
             sell_conditions.append(f"Near resistance ₹{resistance:.2f}")
             sell_score += 8
+
+        # ✅ NEW: Candlestick Patterns for SELL
+        bearish_patterns = [p for p in patterns if p['signal'] == 'BEARISH']
+        if bearish_patterns:
+            # Get strongest bearish pattern
+            strongest = max(bearish_patterns, key=lambda x: x['strength'])
+            sell_conditions.append(strongest['pattern'].replace('_', ' ').title())
+            sell_score += strongest['strength']
+            logger.debug(f"{symbol} SELL: Added {strongest['pattern']} (+{strongest['strength']} pts)")
 
         # Determine signal
         if buy_score > sell_score and buy_score >= 50:
