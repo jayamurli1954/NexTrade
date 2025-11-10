@@ -793,28 +793,129 @@ class PaperTradingTab(QWidget):
                 print(f"⚠️  Error loading trades: {e}")
     
     def export_trades(self):
-        """Export trades to Excel"""
+        """Export trades to Excel - Shows dialog to choose daily or cumulative"""
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout
+
+        if not self.closed_trades and not self.active_trades:
+            QMessageBox.information(self, "No Data", "No trades to export")
+            return
+
+        # Create export type selection dialog
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Export Trades to Excel")
+        dialog.setMinimumWidth(400)
+
+        layout = QVBoxLayout(dialog)
+
+        # Title
+        title = QLabel("Select Export Type:")
+        title.setStyleSheet("font-size: 16px; font-weight: bold; margin-bottom: 10px;")
+        layout.addWidget(title)
+
+        # Description
+        desc = QLabel(
+            "• Daily: Export today's trades only\n"
+            "• Cumulative: Export all trades (all days)"
+        )
+        desc.setStyleSheet("font-size: 13px; color: #666; margin-bottom: 20px;")
+        layout.addWidget(desc)
+
+        # Buttons
+        button_layout = QHBoxLayout()
+
+        daily_btn = QPushButton("📅 Daily Export")
+        daily_btn.setStyleSheet("""
+            font-size: 14px;
+            font-weight: bold;
+            padding: 12px 25px;
+            border-radius: 6px;
+            background-color: #4CAF50;
+            color: white;
+        """)
+        daily_btn.clicked.connect(lambda: self._export_daily(dialog))
+        daily_btn.setCursor(Qt.PointingHandCursor)
+        button_layout.addWidget(daily_btn)
+
+        cumulative_btn = QPushButton("📊 Cumulative Export")
+        cumulative_btn.setStyleSheet("""
+            font-size: 14px;
+            font-weight: bold;
+            padding: 12px 25px;
+            border-radius: 6px;
+            background-color: #2196F3;
+            color: white;
+        """)
+        cumulative_btn.clicked.connect(lambda: self._export_cumulative(dialog))
+        cumulative_btn.setCursor(Qt.PointingHandCursor)
+        button_layout.addWidget(cumulative_btn)
+
+        layout.addLayout(button_layout)
+
+        # Cancel button
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setStyleSheet("padding: 8px 20px; margin-top: 10px;")
+        cancel_btn.clicked.connect(dialog.reject)
+        layout.addWidget(cancel_btn)
+
+        dialog.exec_()
+
+    def _export_daily(self, dialog):
+        """Export today's trades only"""
         try:
             import pandas as pd
-            
-            if not self.closed_trades:
-                QMessageBox.information(self, "No Data", "No trade history to export")
+
+            # Get today's date
+            today = datetime.now().strftime('%Y-%m-%d')
+
+            # Filter trades from today (both active and closed)
+            today_trades = []
+
+            # Add active trades from today
+            for trade in self.active_trades:
+                trade_date = trade['entry_time'][:10]  # Extract YYYY-MM-DD
+                if trade_date == today:
+                    today_trades.append(trade)
+
+            # Add closed trades from today
+            for trade in self.closed_trades:
+                trade_date = trade['entry_time'][:10]  # Extract YYYY-MM-DD
+                if trade_date == today:
+                    today_trades.append(trade)
+
+            if not today_trades:
+                dialog.accept()
+                QMessageBox.information(self, "No Data", "No trades found for today")
                 return
-            
+
             # Create DataFrame
-            df = pd.DataFrame(self.closed_trades)
-            
+            df = pd.DataFrame(today_trades)
+
+            # Select relevant columns for export
+            columns_to_export = [
+                'order_id', 'symbol', 'action', 'entry_time', 'entry_price',
+                'exit_time', 'exit_price', 'exit_reason', 'quantity',
+                'pnl', 'pnl_pct', 'status', 'target', 'stop_loss', 'confidence'
+            ]
+
+            # Keep only available columns
+            available_columns = [col for col in columns_to_export if col in df.columns]
+            df_export = df[available_columns]
+
             # Export to Excel
-            filename = f"paper_trades_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-            df.to_excel(filename, index=False)
-            
+            filename = f"daily_trades_{datetime.now().strftime('%Y%m%d')}.xlsx"
+            df_export.to_excel(filename, index=False)
+
+            dialog.accept()
             QMessageBox.information(
-                self, 
-                "Export Successful", 
-                f"Trades exported to:\n{filename}"
+                self,
+                "Export Successful",
+                f"✅ Daily trades exported!\n\n"
+                f"File: {filename}\n"
+                f"Trades: {len(today_trades)} (today)"
             )
-            
+
         except ImportError:
+            dialog.accept()
             QMessageBox.warning(
                 self,
                 "Export Failed",
@@ -822,6 +923,63 @@ class PaperTradingTab(QWidget):
                 "Install: pip install pandas openpyxl"
             )
         except Exception as e:
+            dialog.accept()
+            QMessageBox.critical(self, "Export Error", f"Error: {e}")
+
+    def _export_cumulative(self, dialog):
+        """Export all trades (cumulative)"""
+        try:
+            import pandas as pd
+
+            # Combine all trades (active + closed)
+            all_trades = self.active_trades + self.closed_trades
+
+            if not all_trades:
+                dialog.accept()
+                QMessageBox.information(self, "No Data", "No trades to export")
+                return
+
+            # Create DataFrame
+            df = pd.DataFrame(all_trades)
+
+            # Select relevant columns for export
+            columns_to_export = [
+                'order_id', 'symbol', 'action', 'entry_time', 'entry_price',
+                'exit_time', 'exit_price', 'exit_reason', 'quantity',
+                'pnl', 'pnl_pct', 'status', 'target', 'stop_loss', 'confidence'
+            ]
+
+            # Keep only available columns
+            available_columns = [col for col in columns_to_export if col in df.columns]
+            df_export = df[available_columns]
+
+            # Sort by entry time
+            df_export = df_export.sort_values('entry_time', ascending=False)
+
+            # Export to Excel
+            filename = f"cumulative_trades_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            df_export.to_excel(filename, index=False)
+
+            dialog.accept()
+            QMessageBox.information(
+                self,
+                "Export Successful",
+                f"✅ Cumulative trades exported!\n\n"
+                f"File: {filename}\n"
+                f"Total Trades: {len(all_trades)}\n"
+                f"Active: {len(self.active_trades)}, Closed: {len(self.closed_trades)}"
+            )
+
+        except ImportError:
+            dialog.accept()
+            QMessageBox.warning(
+                self,
+                "Export Failed",
+                "pandas and openpyxl required for export.\n"
+                "Install: pip install pandas openpyxl"
+            )
+        except Exception as e:
+            dialog.accept()
             QMessageBox.critical(self, "Export Error", f"Error: {e}")
     
     
