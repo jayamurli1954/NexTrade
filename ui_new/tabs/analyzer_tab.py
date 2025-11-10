@@ -40,24 +40,53 @@ class AnalyzerThread(QThread):
         self.is_running = True
     
     def run(self):
-        """Run analysis in background"""
+        """Run analysis in background with real-time progress"""
         try:
+            total = len(self.watchlist)
             # Emit starting message
-            self.progress_update.emit(f"🔍 Starting analysis of {len(self.watchlist)} stocks...")
-            
-            # Analyze all stocks
-            results = self.analyzer.analyze_watchlist(self.watchlist)
-            
+            self.progress_update.emit(f"🔍 Starting analysis of {total} stocks...")
+
+            # Analyze stocks one by one with progress updates
+            results = []
+            signals_found = 0
+
+            for idx, symbol in enumerate(self.watchlist, 1):
+                # Check if thread was stopped
+                if not self.is_running:
+                    return
+
+                try:
+                    # Analyze this symbol
+                    signal = self.analyzer.analyze_symbol(symbol, exchange="NSE")
+                    if signal:
+                        results.append(signal)
+                        signals_found += 1
+
+                    # Emit progress update
+                    percentage = int((idx / total) * 100)
+                    self.progress_update.emit(
+                        f"🔍 Analyzing... {idx}/{total} ({percentage}%) | Found: {signals_found} signals"
+                    )
+
+                except Exception as e:
+                    # Log error but continue with other stocks
+                    print(f"⚠️ Error analyzing {symbol}: {e}")
+
+                # Rate limiting
+                if idx < total:
+                    import time
+                    time.sleep(0.25)
+
             # Check if thread was stopped
             if not self.is_running:
                 return
-            
+
             # Sort by confidence
             results.sort(key=lambda x: x['confidence'], reverse=True)
-            
+
             # Emit completion
             self.analysis_complete.emit(results)
-            
+
         except Exception as e:
             # Emit error
             self.analysis_error.emit(str(e))
