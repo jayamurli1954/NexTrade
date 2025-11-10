@@ -19,6 +19,11 @@ Data sources supported:
 import logging
 import pandas as pd
 from datetime import datetime
+import sys
+import os
+
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 logger = logging.getLogger("FundamentalsAnalyzer")
 
@@ -31,7 +36,7 @@ class FundamentalsAnalyzer:
     def __init__(self, data_provider):
         self.data_provider = data_provider
         self.cache = {}  # Cache fundamentals for 24 hours
-        
+
         # Try to import yfinance
         try:
             import yfinance as yf
@@ -41,6 +46,16 @@ class FundamentalsAnalyzer:
         except ImportError:
             self.has_yfinance = False
             logger.warning("⚠️ yfinance not installed - install with: pip install yfinance")
+
+        # ✅ NEW: Initialize Screener.in scraper
+        self.has_screener = False
+        try:
+            from data_provider.screener_scraper import get_screener_scraper
+            self.screener = get_screener_scraper()
+            self.has_screener = True
+            logger.info("✅ Screener.in scraper available for fundamentals")
+        except Exception as e:
+            logger.warning(f"⚠️ Screener.in scraper initialization failed: {e}")
     
     def analyze_fundamentals(self, symbol):
         """
@@ -76,18 +91,63 @@ class FundamentalsAnalyzer:
     def _fetch_fundamentals(self, symbol):
         """
         Fetch fundamental data from available sources
+        Priority: Screener.in (more accurate for Indian stocks) -> yfinance (fallback)
         """
+        fundamentals = None
+
+        # ✅ NEW: Try Screener.in first (better for Indian stocks)
+        if self.has_screener:
+            try:
+                logger.debug(f"Fetching {symbol} fundamentals from Screener.in")
+                screener_data = self.screener.scrape_fundamentals(symbol)
+
+                if screener_data and not screener_data.get('error'):
+                    # Convert Screener.in format to our standard format
+                    fundamentals = {
+                        'pe_ratio': screener_data.get('pe_ratio'),
+                        'pb_ratio': screener_data.get('pb_ratio'),
+                        'debt_to_equity': screener_data.get('debt_to_equity'),
+                        'roe': screener_data.get('roe'),  # Already in percentage
+                        'profit_margin': None,  # Not directly available
+                        'revenue_growth': screener_data.get('sales_growth_3y'),  # 3Y sales growth
+                        'dividend_yield': screener_data.get('dividend_yield'),
+                        'market_cap': screener_data.get('market_cap'),
+                        'current_ratio': None,  # Not available from Screener.in
+                        'quick_ratio': None,
+                        'roce': screener_data.get('roce'),  # Additional metric
+                        'promoter_holding': screener_data.get('promoter_holding'),  # Additional metric
+                        'source': 'screener.in'
+                    }
+
+                    # Normalize ROE and dividend yield to decimals (0-1 range) for compatibility
+                    if fundamentals['roe'] and fundamentals['roe'] > 1:
+                        fundamentals['roe'] = fundamentals['roe'] / 100
+
+                    if fundamentals['dividend_yield'] and fundamentals['dividend_yield'] > 1:
+                        fundamentals['dividend_yield'] = fundamentals['dividend_yield'] / 100
+
+                    if fundamentals['revenue_growth'] and fundamentals['revenue_growth'] > 1:
+                        fundamentals['revenue_growth'] = fundamentals['revenue_growth'] / 100
+
+                    logger.info(f"✅ {symbol} fundamentals from Screener.in")
+                    return fundamentals
+
+            except Exception as e:
+                logger.debug(f"Screener.in fetch failed for {symbol}: {e}")
+
+        # Fallback to yfinance
         if not self.has_yfinance:
-            logger.warning("yfinance not available - fundamentals disabled")
+            logger.warning("No fundamental data sources available")
             return None
-        
+
         try:
+            logger.debug(f"Fetching {symbol} fundamentals from yfinance (fallback)")
             # For NSE stocks, append .NS suffix
             ticker_symbol = f"{symbol}.NS" if not symbol.endswith('.NS') else symbol
-            
+
             ticker = self.yf.Ticker(ticker_symbol)
             info = ticker.info
-            
+
             # Extract key metrics
             fundamentals = {
                 'pe_ratio': info.get('trailingPE', info.get('forwardPE', None)),
@@ -99,22 +159,23 @@ class FundamentalsAnalyzer:
                 'dividend_yield': info.get('dividendYield', None),
                 'market_cap': info.get('marketCap', None),
                 'current_ratio': info.get('currentRatio', None),
-                'quick_ratio': info.get('quickRatio', None)
+                'quick_ratio': info.get('quickRatio', None),
+                'source': 'yfinance'
             }
-            
+
             # Convert percentages to decimals if needed
             if fundamentals['roe'] and fundamentals['roe'] > 1:
                 fundamentals['roe'] = fundamentals['roe'] / 100
-            
+
             if fundamentals['profit_margin'] and fundamentals['profit_margin'] > 1:
                 fundamentals['profit_margin'] = fundamentals['profit_margin'] / 100
-            
+
             if fundamentals['revenue_growth'] and fundamentals['revenue_growth'] > 1:
                 fundamentals['revenue_growth'] = fundamentals['revenue_growth'] / 100
-            
-            logger.debug(f"{symbol} fundamentals: {fundamentals}")
+
+            logger.info(f"✅ {symbol} fundamentals from yfinance")
             return fundamentals
-            
+
         except Exception as e:
             logger.error(f"Failed to fetch fundamentals for {symbol}: {e}")
             return None

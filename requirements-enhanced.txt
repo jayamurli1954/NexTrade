@@ -30,6 +30,8 @@ scipy==1.11.4  # For performance analytics calculations
 transformers==4.44.2  # FinBERT model support
 torch==2.4.1  # PyTorch backend (Python 3.10 compatible)
 feedparser==6.0.11  # For RSS news feeds
+beautifulsoup4==4.12.3  # For web scraping (Screener.in)
+lxml==5.1.0  # Fast XML/HTML parser for BeautifulSoup
 
 # Optional: For future ML/AI enhancements
 # Uncomment these when implementing additional ML features:
