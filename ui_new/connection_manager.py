@@ -510,12 +510,15 @@ class ConnectionManager:
                 if symbol_upper in ["NIFTY", "BANKNIFTY", "NIFTY50", "FINNIFTY", "MIDCPNIFTY", "INDIAVIX"]:
                     exchange_type = 2  # NFO for NSE indices
                     print(f"ℹ️  [DEBUG] Using NFO exchange type (2) for NSE index {symbol_upper}")
+                elif symbol_upper in ["SENSEX", "BANKEX"]:
+                    exchange_type = 3  # BSE indices use exchange type 3
+                    print(f"ℹ️  [DEBUG] Using BSE exchange type (3) for BSE index {symbol_upper}")
                 elif exchange_upper == "NSE":
                     exchange_type = 1
                 elif exchange_upper == "NFO":
                     exchange_type = 2
                 elif exchange_upper == "BSE":
-                    exchange_type = 4  # BSE indices use BSE exchange type
+                    exchange_type = 3  # BSE cash segment
                 else:
                     print(f"⚠️  [DEBUG] Unsupported exchange: {exchange_upper}")
                     continue # Skip unsupported exchanges
