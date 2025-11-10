@@ -330,9 +330,13 @@ class EnhancedBacktestEngine:
 
     def _calculate_position_size(self, entry_price, stop_loss):
         """Calculate position size based on method"""
+        # Cap position size to 90% of available capital to ensure we can open trades
+        max_position_value = self.current_capital * 0.90
+
         if self.position_size_method == 'fixed_rupees':
-            # Fixed rupee amount per trade
-            quantity = int(self.position_size_value / entry_price)
+            # Fixed rupee amount per trade (capped by available capital)
+            target_value = min(self.position_size_value, max_position_value)
+            quantity = int(target_value / entry_price)
 
         elif self.position_size_method == 'risk_pct':
             # Risk-based position sizing
@@ -343,8 +347,13 @@ class EnhancedBacktestEngine:
             risk_amount = self.current_capital * (self.position_size_value / 100)
             quantity = int(risk_amount / risk_per_share)
 
+            # Cap by max position value
+            max_quantity = int(max_position_value / entry_price)
+            quantity = min(quantity, max_quantity)
+
         else:
-            quantity = int(100000 / entry_price)  # Default
+            # Default to 90% of capital
+            quantity = int(max_position_value / entry_price)
 
         return max(1, quantity)  # At least 1 share
 
@@ -361,8 +370,9 @@ class EnhancedBacktestEngine:
         cost = quantity * entry_price
 
         # Check if we have enough capital
-        if cost > self.current_capital * 0.95:  # Use max 95% of capital
-            logger.debug(f"Insufficient capital for {symbol}: ₹{cost:,.0f} required, ₹{self.current_capital:,.0f} available")
+        max_allowed = self.current_capital * 0.95
+        if cost > max_allowed:  # Use max 95% of capital
+            logger.warning(f"⚠️ Insufficient capital for {symbol}: Cost ₹{cost:,.0f} > Max allowed ₹{max_allowed:,.0f} (Capital: ₹{self.current_capital:,.0f})")
             return False
 
         # Open position
@@ -476,7 +486,27 @@ class EnhancedBacktestEngine:
         """Calculate comprehensive performance metrics"""
         if not self.closed_trades:
             logger.warning("No closed trades - cannot calculate metrics")
-            self.metrics = {'total_trades': 0}
+            self.metrics = {
+                'total_trades': 0,
+                'winning_trades': 0,
+                'losing_trades': 0,
+                'win_rate': 0.0,
+                'total_profit': 0.0,
+                'total_loss': 0.0,
+                'net_pnl': 0.0,
+                'avg_win': 0.0,
+                'avg_loss': 0.0,
+                'profit_factor': 0.0,
+                'expectancy': 0.0,
+                'max_drawdown': 0.0,
+                'max_drawdown_pct': 0.0,
+                'sharpe_ratio': 0.0,
+                'total_return_pct': 0.0,
+                'initial_capital': self.initial_capital,
+                'final_capital': self.current_capital,
+                'start_date': None,
+                'end_date': None
+            }
             return
 
         # Basic counts
