@@ -248,7 +248,7 @@ class PaperTradingTab(QWidget):
     def add_trade(self, trade_data):
         """
         Add new trade from analyzer
-        
+
         Args:
             trade_data: dict with keys:
                 - symbol: str
@@ -259,6 +259,18 @@ class PaperTradingTab(QWidget):
                 - quantity: int (default 1)
                 - confidence: int (optional)
         """
+        # Check if trading is allowed (before 3:15 PM)
+        current_time = datetime.now().time()
+        market_close_time = datetime.strptime("15:15", "%H:%M").time()
+
+        if current_time >= market_close_time:
+            QMessageBox.warning(
+                self,
+                "Trading Closed",
+                "⏰ Trading is not allowed after 3:15 PM!\n\nMarket hours: 9:15 AM - 3:15 PM"
+            )
+            return None
+
         # Generate order ID
         order_id = f"ORD{datetime.now().strftime('%Y%m%d%H%M%S%f')[:17]}"
         
@@ -302,33 +314,49 @@ class PaperTradingTab(QWidget):
         return order_id
     
     def monitor_active_trades(self):
-        """Monitor active trades and auto-exit on target/SL"""
+        """Monitor active trades and auto-exit on target/SL/3:15 PM"""
         if not self.active_trades:
             return
-        
+
+        # Check if it's 3:15 PM or later
+        from datetime import datetime
+        current_time = datetime.now().time()
+        auto_exit_time = datetime.strptime("15:15", "%H:%M").time()
+        is_post_market = current_time >= auto_exit_time
+
         # Get current LTPs
         symbols = [trade['symbol'] for trade in self.active_trades]
         ltp_data = self.conn_mgr.get_ltp_batch(symbols)
-        
+
         trades_to_close = []
-        
+
         for trade in self.active_trades:
             symbol = trade['symbol']
             current_ltp = ltp_data.get(symbol)
-            
+
             if current_ltp is None:
-                continue
-            
+                # If post-market and no LTP, use entry price for exit
+                if is_post_market:
+                    current_ltp = trade['entry_price']
+                else:
+                    continue
+
             entry_price = trade['entry_price']
             target = trade['target']
             stop_loss = trade['stop_loss']
             action = trade['action']
-            
+
             # Check exit conditions
             should_exit = False
             exit_reason = None
-            
-            if action == 'BUY':
+
+            # Priority 1: Force exit at 3:15 PM
+            if is_post_market:
+                should_exit = True
+                exit_reason = "TIME 3:15 PM"
+
+            # Priority 2: Check target/stop loss
+            elif action == 'BUY':
                 # Long position
                 if current_ltp >= target:
                     should_exit = True
@@ -336,7 +364,7 @@ class PaperTradingTab(QWidget):
                 elif current_ltp <= stop_loss:
                     should_exit = True
                     exit_reason = "STOP LOSS HIT"
-            
+
             elif action == 'SELL':
                 # Short position
                 if current_ltp <= target:
@@ -345,27 +373,27 @@ class PaperTradingTab(QWidget):
                 elif current_ltp >= stop_loss:
                     should_exit = True
                     exit_reason = "STOP LOSS HIT"
-            
+
             if should_exit:
                 # Close trade - ENSURE PROPER TYPES
                 trade['exit_price'] = float(current_ltp)
                 trade['exit_time'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 trade['exit_reason'] = str(exit_reason)
                 trade['status'] = 'CLOSED'
-                
-                print(f"🔍 DEBUG: Closing {trade['symbol']} - Entry: ₹{trade['entry_price']:.2f}, Exit: ₹{trade['exit_price']:.2f}")
-                
+
+                print(f"🔍 DEBUG: Closing {trade['symbol']} - Entry: ₹{trade['entry_price']:.2f}, Exit: ₹{trade['exit_price']:.2f}, Reason: {exit_reason}")
+
                 # Calculate P&L
                 if action == 'BUY':
                     pnl = (current_ltp - entry_price) * trade['quantity']
                 else:  # SELL (short)
                     pnl = (entry_price - current_ltp) * trade['quantity']
-                
+
                 pnl_pct = (pnl / (entry_price * trade['quantity'])) * 100
-                
+
                 trade['pnl'] = round(pnl, 2)
                 trade['pnl_pct'] = round(pnl_pct, 2)
-                
+
                 trades_to_close.append(trade)
         
         # Move closed trades to history
@@ -545,63 +573,128 @@ class PaperTradingTab(QWidget):
         self.active_table.setSortingEnabled(True)
     
     def refresh_history(self):
-        """Refresh trade history table"""
+        """Refresh trade history table - Shows ALL trades (active + closed)"""
         self.history_table.setSortingEnabled(False)
-        self.history_table.setRowCount(len(self.closed_trades))
-        
-        if not self.closed_trades:
+
+        # Combine active and closed trades
+        all_trades = []
+
+        # Add active trades with current LTP for P&L calculation
+        if self.active_trades:
+            symbols = [trade['symbol'] for trade in self.active_trades]
+            ltp_data = self.conn_mgr.get_ltp_batch(symbols)
+
+            for trade in self.active_trades:
+                # Create a copy to avoid modifying the original
+                trade_copy = trade.copy()
+                current_ltp = ltp_data.get(trade['symbol'], trade['entry_price'])
+
+                # Calculate current P&L for active trades
+                if trade['action'] == 'BUY':
+                    pnl = (current_ltp - trade['entry_price']) * trade['quantity']
+                else:  # SELL
+                    pnl = (trade['entry_price'] - current_ltp) * trade['quantity']
+
+                pnl_pct = (pnl / (trade['entry_price'] * trade['quantity'])) * 100
+
+                trade_copy['current_pnl'] = pnl
+                trade_copy['current_pnl_pct'] = pnl_pct
+                trade_copy['is_active'] = True
+                all_trades.append(trade_copy)
+
+        # Add closed trades
+        for trade in self.closed_trades:
+            trade_copy = trade.copy()
+            trade_copy['is_active'] = False
+            all_trades.append(trade_copy)
+
+        # Sort by entry time (newest first)
+        all_trades.sort(key=lambda x: x.get('entry_time', ''), reverse=True)
+
+        self.history_table.setRowCount(len(all_trades))
+
+        if not all_trades:
             self.history_table.setRowCount(1)
-            no_data = QTableWidgetItem("No trade history")
+            no_data = QTableWidgetItem("No trades yet")
             no_data.setTextAlignment(Qt.AlignCenter)
             self.history_table.setItem(0, 0, no_data)
             self.history_table.setSpan(0, 0, 1, 12)
             return
-        
-        for row, trade in enumerate(reversed(self.closed_trades)):  # Newest first
-            items = [
-                QTableWidgetItem(trade['order_id'][-8:]),
-                QTableWidgetItem(trade['symbol']),
-                QTableWidgetItem(trade['action']),
-                QTableWidgetItem(trade['entry_time']),
-                QTableWidgetItem(f"₹{trade['entry_price']:.2f}"),
-                QTableWidgetItem(trade['exit_time'] or '-'),
-                QTableWidgetItem(f"₹{trade['exit_price']:.2f}" if trade['exit_price'] else '-'),
-                QTableWidgetItem(trade['exit_reason'] or '-'),
-                QTableWidgetItem(str(trade['quantity'])),
-                QTableWidgetItem(f"₹{trade['pnl']:.2f}"),
-                QTableWidgetItem(f"{trade['pnl_pct']:.2f}%"),
-                QTableWidgetItem(trade['status'])
-            ]
-            
-            # Color coding
+
+        for row, trade in enumerate(all_trades):
+            if trade['is_active']:
+                # Active trade
+                items = [
+                    QTableWidgetItem(trade['order_id'][-8:]),
+                    QTableWidgetItem(trade['symbol']),
+                    QTableWidgetItem(trade['action']),
+                    QTableWidgetItem(trade['entry_time']),
+                    QTableWidgetItem(f"₹{trade['entry_price']:.2f}"),
+                    QTableWidgetItem('-'),  # No exit time yet
+                    QTableWidgetItem('-'),  # No exit price yet
+                    QTableWidgetItem('-'),  # No exit reason yet
+                    QTableWidgetItem(str(trade['quantity'])),
+                    QTableWidgetItem(f"₹{trade['current_pnl']:.2f}"),  # Current P&L
+                    QTableWidgetItem(f"{trade['current_pnl_pct']:.2f}%"),  # Current P&L %
+                    QTableWidgetItem("OPEN")  # Status
+                ]
+
+                # Color status as blue for open
+                status_item = items[11]
+                status_item.setForeground(QColor(0, 100, 200))
+                status_item.setFont(QFont("Arial", 10, QFont.Bold))
+            else:
+                # Closed trade
+                items = [
+                    QTableWidgetItem(trade['order_id'][-8:]),
+                    QTableWidgetItem(trade['symbol']),
+                    QTableWidgetItem(trade['action']),
+                    QTableWidgetItem(trade['entry_time']),
+                    QTableWidgetItem(f"₹{trade['entry_price']:.2f}"),
+                    QTableWidgetItem(trade.get('exit_time', '-')),
+                    QTableWidgetItem(f"₹{trade['exit_price']:.2f}" if trade.get('exit_price') else '-'),
+                    QTableWidgetItem(trade.get('exit_reason', '-')),
+                    QTableWidgetItem(str(trade['quantity'])),
+                    QTableWidgetItem(f"₹{trade.get('pnl', 0):.2f}"),
+                    QTableWidgetItem(f"{trade.get('pnl_pct', 0):.2f}%"),
+                    QTableWidgetItem("CLOSED")  # Status
+                ]
+
+                # Color status as gray for closed
+                status_item = items[11]
+                status_item.setForeground(QColor(100, 100, 100))
+                status_item.setFont(QFont("Arial", 10, QFont.Bold))
+
+                # Exit reason color
+                reason_item = items[7]
+                if trade.get('exit_reason') == "TARGET HIT":
+                    reason_item.setForeground(QColor(0, 150, 0))
+                elif trade.get('exit_reason') == "STOP LOSS HIT":
+                    reason_item.setForeground(QColor(200, 0, 0))
+
+            # Color coding for action
             action_item = items[2]
             if trade['action'] == 'BUY':
                 action_item.setForeground(QColor(0, 150, 0))
             else:
                 action_item.setForeground(QColor(200, 0, 0))
-            
-            # Exit reason color
-            reason_item = items[7]
-            if trade['exit_reason'] == "TARGET HIT":
-                reason_item.setForeground(QColor(0, 150, 0))
-            elif trade['exit_reason'] == "STOP LOSS HIT":
-                reason_item.setForeground(QColor(200, 0, 0))
-            
+
             # P&L color
             pnl_item = items[9]
             pnl_pct_item = items[10]
-            if trade['pnl'] > 0:
+            pnl_value = trade.get('current_pnl') if trade['is_active'] else trade.get('pnl', 0)
+            if pnl_value > 0:
                 pnl_item.setForeground(QColor(0, 150, 0))
                 pnl_pct_item.setForeground(QColor(0, 150, 0))
-            elif trade['pnl'] < 0:
+            elif pnl_value < 0:
                 pnl_item.setForeground(QColor(200, 0, 0))
                 pnl_pct_item.setForeground(QColor(200, 0, 0))
-            
-            # Center align
+
+            # Center align all items
             for col, item in enumerate(items):
                 item.setTextAlignment(Qt.AlignCenter)
                 self.history_table.setItem(row, col, item)
-        
+
         self.history_table.setSortingEnabled(True)
     
     def manual_exit(self, trade):
