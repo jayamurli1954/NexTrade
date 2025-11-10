@@ -21,7 +21,8 @@ import time  # ✅ FIXED: Separate import for time.sleep()
 from datetime import datetime, time as dt_time, timedelta  # ✅ FIXED: Renamed to dt_time
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from indicators.ta import rsi, ema, sma, fibonacci_retracement, bollinger_bands
+from indicators.ta import (rsi, ema, sma, fibonacci_retracement, bollinger_bands,
+                           atr, stochastic, adx, obv, vwap, support_resistance)
 import pandas as pd
 import numpy as np
 import logging
@@ -188,6 +189,27 @@ class EnhancedAnalyzer:
             current_bb_upper = bb_upper.iloc[-1] if not bb_upper.empty else current_price_live * 1.02
             current_bb_lower = bb_lower.iloc[-1] if not bb_lower.empty else current_price_live * 0.98
 
+            # ✅ NEW: Enhanced Technical Indicators
+            # Stochastic Oscillator (Momentum)
+            stoch_k, stoch_d = stochastic(high_prices, low_prices, close_prices)
+            current_stoch_k = stoch_k.iloc[-1] if not stoch_k.empty else 50
+            current_stoch_d = stoch_d.iloc[-1] if not stoch_d.empty else 50
+
+            # ADX (Trend Strength)
+            adx_values = adx(high_prices, low_prices, close_prices)
+            current_adx = adx_values.iloc[-1] if not adx_values.empty else 20
+
+            # OBV (Volume Momentum)
+            obv_values = obv(close_prices, volume)
+            obv_trend = "UP" if len(obv_values) >= 2 and obv_values.iloc[-1] > obv_values.iloc[-2] else "DOWN"
+
+            # VWAP (Volume Weighted Average Price)
+            vwap_values = vwap(high_prices, low_prices, close_prices, volume)
+            current_vwap = vwap_values.iloc[-1] if not vwap_values.empty else current_price_live
+
+            # Support/Resistance levels
+            support, resistance = support_resistance(high_prices, low_prices, close_prices)
+
             # Get sentiment score
             sentiment = self._get_sentiment(symbol)
             
@@ -221,7 +243,14 @@ class EnhancedAnalyzer:
                 fundamentals_score=fundamentals_score,
                 price_change_1d=price_change_1d,
                 price_change_5d=price_change_5d,
-                current_atr=current_atr  # ✅ NEW: Pass ATR for stops
+                current_atr=current_atr,  # ✅ NEW: Pass ATR for stops
+                stoch_k=current_stoch_k,  # ✅ NEW: Stochastic
+                stoch_d=current_stoch_d,
+                adx_value=current_adx,  # ✅ NEW: ADX
+                obv_trend=obv_trend,  # ✅ NEW: OBV trend
+                vwap_value=current_vwap,  # ✅ NEW: VWAP
+                support=support,  # ✅ NEW: Support level
+                resistance=resistance  # ✅ NEW: Resistance level
             )
 
             if signal_data:
@@ -321,12 +350,21 @@ class EnhancedAnalyzer:
             logger.error(f"Sentiment error for {symbol}: {e}")
             return 0
 
-    def _generate_golden_ratio_signal(self, symbol, current_price, current_rsi, ema_short, ema_long, 
-                                     fib_levels, volume_ratio, bb_upper, bb_lower, period_high, 
-                                     period_low, sentiment, fundamentals_score, price_change_1d, 
-                                     price_change_5d, current_atr):
+    def _generate_golden_ratio_signal(self, symbol, current_price, current_rsi, ema_short, ema_long,
+                                     fib_levels, volume_ratio, bb_upper, bb_lower, period_high,
+                                     period_low, sentiment, fundamentals_score, price_change_1d,
+                                     price_change_5d, current_atr, stoch_k=50, stoch_d=50,
+                                     adx_value=20, obv_trend="NEUTRAL", vwap_value=None,
+                                     support=None, resistance=None):
         """
-        ✅ ENHANCED: Now includes fundamentals and ATR-based stops
+        ✅ ENHANCED: Now includes advanced technical indicators, fundamentals, and ATR-based stops
+
+        New indicators integrated:
+        - Stochastic Oscillator (momentum)
+        - ADX (trend strength)
+        - OBV (volume momentum)
+        - VWAP (institutional price)
+        - Support/Resistance levels
         """
         signal = {
             'symbol': symbol,
@@ -394,6 +432,34 @@ class EnhancedAnalyzer:
                 buy_conditions.append(f"Strong fundamentals ({fundamentals_score:.0f}/100)")
             buy_score += fundamental_points
 
+        # ✅ NEW: Enhanced Technical Indicators for BUY
+        # Stochastic Oscillator - Oversold indicates buying opportunity
+        if stoch_k < 20:
+            buy_conditions.append(f"Stoch oversold ({stoch_k:.1f})")
+            buy_score += 10
+        elif stoch_k < 30:
+            buy_score += 5
+
+        # ADX - Strong trend confirmation
+        if adx_value > 25:
+            buy_conditions.append(f"Strong trend (ADX {adx_value:.1f})")
+            buy_score += 8
+
+        # OBV - Volume momentum supporting BUY
+        if obv_trend == "UP":
+            buy_conditions.append("Volume momentum up")
+            buy_score += 7
+
+        # VWAP - Price below VWAP is bullish for entry
+        if vwap_value and current_price < vwap_value * 0.99:
+            buy_conditions.append("Below VWAP")
+            buy_score += 6
+
+        # Support level - Near support is good for BUY
+        if support and current_price <= support * 1.02:
+            buy_conditions.append(f"Near support ₹{support:.2f}")
+            buy_score += 8
+
         # Sell scoring
         sell_conditions = []
         sell_score = 0
@@ -435,6 +501,34 @@ class EnhancedAnalyzer:
         if fundamentals_score > 0 and fundamentals_score < 40:
             sell_conditions.append(f"Weak fundamentals ({fundamentals_score:.0f}/100)")
             sell_score += sell_weights.get('fundamentals_weak', 10)
+
+        # ✅ NEW: Enhanced Technical Indicators for SELL
+        # Stochastic Oscillator - Overbought indicates selling opportunity
+        if stoch_k > 80:
+            sell_conditions.append(f"Stoch overbought ({stoch_k:.1f})")
+            sell_score += 10
+        elif stoch_k > 70:
+            sell_score += 5
+
+        # ADX - Strong downtrend confirmation
+        if adx_value > 25 and ema_short < ema_long:
+            sell_conditions.append(f"Strong downtrend (ADX {adx_value:.1f})")
+            sell_score += 8
+
+        # OBV - Volume momentum supporting SELL
+        if obv_trend == "DOWN":
+            sell_conditions.append("Volume momentum down")
+            sell_score += 7
+
+        # VWAP - Price above VWAP is bearish for short
+        if vwap_value and current_price > vwap_value * 1.01:
+            sell_conditions.append("Above VWAP")
+            sell_score += 6
+
+        # Resistance level - Near resistance is good for SELL
+        if resistance and current_price >= resistance * 0.98:
+            sell_conditions.append(f"Near resistance ₹{resistance:.2f}")
+            sell_score += 8
 
         # Determine signal
         if buy_score > sell_score and buy_score >= 50:
