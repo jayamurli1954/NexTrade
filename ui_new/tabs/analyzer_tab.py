@@ -407,17 +407,40 @@ class AnalyzerTab(QWidget):
         print(f"✅ DEBUG: paper_trading_tab is available, proceeding...")
         
         # Confirm with user
-        reply = QMessageBox.question(
-            self,
-            'Confirm Trade',
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Question)
+        msg_box.setWindowTitle('Confirm Trade')
+        msg_box.setText(
             f"Execute {action} trade?\n\n"
             f"Symbol: {result.get('symbol', '')}\n"
             f"Entry Price: ₹{result.get('ltp', result.get('current_price', 0)):.2f}\n"
             f"Target: ₹{result.get('target', 0):.2f}\n"
             f"Stop Loss: ₹{result.get('stop_loss', 0):.2f}\n"
-            f"Confidence: {result.get('confidence', 0)}%",
-            QMessageBox.Yes | QMessageBox.No
+            f"Confidence: {result.get('confidence', 0)}%"
         )
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                background-color: #ffffff;
+            }
+            QMessageBox QLabel {
+                color: #000000;
+                font-size: 14px;
+                min-width: 350px;
+            }
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                font-weight: bold;
+                padding: 8px 20px;
+                border-radius: 4px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """)
+        reply = msg_box.exec_()
         
         if reply == QMessageBox.No:
             return
@@ -475,9 +498,10 @@ class AnalyzerTab(QWidget):
             return
         
         # Show confirmation
-        QMessageBox.information(
-            self,
-            "Trade Executed",
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setWindowTitle("Trade Executed")
+        msg_box.setText(
             f"✅ {action} order placed successfully!\n\n"
             f"Symbol: {result.get('symbol', '')}\n"
             f"Entry: ₹{result.get('ltp', result.get('current_price', 0)):.2f}\n"
@@ -487,6 +511,29 @@ class AnalyzerTab(QWidget):
             f"Order ID: {order_id[-8:]}\n\n"
             f"Check the Paper Trading tab to monitor this trade."
         )
+        msg_box.setStandardButtons(QMessageBox.Ok)
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                background-color: #ffffff;
+            }
+            QMessageBox QLabel {
+                color: #000000;
+                font-size: 14px;
+                min-width: 350px;
+            }
+            QPushButton {
+                background-color: #2196F3;
+                color: white;
+                font-weight: bold;
+                padding: 8px 20px;
+                border-radius: 4px;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #0b7dda;
+            }
+        """)
+        msg_box.exec_()
         
         self.parent.statusBar().showMessage(
             f"✅ {action} trade executed for {result.get('symbol', '')}", 
