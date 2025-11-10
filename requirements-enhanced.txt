@@ -1,32 +1,30 @@
-# Original dependencies
-certifi==2025.10.5
-charset-normalizer==3.4.4
-idna==3.11
-numpy==2.3.4
-pandas==2.3.3
-pyotp==2.9.0
-PyQt5==5.15.11
-PyQt5-Qt5==5.15.2
-PyQt5_sip==12.17.1
-python-dateutil==2.9.0.post0
-pytz==2025.2
-requests==2.32.5
-six==1.17.0
-smartapi-python==1.5.5
-tzdata==2025.2
-urllib3==2.5.0
-vaderSentiment==3.3.2
+# Original dependencies (Python 3.10+ compatible)
+certifi>=2024.0.0
+charset-normalizer>=3.0.0
+idna>=3.0
+numpy>=1.24.0,<2.3.0  # Python 3.10 compatible (2.3+ requires Python 3.11)
+pandas>=2.0.0,<2.3.0  # Python 3.10 compatible
+pyotp>=2.9.0
+PyQt5>=5.15.0
+python-dateutil>=2.8.0
+pytz>=2024.0
+requests>=2.31.0
+six>=1.16.0
+smartapi-python>=1.5.0
+tzdata>=2024.0
+urllib3>=2.0.0
+vaderSentiment>=3.3.0
 
 # ✅ NEW: Enhanced Security
 keyring>=24.0.0
 cryptography>=41.0.0
 
 # ✅ NEW: Advanced Analytics (already have numpy and pandas above)
-scipy>=1.11.0  # For performance analytics calculations
+scipy>=1.10.0,<1.15.0  # For performance analytics calculations (Python 3.10 compatible)
 
 # ✅ NEW: ML/AI for FinBERT Sentiment Analysis
-transformers>=4.30.0
-torch>=2.0.0
+transformers>=4.30.0,<5.0.0  # FinBERT model support
+torch>=2.0.0,<2.5.0  # PyTorch backend (Python 3.10 compatible)
 feedparser>=6.0.0  # For RSS news feeds
 
 # Optional: For future ML/AI enhancements
