@@ -304,11 +304,11 @@ class DashboardTab(QWidget):
         content_label = QLabel("Waiting for data...")
         content_label.setAlignment(Qt.AlignLeft)
         content_label.setStyleSheet("""
-            font-size: 14px;
-            font-weight: normal;
+            font-size: 16px;
+            font-weight: bold;
             color: white;
             padding: 10px;
-            line-height: 1.6;
+            line-height: 1.8;
         """)
         content_label.setWordWrap(True)
         card_layout.addWidget(content_label)
