@@ -566,30 +566,38 @@ class ConnectionManager:
     def get_ltp_batch(self, symbols_with_exchange):
         """
         Get LTP for multiple symbols from WebSocket cache.
-        `symbols_with_exchange` should be a list of tuples: [(symbol, exchange), (symbol, exchange, token), ...]
+        `symbols_with_exchange` can be:
+        - List of strings: ["RELIANCE", "TCS", ...]
+        - List of tuples: [(symbol, exchange), (symbol, exchange, token), ...]
         """
         results = {}
-        
+
         with self.ltp_lock:
             for item in symbols_with_exchange:
-                if len(item) == 3: # (symbol, exchange, token)
+                # Handle if item is just a string symbol
+                if isinstance(item, str):
+                    symbol_upper = item.upper()
+                    if symbol_upper in self.ltp_data:
+                        results[item] = self.ltp_data[symbol_upper]['ltp']
+                    else:
+                        results[item] = None
+                elif len(item) == 3: # (symbol, exchange, token)
                     symbol, exchange, token = item
                     symbol_upper = symbol.upper()
-                    # If token is provided, we can directly use it to find the symbol in ltp_data
-                    # This assumes ltp_data keys are just symbols, not EXCH:SYMBOL
-                    # We need to ensure _on_ws_data populates ltp_data with just the symbol
-                    # For now, we'll rely on the symbol_upper as the key
                     if symbol_upper in self.ltp_data:
                         results[symbol] = self.ltp_data[symbol_upper]['ltp']
                     else:
                         results[symbol] = None
-                else: # (symbol, exchange)
+                elif len(item) == 2: # (symbol, exchange)
                     symbol, exchange = item
                     symbol_upper = symbol.upper()
                     if symbol_upper in self.ltp_data:
                         results[symbol] = self.ltp_data[symbol_upper]['ltp']
                     else:
                         results[symbol] = None
+                else:
+                    # Unknown format, skip
+                    continue
 
         print(f"ℹ️  [DEBUG] get_ltp_batch results: {results}")
         return results
