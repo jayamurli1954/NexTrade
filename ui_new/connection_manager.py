@@ -183,6 +183,12 @@ class ConnectionManager:
             # Build reverse map
             self.token_to_symbol_map = {token: key.split(':')[1] for key, token in self.token_map.items()}
 
+            # Debug: Verify index tokens are in reverse map
+            print(f"🔍 [DEBUG] Checking token_to_symbol_map for indices:")
+            for token in ['99926000', '99926009', '99926017', '99919000']:
+                symbol = self.token_to_symbol_map.get(token)
+                print(f"   Token {token} -> Symbol: {symbol}")
+
             self.tokens_loaded = True
     
     def load_symbol_tokens(self):
