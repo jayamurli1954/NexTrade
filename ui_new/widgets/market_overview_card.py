@@ -12,8 +12,8 @@ from PyQt5.QtGui import QFont, QCursor
 
 class MarketOverviewCard(QWidget):
     """
-    A static collapsible card showing major indices and stocks.
-    Refreshes every 30 seconds.
+    A modern, sleek collapsible card showing major indices and stocks.
+    Refreshes every 30 seconds with beautiful UI.
     """
 
     def __init__(self, parent=None):
@@ -25,33 +25,52 @@ class MarketOverviewCard(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        """Initialize the UI"""
+        """Initialize the modern UI"""
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+
+        # Main card container with shadow effect
+        self.card_container = QWidget()
+        self.card_container.setStyleSheet("""
+            QWidget {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #1e3c72, stop:1 #2a5298);
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+        """)
+
+        card_layout = QVBoxLayout(self.card_container)
+        card_layout.setContentsMargins(0, 0, 0, 0)
+        card_layout.setSpacing(0)
 
         # Title bar (clickable to collapse/expand)
         self.title_bar = QWidget()
         self.title_bar.setStyleSheet("""
             QWidget {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #2c3e50, stop:1 #34495e);
-                border-radius: 8px 8px 0 0;
-                padding: 12px;
+                background: transparent;
+                border-radius: 12px 12px 0 0;
+                padding: 15px;
             }
         """)
         self.title_bar.setCursor(QCursor(Qt.PointingHandCursor))
         self.title_bar.mousePressEvent = self.toggle_collapse
 
         title_layout = QHBoxLayout(self.title_bar)
-        title_layout.setContentsMargins(15, 5, 15, 5)
+        title_layout.setContentsMargins(20, 10, 20, 10)
 
-        # Title
-        title_label = QLabel("📊 Market Overview")
+        # Icon + Title
+        icon_label = QLabel("📊")
+        icon_label.setStyleSheet("font-size: 20px;")
+        title_layout.addWidget(icon_label)
+
+        title_label = QLabel("Market Overview")
         title_label.setStyleSheet("""
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             color: white;
+            margin-left: 5px;
         """)
         title_layout.addWidget(title_label)
 
@@ -61,122 +80,171 @@ class MarketOverviewCard(QWidget):
         self.last_updated_label = QLabel("Last updated: Never")
         self.last_updated_label.setStyleSheet("""
             font-size: 11px;
-            color: #bdc3c7;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 12px;
+            border-radius: 12px;
         """)
         title_layout.addWidget(self.last_updated_label)
 
         # Collapse/Expand button
         self.collapse_btn = QPushButton("▼")
-        self.collapse_btn.setFixedSize(25, 25)
+        self.collapse_btn.setFixedSize(30, 30)
         self.collapse_btn.setStyleSheet("""
             QPushButton {
-                background: transparent;
+                background: rgba(255, 255, 255, 0.15);
                 border: none;
                 color: white;
                 font-size: 14px;
                 font-weight: bold;
+                border-radius: 15px;
             }
             QPushButton:hover {
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 4px;
+                background: rgba(255, 255, 255, 0.25);
             }
         """)
         self.collapse_btn.clicked.connect(self.toggle_collapse)
         title_layout.addWidget(self.collapse_btn)
 
-        main_layout.addWidget(self.title_bar)
+        card_layout.addWidget(self.title_bar)
+
+        # Separator line
+        separator_top = QFrame()
+        separator_top.setFrameShape(QFrame.HLine)
+        separator_top.setStyleSheet("""
+            background: rgba(255, 255, 255, 0.1);
+            max-height: 1px;
+            border: none;
+        """)
+        card_layout.addWidget(separator_top)
 
         # Content area (collapsible)
         self.content_widget = QWidget()
         self.content_widget.setStyleSheet("""
             QWidget {
-                background: #34495e;
-                border-radius: 0 0 8px 8px;
-                padding: 15px;
+                background: transparent;
+                padding: 20px;
             }
         """)
 
         content_layout = QVBoxLayout(self.content_widget)
-        content_layout.setSpacing(15)
+        content_layout.setSpacing(20)
 
         # Major Indices Section
-        indices_label = QLabel("📈 Major Indices")
-        indices_label.setStyleSheet("""
-            font-size: 14px;
-            font-weight: bold;
-            color: #ecf0f1;
-            margin-bottom: 5px;
-        """)
-        content_layout.addWidget(indices_label)
+        indices_header = QHBoxLayout()
+        indices_icon = QLabel("📈")
+        indices_icon.setStyleSheet("font-size: 16px;")
+        indices_header.addWidget(indices_icon)
 
-        # Indices grid
-        self.indices_grid = QGridLayout()
-        self.indices_grid.setSpacing(10)
-        self.indices_grid.setContentsMargins(0, 0, 0, 0)
+        indices_label = QLabel("Major Indices")
+        indices_label.setStyleSheet("""
+            font-size: 15px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+        """)
+        indices_header.addWidget(indices_label)
+        indices_header.addStretch()
+        content_layout.addLayout(indices_header)
+
+        # Indices cards container
+        indices_container = QHBoxLayout()
+        indices_container.setSpacing(15)
 
         self.indices_labels = {}
         indices = ["NIFTY", "BANKNIFTY", "SENSEX", "INDIAVIX"]
 
-        for i, index in enumerate(indices):
-            # Symbol label
+        for index in indices:
+            # Create individual card for each index
+            index_card = QWidget()
+            index_card.setStyleSheet("""
+                QWidget {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 10px;
+                    padding: 15px;
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                }
+            """)
+
+            index_layout = QVBoxLayout(index_card)
+            index_layout.setSpacing(8)
+
+            # Symbol name
             symbol_label = QLabel(index)
             symbol_label.setStyleSheet("""
                 font-size: 13px;
-                font-weight: bold;
-                color: #bdc3c7;
+                font-weight: 600;
+                color: rgba(255, 255, 255, 0.8);
+                letter-spacing: 0.3px;
             """)
+            symbol_label.setAlignment(Qt.AlignCenter)
+            index_layout.addWidget(symbol_label)
 
-            # Price label
+            # Price
             price_label = QLabel("--")
-            price_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            price_label.setAlignment(Qt.AlignCenter)
             price_label.setStyleSheet("""
-                font-size: 14px;
+                font-size: 18px;
                 font-weight: bold;
-                color: white;
+                color: #ffffff;
             """)
+            index_layout.addWidget(price_label)
 
-            # Change label
+            # Change percentage
             change_label = QLabel("--")
-            change_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            change_label.setAlignment(Qt.AlignCenter)
             change_label.setStyleSheet("""
                 font-size: 12px;
+                font-weight: 600;
                 color: #95a5a6;
+                padding: 4px 8px;
+                border-radius: 6px;
+                background: rgba(0, 0, 0, 0.2);
             """)
+            index_layout.addWidget(change_label)
 
-            row = i // 2
-            col = (i % 2) * 3
-
-            self.indices_grid.addWidget(symbol_label, row, col)
-            self.indices_grid.addWidget(price_label, row, col + 1)
-            self.indices_grid.addWidget(change_label, row, col + 2)
+            indices_container.addWidget(index_card)
 
             self.indices_labels[index] = {
+                'card': index_card,
                 'symbol': symbol_label,
                 'price': price_label,
                 'change': change_label
             }
 
-        content_layout.addLayout(self.indices_grid)
+        content_layout.addLayout(indices_container)
 
         # Separator
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
-        separator.setStyleSheet("background: #7f8c8d; max-height: 1px;")
+        separator.setStyleSheet("""
+            background: rgba(255, 255, 255, 0.1);
+            max-height: 1px;
+            border: none;
+            margin: 10px 0;
+        """)
         content_layout.addWidget(separator)
 
         # Major Stocks Section
-        stocks_label = QLabel("💼 Major Stocks")
+        stocks_header = QHBoxLayout()
+        stocks_icon = QLabel("💼")
+        stocks_icon.setStyleSheet("font-size: 16px;")
+        stocks_header.addWidget(stocks_icon)
+
+        stocks_label = QLabel("Major Stocks")
         stocks_label.setStyleSheet("""
-            font-size: 14px;
+            font-size: 15px;
             font-weight: bold;
-            color: #ecf0f1;
-            margin-bottom: 5px;
+            color: #ffffff;
+            letter-spacing: 0.5px;
         """)
-        content_layout.addWidget(stocks_label)
+        stocks_header.addWidget(stocks_label)
+        stocks_header.addStretch()
+        content_layout.addLayout(stocks_header)
 
         # Stocks grid
         self.stocks_grid = QGridLayout()
-        self.stocks_grid.setSpacing(10)
+        self.stocks_grid.setSpacing(12)
         self.stocks_grid.setContentsMargins(0, 0, 0, 0)
 
         self.stocks_labels = {}
@@ -185,39 +253,65 @@ class MarketOverviewCard(QWidget):
                   "WIPRO", "TITAN"]
 
         for i, stock in enumerate(stocks):
-            # Symbol label
-            symbol_label = QLabel(stock)
-            symbol_label.setStyleSheet("""
-                font-size: 12px;
-                font-weight: bold;
-                color: #bdc3c7;
+            # Create mini card for each stock
+            stock_item = QWidget()
+            stock_item.setStyleSheet("""
+                QWidget {
+                    background: rgba(255, 255, 255, 0.08);
+                    border-radius: 8px;
+                    padding: 12px 15px;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                }
             """)
 
-            # Price label
+            stock_layout = QHBoxLayout(stock_item)
+            stock_layout.setContentsMargins(0, 0, 0, 0)
+            stock_layout.setSpacing(10)
+
+            # Symbol
+            symbol_label = QLabel(stock)
+            symbol_label.setStyleSheet("""
+                font-size: 13px;
+                font-weight: 600;
+                color: #ffffff;
+                min-width: 90px;
+            """)
+            stock_layout.addWidget(symbol_label)
+
+            stock_layout.addStretch()
+
+            # Price
             price_label = QLabel("--")
             price_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             price_label.setStyleSheet("""
-                font-size: 13px;
+                font-size: 14px;
                 font-weight: bold;
-                color: white;
+                color: #ffffff;
+                min-width: 80px;
             """)
+            stock_layout.addWidget(price_label)
 
-            # Change label
+            # Change
             change_label = QLabel("--")
-            change_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            change_label.setAlignment(Qt.AlignCenter)
             change_label.setStyleSheet("""
                 font-size: 11px;
+                font-weight: 600;
                 color: #95a5a6;
+                padding: 3px 8px;
+                border-radius: 5px;
+                background: rgba(0, 0, 0, 0.2);
+                min-width: 65px;
             """)
+            stock_layout.addWidget(change_label)
 
             row = i // 2
-            col = (i % 2) * 3
+            col = i % 2
 
-            self.stocks_grid.addWidget(symbol_label, row, col)
-            self.stocks_grid.addWidget(price_label, row, col + 1)
-            self.stocks_grid.addWidget(change_label, row, col + 2)
+            self.stocks_grid.addWidget(stock_item, row, col)
 
             self.stocks_labels[stock] = {
+                'item': stock_item,
                 'symbol': symbol_label,
                 'price': price_label,
                 'change': change_label
@@ -225,7 +319,9 @@ class MarketOverviewCard(QWidget):
 
         content_layout.addLayout(self.stocks_grid)
 
-        main_layout.addWidget(self.content_widget)
+        card_layout.addWidget(self.content_widget)
+
+        main_layout.addWidget(self.card_container)
 
     def toggle_collapse(self, event=None):
         """Toggle collapse/expand state"""
@@ -270,13 +366,16 @@ class MarketOverviewCard(QWidget):
                         change_pct = (change / prev_price) * 100
 
                         if change > 0:
-                            color = "#2ecc71"  # Green
+                            color = "#00ff88"  # Bright green
+                            bg_color = "rgba(0, 255, 136, 0.15)"
                             sign = "+"
                         elif change < 0:
-                            color = "#e74c3c"  # Red
+                            color = "#ff4757"  # Bright red
+                            bg_color = "rgba(255, 71, 87, 0.15)"
                             sign = ""
                         else:
                             color = "#95a5a6"  # Gray
+                            bg_color = "rgba(0, 0, 0, 0.2)"
                             sign = ""
 
                         change_text = f"{sign}{change_pct:.2f}%"
@@ -284,10 +383,13 @@ class MarketOverviewCard(QWidget):
                         self.indices_labels[symbol]['change'].setStyleSheet(f"""
                             font-size: 12px;
                             color: {color};
-                            font-weight: bold;
+                            font-weight: 600;
+                            padding: 4px 8px;
+                            border-radius: 6px;
+                            background: {bg_color};
                         """)
                         self.indices_labels[symbol]['price'].setStyleSheet(f"""
-                            font-size: 14px;
+                            font-size: 18px;
                             font-weight: bold;
                             color: {color};
                         """)
@@ -314,13 +416,16 @@ class MarketOverviewCard(QWidget):
                         change_pct = (change / prev_price) * 100
 
                         if change > 0:
-                            color = "#2ecc71"  # Green
+                            color = "#00ff88"  # Bright green
+                            bg_color = "rgba(0, 255, 136, 0.15)"
                             sign = "+"
                         elif change < 0:
-                            color = "#e74c3c"  # Red
+                            color = "#ff4757"  # Bright red
+                            bg_color = "rgba(255, 71, 87, 0.15)"
                             sign = ""
                         else:
                             color = "#95a5a6"  # Gray
+                            bg_color = "rgba(0, 0, 0, 0.2)"
                             sign = ""
 
                         change_text = f"{sign}{change_pct:.2f}%"
@@ -328,14 +433,17 @@ class MarketOverviewCard(QWidget):
                         self.stocks_labels[symbol]['change'].setStyleSheet(f"""
                             font-size: 11px;
                             color: {color};
-                            font-weight: bold;
+                            font-weight: 600;
+                            padding: 3px 8px;
+                            border-radius: 5px;
+                            background: {bg_color};
                         """)
                         self.stocks_labels[symbol]['price'].setStyleSheet(f"""
-                            font-size: 13px;
+                            font-size: 14px;
                             font-weight: bold;
                             color: {color};
                         """)
 
         # Update last updated time
         current_time = datetime.now().strftime("%I:%M:%S %p")
-        self.last_updated_label.setText(f"Last updated: {current_time}")
+        self.last_updated_label.setText(f"Updated: {current_time}")
