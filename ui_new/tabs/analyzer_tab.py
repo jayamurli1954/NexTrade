@@ -87,9 +87,10 @@ class AnalyzerTab(QWidget):
         self.parent = parent
         self.conn_mgr = conn_mgr
         self.paper_trading_tab = paper_trading_tab
-        
+
         self.scan_results = []
-        self.analyzer = EnhancedAnalyzer(data_provider=self.conn_mgr)
+        # Pass config file to analyzer so it can read NEWSAPI_KEY
+        self.analyzer = EnhancedAnalyzer(data_provider=self.conn_mgr, config_file="config.json")
         
         # Thread management
         self.analyzer_thread = None

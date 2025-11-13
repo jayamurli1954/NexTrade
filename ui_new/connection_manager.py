@@ -436,13 +436,17 @@ class ConnectionManager:
             if isinstance(message, dict):
                 token = str(message.get('token', ''))
                 ltp = message.get('last_traded_price', 0)
-                
+
+                # Debug: Log all messages with indices tokens
+                if token in ['99926000', '99926009', '99926017', '99919000']:
+                    print(f"🔍 [DEBUG] Raw WS message for token {token}: {message}")
+
                 if token and ltp:
                     symbol = self.token_to_symbol_map.get(token) # Use reverse map
                     if symbol:
-                        # Removed excessive debug logging for cleaner output
-                        # if symbol in ["NIFTY", "BANKNIFTY", "SENSEX", "INDIAVIX"]:
-                        #     print(f"ℹ️  [DEBUG] WebSocket data for {symbol}: {ltp / 100.0}")
+                        # Temporary debug for indices - will remove after fix
+                        if symbol in ["NIFTY", "BANKNIFTY", "SENSEX", "INDIAVIX"]:
+                            print(f"✅ [DEBUG] Received {symbol} WebSocket data: ₹{ltp / 100.0:.2f}")
 
                         # Update LTP cache (thread-safe)
                         with self.ltp_lock:
@@ -451,6 +455,10 @@ class ConnectionManager:
                                 'timestamp': time.time(),
                                 'token': token
                             }
+                    else:
+                        # Debug: Token not found in map
+                        if token in ['99926000', '99926009', '99926017']:  # NIFTY, BANKNIFTY, INDIAVIX
+                            print(f"⚠️ [DEBUG] Token {token} not found in token_to_symbol_map! LTP: {ltp / 100.0:.2f}")
                         # print(f"ℹ️  [DEBUG] Updated LTP for {symbol}: {self.ltp_data[symbol]['ltp']}")
         except Exception as e:
             print(f"⚠️  [DEBUG] Error in _on_ws_data: {e}")
@@ -474,8 +482,9 @@ class ConnectionManager:
             return False
         
         self.ensure_tokens_loaded()
-        
-        print(f"ℹ️  [DEBUG] Attempting to subscribe to: {symbols_with_exchange}")
+
+        # Reduced debug noise
+        # print(f"ℹ️  [DEBUG] Attempting to subscribe to: {symbols_with_exchange}")
 
         # Group tokens by exchange type
         tokens_by_exchange = {}
@@ -491,15 +500,17 @@ class ConnectionManager:
                 exchange_upper = exchange.upper()
                 key = f"{exchange_upper}:{symbol.upper()}"
                 token = self.token_map.get(key)
-            
-            print(f"ℹ️  [DEBUG] Symbol: {symbol}, Exchange: {exchange}, Key: {key}, Token: {token}")
+
+            # Reduced debug noise - only log if token is missing
+            # print(f"ℹ️  [DEBUG] Symbol: {symbol}, Exchange: {exchange}, Key: {key}, Token: {token}")
 
             if token:
                 # Special handling for indices - NSE indices use NFO exchange type for WebSocket
                 symbol_upper = symbol.upper()
                 if symbol_upper in ["NIFTY", "BANKNIFTY", "NIFTY50", "FINNIFTY", "MIDCPNIFTY", "INDIAVIX"]:
                     exchange_type = 2  # NFO for NSE indices
-                    print(f"ℹ️  [DEBUG] Using NFO exchange type (2) for NSE index {symbol_upper}")
+                    # Reduced debug noise
+                    # print(f"ℹ️  [DEBUG] Using NFO exchange type (2) for NSE index {symbol_upper}")
                 elif exchange_upper == "NSE":
                     exchange_type = 1
                 elif exchange_upper == "NFO":
@@ -523,13 +534,14 @@ class ConnectionManager:
 
         for exchange_type, tokens in tokens_by_exchange.items():
             token_data = [{"exchangeType": exchange_type, "tokens": tokens}]
-            print(f"ℹ️  [DEBUG] Subscribing with token_data: {token_data}") # NEW DEBUG PRINT
+            # Reduced debug noise
+            # print(f"ℹ️  [DEBUG] Subscribing with token_data: {token_data}")
             try:
-                print(f"ℹ️  [DEBUG] Subscribing to exchange {exchange_type} with tokens: {tokens}")
+                # print(f"ℹ️  [DEBUG] Subscribing to exchange {exchange_type} with tokens: {tokens}")
                 self.websocket.subscribe(correlation_id, mode, token_data)
                 print(f"✅ Subscribed to {len(tokens)} symbols on exchange type {exchange_type}")
             except Exception as e:
-                print(f"⚠️  [DEBUG] Subscription error for exchange type {exchange_type}: {e}")
+                print(f"⚠️  Subscription error for exchange type {exchange_type}: {e}")
 
         return True
 
