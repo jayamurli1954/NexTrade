@@ -172,10 +172,10 @@ class MarketOverviewCard(QWidget):
             # Symbol name
             symbol_label = QLabel(index)
             symbol_label.setStyleSheet("""
-                font-size: 13px;
-                font-weight: 600;
-                color: rgba(255, 255, 255, 0.8);
-                letter-spacing: 0.3px;
+                font-size: 15px;
+                font-weight: 700;
+                color: rgba(255, 255, 255, 0.9);
+                letter-spacing: 0.5px;
             """)
             symbol_label.setAlignment(Qt.AlignCenter)
             index_layout.addWidget(symbol_label)
@@ -184,8 +184,8 @@ class MarketOverviewCard(QWidget):
             price_label = QLabel("--")
             price_label.setAlignment(Qt.AlignCenter)
             price_label.setStyleSheet("""
-                font-size: 18px;
-                font-weight: bold;
+                font-size: 24px;
+                font-weight: 900;
                 color: #ffffff;
             """)
             index_layout.addWidget(price_label)
@@ -194,10 +194,10 @@ class MarketOverviewCard(QWidget):
             change_label = QLabel("--")
             change_label.setAlignment(Qt.AlignCenter)
             change_label.setStyleSheet("""
-                font-size: 12px;
-                font-weight: 600;
+                font-size: 14px;
+                font-weight: 700;
                 color: #95a5a6;
-                padding: 4px 8px;
+                padding: 5px 10px;
                 border-radius: 6px;
                 background: rgba(0, 0, 0, 0.2);
             """)
@@ -271,10 +271,10 @@ class MarketOverviewCard(QWidget):
             # Symbol
             symbol_label = QLabel(stock)
             symbol_label.setStyleSheet("""
-                font-size: 13px;
-                font-weight: 600;
+                font-size: 15px;
+                font-weight: 700;
                 color: #ffffff;
-                min-width: 90px;
+                min-width: 100px;
             """)
             stock_layout.addWidget(symbol_label)
 
@@ -284,10 +284,10 @@ class MarketOverviewCard(QWidget):
             price_label = QLabel("--")
             price_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             price_label.setStyleSheet("""
-                font-size: 14px;
-                font-weight: bold;
+                font-size: 16px;
+                font-weight: 900;
                 color: #ffffff;
-                min-width: 80px;
+                min-width: 90px;
             """)
             stock_layout.addWidget(price_label)
 
@@ -295,13 +295,13 @@ class MarketOverviewCard(QWidget):
             change_label = QLabel("--")
             change_label.setAlignment(Qt.AlignCenter)
             change_label.setStyleSheet("""
-                font-size: 11px;
-                font-weight: 600;
+                font-size: 13px;
+                font-weight: 700;
                 color: #95a5a6;
-                padding: 3px 8px;
+                padding: 4px 10px;
                 border-radius: 5px;
                 background: rgba(0, 0, 0, 0.2);
-                min-width: 65px;
+                min-width: 70px;
             """)
             stock_layout.addWidget(change_label)
 
@@ -381,16 +381,16 @@ class MarketOverviewCard(QWidget):
                         change_text = f"{sign}{change_pct:.2f}%"
                         self.indices_labels[symbol]['change'].setText(change_text)
                         self.indices_labels[symbol]['change'].setStyleSheet(f"""
-                            font-size: 12px;
+                            font-size: 14px;
                             color: {color};
-                            font-weight: 600;
-                            padding: 4px 8px;
+                            font-weight: 700;
+                            padding: 5px 10px;
                             border-radius: 6px;
                             background: {bg_color};
                         """)
                         self.indices_labels[symbol]['price'].setStyleSheet(f"""
-                            font-size: 18px;
-                            font-weight: bold;
+                            font-size: 24px;
+                            font-weight: 900;
                             color: {color};
                         """)
 
@@ -431,16 +431,16 @@ class MarketOverviewCard(QWidget):
                         change_text = f"{sign}{change_pct:.2f}%"
                         self.stocks_labels[symbol]['change'].setText(change_text)
                         self.stocks_labels[symbol]['change'].setStyleSheet(f"""
-                            font-size: 11px;
+                            font-size: 13px;
                             color: {color};
-                            font-weight: 600;
-                            padding: 3px 8px;
+                            font-weight: 700;
+                            padding: 4px 10px;
                             border-radius: 5px;
                             background: {bg_color};
                         """)
                         self.stocks_labels[symbol]['price'].setStyleSheet(f"""
-                            font-size: 14px;
-                            font-weight: bold;
+                            font-size: 16px;
+                            font-weight: 900;
                             color: {color};
                         """)
 

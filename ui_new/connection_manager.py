@@ -440,9 +440,10 @@ class ConnectionManager:
                 if token and ltp:
                     symbol = self.token_to_symbol_map.get(token) # Use reverse map
                     if symbol:
-                        if symbol in ["NIFTY", "BANKNIFTY", "SENSEX", "INDIAVIX"]: # NEW DEBUG PRINT
-                            print(f"ℹ️  [DEBUG] WebSocket data for {symbol}: {ltp / 100.0}")
-                        
+                        # Removed excessive debug logging for cleaner output
+                        # if symbol in ["NIFTY", "BANKNIFTY", "SENSEX", "INDIAVIX"]:
+                        #     print(f"ℹ️  [DEBUG] WebSocket data for {symbol}: {ltp / 100.0}")
+
                         # Update LTP cache (thread-safe)
                         with self.ltp_lock:
                             self.ltp_data[symbol] = {
@@ -591,7 +592,8 @@ class ConnectionManager:
                     else:
                         results[symbol] = None
 
-        print(f"ℹ️  [DEBUG] get_ltp_batch results: {results}")
+        # Removed excessive debug logging for cleaner output
+        # print(f"ℹ️  [DEBUG] get_ltp_batch results: {results}")
         return results
     
     def get_holdings(self):
