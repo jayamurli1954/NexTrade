@@ -9,7 +9,7 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QMessageBox
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
-from ui_new.widgets.scrolling_ticker import ScrollingTicker
+from ui_new.widgets.market_overview_card import MarketOverviewCard
 
 class DashboardTab(QWidget):
     """Dashboard - Overview of trading bot status"""
@@ -27,10 +27,10 @@ class DashboardTab(QWidget):
         self.timer.timeout.connect(self.refresh_dashboard)
         self.timer.start(10000)
 
-        # Timer for the ticker
-        self.ticker_timer = QTimer()
-        self.ticker_timer.timeout.connect(self.update_ticker)
-        self.ticker_timer.start(2000) # Update every 2 seconds
+        # Timer for the market overview card (refresh every 30 seconds)
+        self.market_timer = QTimer()
+        self.market_timer.timeout.connect(self.update_market_overview)
+        self.market_timer.start(30000)  # Update every 30 seconds
 
         self.ticker_symbols = [
             ("NIFTY", "NSE"),
@@ -53,13 +53,11 @@ class DashboardTab(QWidget):
         layout = QVBoxLayout(self)
         layout.setSpacing(20)
 
-        # Scrolling Ticker
-        self.ticker = ScrollingTicker(self)
-        self.ticker.setFixedHeight(40)
-        self.ticker.setObjectName("scrollingTicker")
-        self.ticker.setStyleSheet("#scrollingTicker { border-bottom: 1px solid #4f5b62; }")
-        layout.addWidget(self.ticker)
-        self.ticker.hide() # Initially hidden
+        # Market Overview Card
+        self.market_card = MarketOverviewCard(self)
+        self.market_card.setObjectName("marketOverviewCard")
+        layout.addWidget(self.market_card)
+        self.market_card.hide()  # Initially hidden until connected
         
         # Top bar with connection status and connect button
         top_bar = QHBoxLayout()
@@ -232,7 +230,8 @@ class DashboardTab(QWidget):
         # Initial refresh
         self.refresh_dashboard()
         
-    def update_ticker(self):
+    def update_market_overview(self):
+        """Update the market overview card with latest prices"""
         if not self.conn_mgr.get_connection_status()['broker_connected']:
             return
 
@@ -240,15 +239,15 @@ class DashboardTab(QWidget):
 
         prices = {}
         for item in self.ticker_symbols:
-            symbol = item[0] # Always the first element
+            symbol = item[0]  # Always the first element
             price = ltp_data.get(symbol)
             if price is not None:
                 prices[symbol] = price
             else:
                 prices[symbol] = "N/A"
 
-        self.ticker.update_prices(prices)
-        self.update_gainers_losers()    
+        self.market_card.update_prices(prices)
+        self.update_gainers_losers(prices)    
     def create_stat_card(self, title, value, color):
         """Create a statistics card"""
         card = QWidget()
@@ -318,16 +317,17 @@ class DashboardTab(QWidget):
 
         return card
 
-    def update_gainers_losers(self):
+    def update_gainers_losers(self, current_prices=None):
         """Calculate and update top gainers and losers"""
         if not self.conn_mgr.get_connection_status()['broker_connected']:
             self.gainers_card.content_label.setText("Not connected")
             self.losers_card.content_label.setText("Not connected")
             return
 
-        # Get current and previous prices from ticker
-        current_prices = self.ticker.current_prices
-        previous_prices = self.ticker.previous_prices
+        # Get current and previous prices from market card
+        if current_prices is None:
+            current_prices = self.market_card.current_prices
+        previous_prices = self.market_card.previous_prices
 
         if not current_prices or not previous_prices:
             self.gainers_card.content_label.setText("Waiting for data...")
@@ -453,7 +453,7 @@ class DashboardTab(QWidget):
                     border: none;
                 }
             """)
-            self.ticker.show()
+            self.market_card.show()
         else:
             self.connection_banner.setText("🔴 Broker: Disconnected")
             self.connection_banner.setStyleSheet("""
@@ -474,7 +474,7 @@ class DashboardTab(QWidget):
                     border: none;
                 }
             """)
-            self.ticker.hide()
+            self.market_card.hide()
         
         # Update capital
         capital = self.conn_mgr.config.get('initial_capital', 100000)
