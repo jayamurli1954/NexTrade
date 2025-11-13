@@ -5,5 +5,6 @@
     "totp_token": "IHB5UTV7XWWI4DPZ5XOGUNZXUE",
     "initial_capital": 100000,
     "risk_per_trade": 2,
-    "auto_trading": false
+    "auto_trading": false,
+    "NEWSAPI_KEY": "13870b6e88734b49b847f6cb7621859c"
 }
