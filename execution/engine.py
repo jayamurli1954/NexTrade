@@ -98,10 +98,19 @@ class ExecutionEngine:
                 reconciliation_required=False
             )
 
-        exec_req_id = f"EXREQ-ENTRY-{uuid.uuid4().hex[:8].upper()}"
-
+        exec_req_id = f"EXREQ-ENTRY-{risk_decision.decision_id}"
         idem_key = f"EXEC_ENTRY:{risk_decision.decision_id}"
 
+        # Idempotency Check: Return cached submission result if request was already processed
+        if exec_req_id in self._state_machines and self._state_machines[exec_req_id].is_terminal:
+            cached_result = self.gateway._idempotency_registry[idem_key][1]
+            pos_id = self._execution_lineage.get(exec_req_id, {}).get("position_id")
+            return ExecutionSubmissionResult(
+                execution_result=cached_result,
+                position_id=pos_id,
+                protection_activated=pos_id in self._protection_managers,
+                reconciliation_required=cached_result.status == ExecutionStatus.UNKNOWN
+            )
 
         exec_req = ExecutionRequest(
             execution_request_id=exec_req_id,
