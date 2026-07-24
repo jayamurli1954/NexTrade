@@ -181,3 +181,23 @@ class ExecutionResult:
             "rejection_reason": self.rejection_reason,
             "timestamp": self.timestamp.isoformat(),
         }
+
+
+@dataclass(frozen=True)
+class ExecutionSubmissionResult:
+    """
+    Immutable result wrapper returned by ExecutionEngine.submit_entry().
+    Refinement 3 for Sub-Phase 3F: Clean API design avoiding direct mutable manager return.
+    """
+    execution_result: ExecutionResult
+    position_id: Optional[str] = None
+    protection_activated: bool = False
+    reconciliation_required: bool = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "execution_result": self.execution_result.to_dict(),
+            "position_id": self.position_id,
+            "protection_activated": self.protection_activated,
+            "reconciliation_required": self.reconciliation_required,
+        }
