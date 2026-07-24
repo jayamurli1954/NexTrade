@@ -124,6 +124,56 @@ class ExecutionStateMachine:
         )
         return self._current_status
 
+    def reconcile_to(
+        self,
+        new_status: ExecutionStatus,
+        authority_key: str,
+        reason: str = ""
+    ) -> ExecutionStatus:
+        """
+        Invariant E29: Reconciliation Authority Boundary.
+        Controlled resolution of execution state (especially UNKNOWN state) via ReconciliationEngine.
+        Requires valid authority_key token. Normal components calling transition_to directly
+        cannot resolve UNKNOWN state.
+        """
+        from execution.state_machine import RECONCILIATION_AUTHORITY_KEY
+        if authority_key != RECONCILIATION_AUTHORITY_KEY:
+            raise PermissionError(
+                "Invariant E29 Violation: ExecutionStateMachine.reconcile_to() may only be invoked "
+                "by ReconciliationEngine with exclusive authority key."
+            )
+
+        if not isinstance(new_status, ExecutionStatus):
+            raise ValueError(f"Expected ExecutionStatus enum, got {type(new_status).__name__}")
+
+        if new_status == self._current_status:
+            return self._current_status
+
+        allowed_reconciled_states = {
+            ExecutionStatus.FILLED,
+            ExecutionStatus.PARTIALLY_FILLED,
+            ExecutionStatus.REJECTED,
+            ExecutionStatus.CANCELLED,
+            ExecutionStatus.EXPIRED,
+        }
+        if new_status not in allowed_reconciled_states:
+            raise ValueError(f"Cannot reconcile state to invalid target status '{new_status}'")
+
+        prev = self._current_status
+        self._current_status = new_status
+        self._history.append(
+            ExecutionStateRecord(
+                execution_request_id=self.execution_request_id,
+                previous_status=prev,
+                new_status=new_status,
+                reason=f"RECONCILIATION_RESOLVED: {reason}" if reason else "RECONCILIATION_RESOLVED"
+            )
+        )
+        return self._current_status
+
     def get_history(self) -> List[ExecutionStateRecord]:
         """Return full transition history."""
         return list(self._history)
+
+
+RECONCILIATION_AUTHORITY_KEY = "RECONCILIATION_AUTHORITY_EXCLUSIVE_KEY"

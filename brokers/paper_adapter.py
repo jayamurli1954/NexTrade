@@ -215,14 +215,17 @@ class PaperBrokerAdapter(BrokerInterface):
             positions.append(
                 Position(
                     position_id=f"POS-{sym}",
+                    strategy_id="PAPER",
                     symbol=sym,
-                    quantity=pos.get("quantity", pos.get("qty", 0)),
+                    exchange="NSE",
                     side=side,
-                    average_price=pos.get("avg_price", 0.0),
+                    quantity=pos.get("quantity", pos.get("qty", 0)),
+                    average_entry_price=pos.get("avg_price", 0.0),
                     current_price=pos.get("current_price", 0.0),
                     unrealized_pnl=pos.get("pnl", 0.0)
                 )
             )
+
         return positions
 
     def get_account_funds(self) -> FundsInfo:
@@ -238,3 +241,26 @@ class PaperBrokerAdapter(BrokerInterface):
     def get_trades(self, order_id: Optional[str] = None) -> List[Any]:
         """BrokerInterface protocol implementation for get_trades."""
         return []
+
+    def query_execution(
+        self,
+        execution_request_id: Optional[str] = None,
+        broker_order_id: Optional[str] = None,
+        idempotency_key: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Sub-Phase 3E: Query authoritative broker execution state for reconciliation.
+        """
+        # Look up in paper trader trades history if available
+        trades = getattr(self.paper_trader, "trades", [])
+        for trade in trades:
+            t_id = str(trade.get("trade_id", ""))
+            if (broker_order_id and t_id == str(broker_order_id)) or (execution_request_id and trade.get("execution_request_id") == execution_request_id):
+                return {
+                    "broker_order_id": t_id,
+                    "status": ExecutionStatus.FILLED,
+                    "cumulative_filled_quantity": trade.get("quantity", 0),
+                    "average_fill_price": float(trade.get("price", 100.0)),
+                    "symbol": trade.get("symbol", ""),
+                }
+        return None
