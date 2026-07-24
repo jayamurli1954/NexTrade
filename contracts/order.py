@@ -44,6 +44,18 @@ def _utc_now() -> datetime:
 
 
 @dataclass
+class OrderModification:
+    """
+    Extensible domain object representing requested modifications to an open order.
+    """
+    new_quantity: Optional[int] = None
+    new_limit_price: Optional[float] = None
+    new_stop_price: Optional[float] = None
+    new_time_in_force: Optional[TimeInForce] = None
+
+
+
+@dataclass
 class Order:
     """
     Mutable order intent object tracking execution lifecycle.
