@@ -20,8 +20,7 @@ p.set_credentials(
 
 print("login:", p.login() if not USE_PAPER_MODE else "Paper mode active")
 
-print("profile:", p.get_profile())
+print("snapshot:", p.snapshot())
 print("funds:", p.get_funds())
 print("holdings:", p.get_holdings())
-print("ltp_bulk:", p.get_ltp_bulk(["RELIANCE-EQ", "TCS-EQ", "INFY-EQ"]))
-
+print("ltp:", p.get_ltp("RELIANCE", "NSE"))
