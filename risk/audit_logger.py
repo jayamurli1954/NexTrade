@@ -325,10 +325,13 @@ class RiskAuditLogger:
         with self._lock:
             if self._write_failures > 0 and self._is_degraded:
                 status_str = "DEGRADED"
+            elif self._is_degraded:
+                status_str = "DEGRADED"
             elif self._write_failures > 0:
                 status_str = "FAILED"
             else:
                 status_str = "HEALTHY"
+
 
             return AuditHealthStatus(
                 status=status_str,
