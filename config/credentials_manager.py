@@ -1,107 +1,57 @@
 # config/credentials_manager.py
-import os
-import json
+"""
+Backward-compatible wrapper around canonical OS Keyring credential manager
+(enhancements.config.secure_credentials.SecureCredentialsManager)
+"""
 import logging
 from typing import Tuple, Dict, Any
 
 logger = logging.getLogger("CredentialsManager")
 
 try:
-    from cryptography.fernet import Fernet
-    _CRYPTO_OK = True
-except ImportError:
-    Fernet = None
-    _CRYPTO_OK = False
-    logger.warning("cryptography not installed - using plain JSON fallback")
-
-
-def _user_appdata_dir() -> str:
-    base = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
-    if base:
-        return os.path.join(base, "AngelTradingBot", "credentials")
-    home = os.path.expanduser("~")
-    return os.path.join(home, ".local", "share", "AngelTradingBot", "credentials")
-
-
-def _ensure_dir(p: str) -> None:
-    os.makedirs(p, exist_ok=True)
-
-
-def _atomic_write_bytes(path: str, data: bytes) -> None:
-    tmp = path + ".tmp"
-    with open(tmp, "wb") as f:
-        f.write(data)
-        f.flush()
-        os.fsync(f.fileno())
-    os.replace(tmp, path)
+    from enhancements.config.secure_credentials import SecureCredentialsManager as KeyringCredentialsManager
+    _KEYRING_OK = True
+except Exception as e:
+    logger.warning(f"Keyring credential manager import error: {e}")
+    KeyringCredentialsManager = None
+    _KEYRING_OK = False
 
 
 class SecureCredentialsManager:
+    """
+    Backward-compatible wrapper that delegates to enhancements.config.secure_credentials
+    """
     def __init__(self, config_dir: str = "config"):
-        self.project_config_dir = config_dir
-        _ensure_dir(self.project_config_dir)
-        self.appdata_dir = _user_appdata_dir()
-        _ensure_dir(self.appdata_dir)
-        self._key_file = os.path.join(self.appdata_dir, "key.key")
-        self._cred_file = os.path.join(self.appdata_dir, "encrypted_credentials.dat")
-        self.pointer_file = os.path.join(self.project_config_dir, "credentials_path.txt")
-        try:
-            with open(self.pointer_file, "w", encoding="utf-8") as f:
-                f.write(self._cred_file)
-        except Exception:
-            pass
-        self._fernet = None
-        if _CRYPTO_OK:
-            try:
-                if not os.path.exists(self._key_file):
-                    key = Fernet.generate_key()
-                    _atomic_write_bytes(self._key_file, key)
-                    logger.info("New encryption key generated")
-                with open(self._key_file, "rb") as kf:
-                    key = kf.read()
-                self._fernet = Fernet(key)
-            except Exception as e:
-                logger.warning(f"Encryption disabled: {e}")
-                self._fernet = None
-        logger.info("Credentials manager initialized")
+        self.config_dir = config_dir
+        if _KEYRING_OK and KeyringCredentialsManager:
+            self._keyring_mgr = KeyringCredentialsManager()
+        else:
+            self._keyring_mgr = None
+            logger.warning("OS Keyring credential manager not available")
 
     def save_credentials(self, api_key: str, client_code: str, password: str, totp_secret: str = "") -> Tuple[bool, str]:
-        payload = {
-            "api_key": api_key.strip(),
-            "client_code": client_code.strip(),
-            "password": password.strip(),
-            "totp_secret": (totp_secret or "").strip(),
-        }
-        try:
-            raw = json.dumps(payload).encode("utf-8")
-            if self._fernet:
-                data = self._fernet.encrypt(raw)
+        if self._keyring_mgr:
+            creds = {
+                "api_key": api_key.strip(),
+                "client_id": client_code.strip(),
+                "password": password.strip(),
+                "totp_token": (totp_secret or "").strip()
+            }
+            success = self._keyring_mgr.store_credentials("default", creds)
+            if success:
+                logger.info("Credentials saved securely to OS keyring")
+                return True, "Saved to OS Keyring"
             else:
-                data = raw
-            _atomic_write_bytes(self._cred_file, data)
-            logger.info("Credentials saved")
-            return True, "Saved"
-        except Exception as e:
-            logger.error(f"Save error: {e}")
-            return False, f"Failed: {e}"
+                return False, "Keyring save failed"
+        return False, "Keyring unavailable"
 
     def load_credentials(self) -> Tuple[bool, Dict[str, Any]]:
-        if not os.path.exists(self._cred_file):
-            return False, {}
-        try:
-            with open(self._cred_file, "rb") as f:
-                data = f.read()
-            if self._fernet:
-                try:
-                    raw = self._fernet.decrypt(data)
-                except Exception:
-                    raw = data  # Fallback if old plain
-            else:
-                raw = data
-            payload = json.loads(raw.decode("utf-8"))
-            logger.info("Credentials loaded")
-            return True, payload
-        except Exception as e:
-            logger.error(f"Load error: {e}")
-            return False, {}
-
+        if self._keyring_mgr:
+            creds = self._keyring_mgr.retrieve_credentials("default")
+            if creds:
+                # Map client_id -> client_code for backward compatibility
+                if "client_id" in creds and "client_code" not in creds:
+                    creds["client_code"] = creds["client_id"]
+                logger.info("Credentials loaded securely from OS keyring")
+                return True, creds
+        return False, {}

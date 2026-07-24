@@ -18,7 +18,8 @@ p.set_credentials(
     totp_secret=creds.get("totp_secret", ""),
 )
 
-print("connect:", p.connect())
+print("login:", p.login() if not USE_PAPER_MODE else "Paper mode active")
+
 print("profile:", p.get_profile())
 print("funds:", p.get_funds())
 print("holdings:", p.get_holdings())

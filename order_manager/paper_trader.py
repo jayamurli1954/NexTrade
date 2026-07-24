@@ -15,10 +15,18 @@ CRITICAL FIXES:
 
 from datetime import datetime, time
 import pandas as pd
+import sys
 import os
 import threading
 import logging
 import time as time_module
+
+if hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 from core.capital_tracker import get_capital_tracker
 from core.cumulative_trade_logger import get_cumulative_logger
 

@@ -1,6 +1,15 @@
 # Credentials and sensitive data
 config/credentials_path.txt
-.env
+config.json
+config/*.key
+config/*.dat
+*.key
+*.dat
+.env*
+paper_trades.json
+paper_trades_*.xlsx
+trades_log.xlsx
+
 
 # Python cache
 __pycache__/
