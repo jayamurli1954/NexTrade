@@ -25,10 +25,12 @@ class ExecutionGateway:
     def __init__(
         self,
         audit_logger: Optional[RiskAuditLogger] = None,
-        broker_adapter: Optional[Any] = None
+        broker_adapter: Optional[Any] = None,
+        safety_gate: Optional[Any] = None
     ):
         self.audit_logger = audit_logger
         self.broker_adapter = broker_adapter
+        self.safety_gate = safety_gate
         self._decision_store: Dict[str, RiskDecision] = {}
         # Idempotency Registry mapping idempotency_key -> (ExecutionRequest, ExecutionResult)
         self._idempotency_registry: Dict[str, Tuple[ExecutionRequest, ExecutionResult]] = {}
@@ -126,6 +128,22 @@ class ExecutionGateway:
             return reject(
                 f"EXECUTION_GATE_DENIED: ExecutionAuthorizationGate denied execution for decision '{authoritative_decision.decision_id}'"
             )
+
+        # 4b. LiveSafetyGate Safety Perimeter Evaluation (Phase 4D)
+        if self.safety_gate is not None and hasattr(self.safety_gate, "authorize_dispatch"):
+            from contracts.broker_translation import to_broker_order_request
+            from contracts.safety_contracts import SafetyEvaluationContext, ExecutionEnvironment
+            
+            broker_req = to_broker_order_request(request)
+            safety_context = SafetyEvaluationContext(
+                live_trading_enabled=getattr(self.safety_gate, "live_trading_enabled", False),
+                environment=getattr(self.safety_gate, "environment", ExecutionEnvironment.PAPER),
+                timestamp=now
+            )
+            safety_res = self.safety_gate.authorize_dispatch(broker_req, safety_context)
+            if not safety_res.is_authorized:
+                denial_str = ", ".join(safety_res.denial_reasons) if safety_res.denial_reasons else "Safety gate denial"
+                return reject(f"LIVE_SAFETY_GATE_DENIED: {denial_str}")
 
         # 5. Execute via BrokerAdapter (if configured) or Default Paper Stub
         if self.broker_adapter is not None and hasattr(self.broker_adapter, "execute_order"):
