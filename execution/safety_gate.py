@@ -28,13 +28,15 @@ class LiveSafetyGate:
     def __init__(
         self,
         limits: Optional[LiveSafetyLimits] = None,
-        rate_limiter: Optional[SlidingWindowRateLimiter] = None
+        rate_limiter: Optional[SlidingWindowRateLimiter] = None,
+        metrics_registry: Optional[Any] = None
     ):
         self.limits = limits or LiveSafetyLimits()
         self.rate_limiter = rate_limiter or SlidingWindowRateLimiter(
             max_requests=self.limits.max_orders_per_minute,
             window_seconds=60.0
         )
+        self.metrics_registry = metrics_registry
 
     def authorize_dispatch(
         self,
