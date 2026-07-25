@@ -19,7 +19,7 @@ from brokers.ibkr_adapter import IBKRBrokerAdapter
 
 
 def test_physical_port_security_guard_blocks_live_ports():
-    """Verify validate_sandbox_config raises PermissionError if live port or live account is used."""
+    """Verify validate_sandbox_config raises PermissionError/ValueError across all invalid/live configurations."""
     # 1. Live TWS port 7462 must fail when live_trading_enabled is False
     config_live_port = IBKRConfig(port=7462)
     with pytest.raises(PermissionError, match="SECURITY GUARD VIOLATION: IBKR live port 7462 requested"):
@@ -30,19 +30,38 @@ def test_physical_port_security_guard_blocks_live_ports():
     with pytest.raises(PermissionError, match="SECURITY GUARD VIOLATION: IBKR live port 4001 requested"):
         validate_sandbox_config(config_gateway_live, live_trading_enabled=False)
 
-    # 3. Live account designation must fail
+    # 3. Unauthorized port 9999 must fail
+    config_invalid_port = IBKRConfig(port=9999)
+    with pytest.raises(PermissionError, match="SECURITY GUARD VIOLATION: Unauthorized port 9999 requested"):
+        validate_sandbox_config(config_invalid_port, live_trading_enabled=False)
+
+    # 4. Live account designation must fail
     config_live_acct = IBKRConfig(port=7497, is_paper_account=False)
     with pytest.raises(PermissionError, match="is_paper_account must be True"):
         validate_sandbox_config(config_live_acct, live_trading_enabled=False)
 
-    # 4. Live account ID format must fail
+    # 5. Live account ID format must fail
     config_live_id = IBKRConfig(port=7497, account_id="U999888")
     with pytest.raises(PermissionError, match="Account ID 'U999888' appears to be a live account"):
         validate_sandbox_config(config_live_id, live_trading_enabled=False)
 
-    # 5. Paper port 7497 & DU account succeeds cleanly
-    config_paper = IBKRConfig(port=7497, account_id="DU123456", is_paper_account=True)
-    validate_sandbox_config(config_paper, live_trading_enabled=False)
+    # 6. Missing host must fail with ValueError
+    config_empty_host = IBKRConfig(host="")
+    with pytest.raises(ValueError, match="IBKR config host must be a non-empty string"):
+        validate_sandbox_config(config_empty_host, live_trading_enabled=False)
+
+    # 7. Missing account ID must fail with ValueError
+    config_empty_acct = IBKRConfig(account_id="")
+    with pytest.raises(ValueError, match="IBKR config account_id must be a non-empty string"):
+        validate_sandbox_config(config_empty_acct, live_trading_enabled=False)
+
+    # 8. Paper TWS port 7497 & DU account succeeds cleanly
+    config_paper_tws = IBKRConfig(port=7497, account_id="DU123456", is_paper_account=True)
+    validate_sandbox_config(config_paper_tws, live_trading_enabled=False)
+
+    # 9. Paper Gateway port 4002 & DU account succeeds cleanly
+    config_paper_gateway = IBKRConfig(port=4002, account_id="DU123456", is_paper_account=True)
+    validate_sandbox_config(config_paper_gateway, live_trading_enabled=False)
 
 
 def test_sandbox_harness_order_types_and_lifecycle():

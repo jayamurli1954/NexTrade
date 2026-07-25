@@ -29,18 +29,29 @@ class IBKRConfig:
 def validate_sandbox_config(config: IBKRConfig, live_trading_enabled: bool = False) -> None:
     """
     Validates IBKR connection configuration against physical safety bounds.
-    Raises PermissionError if a live production port or non-paper account is configured
-    while live_trading_enabled is False.
+    Raises ValueError or PermissionError if invalid, non-paper, or unauthorized parameters are present while live_trading_enabled is False.
     """
     if not isinstance(config, IBKRConfig):
-        raise ValueError(f"Expected IBKRConfig instance, got {type(config).__name__}")
+        raise ValueError(f"Expected IBKRConfig instance, got {type(config).__name__ if config is not None else 'None'}")
 
-    # Guard 1: Physical Live Port Rejection
-    if not live_trading_enabled and config.port in KNOWN_LIVE_IBKR_PORTS:
-        raise PermissionError(
-            f"SECURITY GUARD VIOLATION: IBKR live port {config.port} requested while "
-            f"live_trading_enabled is False. Only paper ports ({KNOWN_PAPER_IBKR_PORTS}) are permitted."
-        )
+    if not config.host or not isinstance(config.host, str):
+        raise ValueError("IBKR config host must be a non-empty string")
+
+    if not config.account_id or not isinstance(config.account_id, str):
+        raise ValueError("IBKR config account_id must be a non-empty string")
+
+    # Guard 1: Physical Live & Unauthorized Port Rejection
+    if not live_trading_enabled:
+        if config.port in KNOWN_LIVE_IBKR_PORTS:
+            raise PermissionError(
+                f"SECURITY GUARD VIOLATION: IBKR live port {config.port} requested while "
+                f"live_trading_enabled is False. Only paper ports ({KNOWN_PAPER_IBKR_PORTS}) are permitted."
+            )
+        if config.port not in KNOWN_PAPER_IBKR_PORTS:
+            raise PermissionError(
+                f"SECURITY GUARD VIOLATION: Unauthorized port {config.port} requested while "
+                f"live_trading_enabled is False. Only paper ports ({KNOWN_PAPER_IBKR_PORTS}) are permitted."
+            )
 
     # Guard 2: Paper Account Designation Rejection
     if not live_trading_enabled and not config.is_paper_account:
