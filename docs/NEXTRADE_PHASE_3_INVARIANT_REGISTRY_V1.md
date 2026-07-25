@@ -1,7 +1,7 @@
 # NexTrade Phase 3 — Master Invariant Registry (E1 — E41)
 
 ## Executive Summary
-This document serves as the **authoritative Master Invariant Registry** for the NexTrade Execution, Protection & Reconciliation Subsystem (Phase 3). It consolidates all 41 operational and safety invariants established from Sub-Phase 3A through Sub-Phase 3H.
+This document serves as the **authoritative Master Invariant Registry** for the NexTrade Execution, Protection & Reconciliation Subsystem (Phase 3 baseline `v3.0-phase-3-complete` / commit `db4a6ac`). It consolidates all 41 operational and safety invariants established from Sub-Phase 3A through Sub-Phase 3H, including the audited State Machine lifecycle invariants (E24–E28).
 
 ---
 
@@ -42,7 +42,19 @@ This document serves as the **authoritative Master Invariant Registry** for the 
 
 ---
 
-## 3. Reconciliation Engine Invariants (E29 — E33)
+## 3. Execution State Machine Lifecycle Invariants (E24 — E28)
+
+| ID | Invariant Name | Enforcing Module | Definition & Enforcement Mechanism | Failure Behavior | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **E24** | State Transition Graph Integrity | `ExecutionStateMachine` | Order transitions strictly bounded by `VALID_TRANSITIONS` graph (`CREATED` -> `AUTHORIZED` -> `SUBMITTED` -> `FILLED`/`UNKNOWN`). | Illegal state jumps raise `ValueError`. | 🟢 PASS |
+| **E25** | Terminal State & Reconciliation Boundary | `ExecutionStateMachine` | Terminal states (`FILLED`, `REJECTED`, `CANCELLED`, `EXPIRED`, `UNKNOWN`) permit 0 outward transitions via `transition_to()`. State `UNKNOWN` can only be reconciled via `reconcile_to()` with valid authority key. | Direct transition raises `ValueError`; unauthorized reconciliation raises `PermissionError`. | 🟢 PASS |
+| **E26** | Idempotent State Self-Transitions | `ExecutionStateMachine` | Requesting `new_status == current_status` returns `current_status` cleanly without duplicate history records or side-effects. | No state mutation or audit log duplication. | 🟢 PASS |
+| **E27** | Complete Lineage Audit Trail | `ExecutionStateMachine` | Every initialization and state transition appends an immutable `ExecutionStateRecord` capturing `execution_request_id`, `previous_status`, `new_status`, `timestamp`, and `reason`. | Comprehensive transition history preserved. | 🟢 PASS |
+| **E28** | Non-Empty Identity Enforcement | `ExecutionStateMachine` | Constructor validates `execution_request_id` is a non-empty string. | `ValueError` on empty or None identifier. | 🟢 PASS |
+
+---
+
+## 4. Reconciliation Engine Invariants (E29 — E33)
 
 | ID | Invariant Name | Enforcing Module | Definition & Enforcement Mechanism | Failure Behavior | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -54,7 +66,7 @@ This document serves as the **authoritative Master Invariant Registry** for the 
 
 ---
 
-## 4. Execution Engine Subsystem Invariants (E34 — E41)
+## 5. Execution Engine Subsystem Invariants (E34 — E41)
 
 | ID | Invariant Name | Enforcing Module | Definition & Enforcement Mechanism | Failure Behavior | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -66,3 +78,15 @@ This document serves as the **authoritative Master Invariant Registry** for the 
 | **E39** | Execution Lineage Preservation | `execution/engine.py` | Preserves `execution_request_id`, `risk_decision_id`, `signal_id`, `position_id`, and `idempotency_key`. | Full lineage dictionary stored. | 🟢 PASS |
 | **E40** | Position Quantity Conservation Equation | `execution/engine.py` | \(Q_{\text{open}} = Q_{\text{entry}} - Q_{\text{exit\_cumulative}}\) and \(0 \le Q_{\text{protected}} \le Q_{\text{open}}\). | Consolidated open quantity. | 🟢 PASS |
 | **E41** | Single Protection Manager per Position | `execution/engine.py` | Ensures `position_id` maps to exactly 0 or 1 active `ProtectionLifecycleManager`. | Scale-in updates existing manager. | 🟢 PASS |
+
+---
+
+## 6. Sub-Phase 4A Invariant Traceability Matrix (E24 — E28)
+
+| Invariant | Enforcing Implementation | Enforcement Mechanism | Verifying Test Case | Evidence | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **E24** | `execution/state_machine.py` | `VALID_TRANSITIONS` lookup in `transition_to()` | `test_e24_state_transition_graph_integrity` | PASSED | 🟢 VERIFIED |
+| **E25** | `execution/state_machine.py` | `is_terminal` property & `reconcile_to()` authority guard | `test_e25_terminal_state_immutability_and_reconciliation_boundary` | PASSED | 🟢 VERIFIED |
+| **E26** | `execution/state_machine.py` | `if new_status == self._current_status: return` in `transition_to()` | `test_e26_idempotent_state_self_transitions` | PASSED | 🟢 VERIFIED |
+| **E27** | `execution/state_machine.py` | `ExecutionStateRecord` append in `__init__`, `transition_to()`, `reconcile_to()` | `test_e27_complete_lineage_audit_trail` | PASSED | 🟢 VERIFIED |
+| **E28** | `execution/state_machine.py` | `if not execution_request_id: raise ValueError` in `__init__` | `test_e28_non_empty_identity_enforcement` | PASSED | 🟢 VERIFIED |
