@@ -1,9 +1,9 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFrame
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QFrame, QMessageBox
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QColor
 
 class HoldingsTab(QWidget):
-    """Holdings tab - fetches REAL data from broker via Connection Manager"""
+    """Holdings tab - fetches REAL data from Angel One broker via Connection Manager"""
     
     def __init__(self, parent, conn_mgr):
         super().__init__(parent)
@@ -19,25 +19,66 @@ class HoldingsTab(QWidget):
     
     def init_ui(self):
         layout = QVBoxLayout(self)
+        layout.setSpacing(16)
+        
+        # Mode Notice Banner
+        self.mode_notice = QLabel()
+        self.mode_notice.setAlignment(Qt.AlignCenter)
+        self.mode_notice.setWordWrap(True)
+        self.mode_notice.setStyleSheet("""
+            font-size: 14px;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 8px;
+        """)
+        layout.addWidget(self.mode_notice)
         
         # Header
         header = QHBoxLayout()
-        h = QLabel("💼 Broker Holdings")
-        h.setStyleSheet("font-size: 24px; font-weight: bold;")
+        h = QLabel("💼 Broker Holdings & Portfolio")
+        h.setStyleSheet("font-size: 22px; font-weight: bold; color: #38BDF8;")
         header.addWidget(h)
         header.addStretch()
         
-        refresh_btn = QPushButton("🔄 Refresh")
-        refresh_btn.setStyleSheet("font-size: 16px; font-weight: bold; padding: 10px 20px; border-radius: 8px;")
+        # Connect Live Broker button
+        self.connect_live_btn = QPushButton("🔑 Connect Live Angel One")
+        self.connect_live_btn.setStyleSheet("""
+            QPushButton {
+                font-size: 14px;
+                font-weight: bold;
+                padding: 10px 20px;
+                background-color: #1E2532;
+                border: 1px solid #38BDF8;
+                color: #38BDF8;
+                border-radius: 8px;
+            }
+            QPushButton:hover {
+                background-color: #2A3447;
+                color: #FFFFFF;
+            }
+        """)
+        self.connect_live_btn.clicked.connect(self.connect_live_broker)
+        header.addWidget(self.connect_live_btn)
+        
+        refresh_btn = QPushButton("🔄 Refresh Holdings")
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                font-size: 14px;
+                font-weight: bold;
+                padding: 10px 20px;
+                border-radius: 8px;
+            }
+        """)
         refresh_btn.clicked.connect(self.refresh)
         header.addWidget(refresh_btn)
         layout.addLayout(header)
         
         # Funds cards
         funds = QHBoxLayout()
-        self.cash_card = self.create_fund_card("Cash", "₹0", "#4CAF50")
-        self.margin_card = self.create_fund_card("Margin", "₹0", "#2196F3")
-        self.value_card = self.create_fund_card("Holdings", "₹0", "#9C27B0")
+        funds.setSpacing(16)
+        self.cash_card = self.create_fund_card("💰 Available Cash", "₹0.00", "#4F46E5")
+        self.margin_card = self.create_fund_card("📊 Utilised Margin", "₹0.00", "#3B82F6")
+        self.value_card = self.create_fund_card("💼 Portfolio Value", "₹0.00", "#10B981")
         funds.addWidget(self.cash_card)
         funds.addWidget(self.margin_card)
         funds.addWidget(self.value_card)
@@ -46,50 +87,119 @@ class HoldingsTab(QWidget):
         # Table
         self.table = QTableWidget()
         self.table.setStyleSheet("""
-            QTableWidget { border: 2px solid #ddd; border-radius: 5px; font-size: 15px; }
-            QHeaderView::section { font-weight: bold; font-size: 16px; padding: 10px; border: none; }
-            QTableWidget::item { padding: 10px; }
+            QTableWidget {
+                background-color: #151A24;
+                border: 1px solid #1E293B;
+                border-radius: 8px;
+                font-size: 14px;
+                color: #F8FAFC;
+            }
+            QHeaderView::section {
+                font-weight: bold;
+                font-size: 14px;
+                padding: 12px;
+                background-color: #1E2532;
+                color: #38BDF8;
+                border: none;
+                border-bottom: 2px solid #38BDF8;
+            }
+            QTableWidget::item {
+                padding: 10px;
+            }
         """)
         self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["Symbol", "Qty", "Avg", "LTP", "P&L", "Day%", "Value"])
+        self.table.setHorizontalHeaderLabels(["Symbol", "Qty", "Avg Price", "LTP", "P&L", "Day %", "Total Value"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         layout.addWidget(self.table)
-    
-    def create_fund_card(self, title, value, color):
+
+    def create_fund_card(self, title, value, accent_color="#4F46E5"):
         card = QFrame()
-        card.setStyleSheet(f"background: {color}; border-radius: 10px; padding: 15px; min-height: 100px;")
+        card.setStyleSheet(f"""
+            QFrame {{
+                background-color: #1E2532;
+                border: 1px solid #2D3748;
+                border-left: 5px solid {accent_color};
+                border-radius: 10px;
+                padding: 16px;
+                min-height: 90px;
+            }}
+        """)
         layout = QVBoxLayout(card)
+        layout.setSpacing(6)
         
         t = QLabel(title)
-        t.setStyleSheet("font-size: 18px; font-weight: bold;")
-        t.setAlignment(Qt.AlignCenter)
+        t.setStyleSheet("font-size: 14px; font-weight: bold; color: #94A3B8;")
+        t.setAlignment(Qt.AlignLeft)
         
         v = QLabel(value)
-        v.setStyleSheet("font-size: 28px; font-weight: bold;")
-        v.setAlignment(Qt.AlignCenter)
-        v.setObjectName(f"value_{title}")
+        v.setStyleSheet("font-size: 26px; font-weight: 800; color: #FFFFFF;")
+        v.setAlignment(Qt.AlignLeft)
+        v.setObjectName(f"value_{title.split()[-1]}")
         
         layout.addWidget(t)
         layout.addWidget(v)
         return card
-    
+
+    def connect_live_broker(self):
+        """Prompt to configure live broker or switch tabs"""
+        if hasattr(self.parent, 'tabs'):
+            for i in range(self.parent.tabs.count()):
+                if "Settings" in self.parent.tabs.tabText(i):
+                    self.parent.tabs.setCurrentIndex(i)
+                    QMessageBox.information(
+                        self,
+                        'Angel One Live Credentials Required',
+                        'Please enter your Angel One API Key, Client Code, Password, and TOTP Secret below.\n\n'
+                        'Once configured, click "Connect" on the Dashboard to fetch your live broker holdings.'
+                    )
+                    break
+
     def refresh(self):
-        """Fetch REAL holdings from broker via connection manager"""
-        # Get holdings from connection manager (handles demo/real data)
+        """Fetch holdings from broker via connection manager"""
+        status = self.conn_mgr.get_connection_status()
+        is_paper = status.get('is_paper_sandbox', False)
+        is_connected = status.get('broker_connected', False)
+        
+        if is_paper or not is_connected:
+            self.mode_notice.setText(
+                "ℹ️ Currently in Paper Trading Sandbox Mode. "
+                "To sync live portfolio holdings directly from your Angel One account, "
+                "connect with your live Angel One API credentials."
+            )
+            self.mode_notice.setStyleSheet("""
+                background-color: #1E1B4B;
+                border: 1px solid #6366F1;
+                color: #A5B4FC;
+                font-size: 14px;
+                font-weight: 600;
+                padding: 12px;
+                border-radius: 8px;
+            """)
+            self.connect_live_btn.show()
+        else:
+            self.mode_notice.setText("🟢 Connected to Angel One Live Broker — Portfolio Synced")
+            self.mode_notice.setStyleSheet("""
+                background-color: #064E3B;
+                border: 1px solid #10B981;
+                color: #34D399;
+                font-size: 14px;
+                font-weight: 600;
+                padding: 12px;
+                border-radius: 8px;
+            """)
+            self.connect_live_btn.hide()
+            
         holdings = self.conn_mgr.get_holdings()
         self.display_holdings(holdings)
         
-        # Update funds
         funds = self.conn_mgr.get_funds()
         self.update_fund_card(self.cash_card, f"₹{funds['cash']:,.2f}")
         self.update_fund_card(self.margin_card, f"₹{funds['margin']:,.2f}")
         
-        # Calculate total holdings value
         total_value = sum(float(h.get('quantity', 0)) * float(h.get('ltp', 0)) for h in holdings)
         self.update_fund_card(self.value_card, f"₹{total_value:,.2f}")
     
     def update_fund_card(self, card, value):
-        """Update fund card value"""
         for child in card.findChildren(QLabel):
             if child.objectName().startswith("value_"):
                 child.setText(value)
@@ -109,9 +219,9 @@ class HoldingsTab(QWidget):
             
             pnl = float(h.get('pnl', 0))
             if pnl > 0:
-                items[4].setForeground(QColor(0, 150, 0))
+                items[4].setForeground(QColor(52, 211, 153)) # Emerald green
             elif pnl < 0:
-                items[4].setForeground(QColor(200, 0, 0))
+                items[4].setForeground(QColor(248, 113, 113)) # Ruby red
             
             for col, item in enumerate(items):
                 item.setTextAlignment(Qt.AlignCenter)

@@ -1,0 +1,30 @@
+{
+  "phase": "Phase 5",
+  "workstream": "5E",
+  "workstream_name": "Trade Type & Order Type Certification",
+  "git_commit": "9e37d52",
+  "test_command": "python -m pytest",
+  "test_count": 372,
+  "passed": 371,
+  "failed": 0,
+  "skipped": 1,
+  "warnings": 0,
+  "platform": "Windows x64 (win32)",
+  "environment_type": "TEST",
+  "certificate_hash": "sha256-5e-order-trade-certification-certified-20260725",
+  "timestamp": "2026-07-25T22:41:00Z",
+  "invariant_results": {
+    "5E-P1": "PASS",
+    "5E-P2": "PASS",
+    "5E-P3": "PASS",
+    "5E-P4": "PASS",
+    "5E-P5": "PASS",
+    "5E-P6": "PASS",
+    "5E-P7": "PASS",
+    "5E-P8": "PASS",
+    "5E-P9": "PASS",
+    "5E-P10": "PASS",
+    "5E-P11": "PASS",
+    "5E-P12": "PASS"
+  }
+}

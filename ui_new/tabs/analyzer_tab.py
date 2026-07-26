@@ -16,21 +16,21 @@
 
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QTableWidget, QTableWidgetItem, 
-                             QHeaderView, QSpinBox, QMessageBox, QApplication)
+                             QHeaderView, QSpinBox, QMessageBox, QApplication, QProgressBar)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QColor
 from analyzer.enhanced_analyzer import EnhancedAnalyzer
+import time
 
 
 class AnalyzerThread(QThread):
     """
-    Background thread for stock analysis
-    Prevents UI freezing during long scans
+    Background thread for stock analysis with real-time per-stock progress updates
     """
-    # Signals to communicate with main UI
-    progress_update = pyqtSignal(str)  # Progress message
-    analysis_complete = pyqtSignal(list)  # Results
-    analysis_error = pyqtSignal(str)  # Error message
+    progress_update = pyqtSignal(str)
+    progress_step = pyqtSignal(int, int, str, int)  # current_idx, total_count, symbol, signals_found
+    analysis_complete = pyqtSignal(list)
+    analysis_error = pyqtSignal(str)
     
     def __init__(self, analyzer, watchlist, threshold):
         super().__init__()
@@ -40,27 +40,34 @@ class AnalyzerThread(QThread):
         self.is_running = True
     
     def run(self):
-        """Run analysis in background"""
+        """Run analysis in background with live per-stock progress updates"""
         try:
-            # Emit starting message
-            self.progress_update.emit(f"🔍 Starting analysis of {len(self.watchlist)} stocks...")
+            total = len(self.watchlist)
+            signals = []
             
-            # Analyze all stocks
-            results = self.analyzer.analyze_watchlist(self.watchlist)
-            
-            # Check if thread was stopped
-            if not self.is_running:
-                return
+            for idx, symbol in enumerate(self.watchlist, start=1):
+                if not self.is_running:
+                    return
+                
+                # Emit live progress for current stock symbol
+                self.progress_step.emit(idx, total, symbol, len(signals))
+                
+                try:
+                    sig = self.analyzer.analyze_symbol(symbol)
+                    if sig:
+                        signals.append(sig)
+                except Exception:
+                    pass
+                
+                time.sleep(0.01)  # Smooth UI update pace
             
             # Sort by confidence
-            results.sort(key=lambda x: x['confidence'], reverse=True)
-            
-            # Emit completion
-            self.analysis_complete.emit(results)
+            signals.sort(key=lambda x: x['confidence'], reverse=True)
+            self.analysis_complete.emit(signals)
             
         except Exception as e:
-            # Emit error
             self.analysis_error.emit(str(e))
+
     
     def stop(self):
         """Stop the analysis thread"""
@@ -140,12 +147,34 @@ class AnalyzerTab(QWidget):
         
         layout.addLayout(header)
         
-        # Progress indicator
-        self.progress_label = QLabel("")
-        self.progress_label.setStyleSheet("font-weight: bold; font-size: 14px; padding: 5px;")
+        # Progress Indicator & Bar Section
+        progress_box = QVBoxLayout()
+        progress_box.setSpacing(6)
+
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setFixedHeight(14)
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                background-color: #1E293B;
+                border: 1px solid #334155;
+                border-radius: 7px;
+            }
+            QProgressBar::chunk {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #06B6D4, stop:1 #10B981);
+                border-radius: 6px;
+            }
+        """)
+        progress_box.addWidget(self.progress_bar)
+
+        self.progress_label = QLabel("Click 'Scan Now' to begin scanning your watchlist")
+        self.progress_label.setStyleSheet("font-weight: bold; font-size: 14px; color: #38BDF8; padding: 4px;")
         self.progress_label.setAlignment(Qt.AlignCenter)
-        self.progress_label.setMinimumHeight(30)
-        layout.addWidget(self.progress_label)
+        progress_box.addWidget(self.progress_label)
+
+        layout.addLayout(progress_box)
         
         # Results table
         self.table = QTableWidget()
@@ -182,8 +211,9 @@ class AnalyzerTab(QWidget):
         header_view.setSectionResizeMode(5, QHeaderView.Stretch)  # Target/SL
         header_view.setSectionResizeMode(6, QHeaderView.Fixed)    # Action
         
-        self.table.setColumnWidth(0, 60)   # Rank
-        self.table.setColumnWidth(6, 140)  # Action button
+        self.table.setColumnWidth(0, 70)   # Rank
+        self.table.setColumnWidth(6, 180)  # Action button
+
         
         self.table.setVerticalScrollMode(QTableWidget.ScrollPerPixel)
         self.table.setMinimumHeight(400)
@@ -191,7 +221,7 @@ class AnalyzerTab(QWidget):
         layout.addWidget(self.table)
         
         # Status
-        self.status_label = QLabel("Click 'Scan Now' to analyze stocks from watchlist")
+        self.status_label = QLabel("Ready to analyze stocks")
         self.status_label.setStyleSheet("""
             font-size: 14px; 
             color: #666; 
@@ -214,10 +244,11 @@ class AnalyzerTab(QWidget):
             )
             return
         
-        # Update UI
+        # Reset progress bar
+        self.progress_bar.setValue(0)
         self.status_label.setText("🔍 Preparing to scan...")
-        self.progress_label.setText("🔍 Initializing analysis...")
-        self.scan_btn.setEnabled(False)  # Disable button during scan
+        self.progress_label.setText("🔍 Initializing stock analysis...")
+        self.scan_btn.setEnabled(False)
         
         # Get parameters
         threshold = self.threshold_spin.value()
@@ -228,6 +259,7 @@ class AnalyzerTab(QWidget):
         
         # Connect signals
         self.analyzer_thread.progress_update.connect(self.on_progress_update)
+        self.analyzer_thread.progress_step.connect(self.on_progress_step)
         self.analyzer_thread.analysis_complete.connect(self.on_analysis_complete)
         self.analyzer_thread.analysis_error.connect(self.on_analysis_error)
         
@@ -235,16 +267,30 @@ class AnalyzerTab(QWidget):
         self.analyzer_thread.start()
         
         # Update status
-        self.parent.statusBar().showMessage("🔍 Analyzing stocks in background...", 2000)
+        self.show_status_message("🔍 Analyzing stocks in background...", 2000)
+
     
+    def on_progress_step(self, idx, total, symbol, signals_count):
+        """Handle real-time per-stock progress updates"""
+        pct = int((idx / total) * 100)
+        self.progress_bar.setValue(pct)
+        self.progress_label.setText(
+            f"🔍 Analyzing: {symbol}  |  {idx} / {total} Stocks ({pct}%)  |  🟢 {signals_count} Signals Found"
+        )
+        self.status_label.setText(f"Scanning stock {idx} of {total}: {symbol}...")
+        QApplication.processEvents()
+
     def on_progress_update(self, message):
         """Handle progress updates from thread"""
         self.progress_label.setText(message)
-        QApplication.processEvents()  # Keep UI responsive
+        QApplication.processEvents()
     
     def on_analysis_complete(self, results):
         """Handle completion of analysis"""
         threshold = self.threshold_spin.value()
+        self.progress_bar.setValue(100)
+        self.scan_btn.setEnabled(True)
+
         
         # Store results
         self.scan_results = results
@@ -256,30 +302,32 @@ class AnalyzerTab(QWidget):
         # Display results
         self.display_results()
         
-        # Update progress
-        self.progress_label.setText(f"✅ Analysis complete! Found {total_found} signals, showing top 10")
+        # Update progress label
+        total_stocks = len(self.conn_mgr.get_stock_list())
+        self.progress_label.setText(f"✅ Analysis Complete! Analyzed {total_stocks} stocks — Found {total_found} valid signals (Showing Top 10)")
+        self.status_label.setText(f"Scan finished. Top {len(self.scan_results)} high-confidence signals displayed in table below.")
+
         
         # Update status
         if self.scan_results:
             self.status_label.setText(
                 f"✅ Showing top 10 stocks (found {total_found} stocks with confidence ≥ {threshold}%)"
             )
-            self.parent.statusBar().showMessage(
-                f"✅ Found {total_found} stocks, showing top 10", 
-                5000
-            )
+            self.show_status_message(f"✅ Found {total_found} stocks, showing top 10", 5000)
         else:
             self.status_label.setText(
                 f"⚠️ No stocks found with confidence ≥ {threshold}%"
             )
             self.progress_label.setText(f"⚠️ No signals found (threshold: {threshold}%)")
-            self.parent.statusBar().showMessage(
-                f"⚠️ No stocks meet criteria", 
-                3000
-            )
+            self.show_status_message("⚠️ No stocks meet criteria", 3000)
         
         # Re-enable scan button
         self.scan_btn.setEnabled(True)
+
+    def show_status_message(self, message, timeout=3000):
+        if self.parent and hasattr(self.parent, 'statusBar') and self.parent.statusBar():
+            self.parent.statusBar().showMessage(message, timeout)
+
     
     def on_analysis_error(self, error_msg):
         """Handle analysis errors"""
@@ -357,27 +405,41 @@ class AnalyzerTab(QWidget):
             target_sl_item.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 5, target_sl_item)
             
-            # ⭐ SINGLE ACTION BUTTON (based on signal)
-            if result.get('signal', result.get('action', 'HOLD')) == 'BUY':
-                action_btn = QPushButton("📈 Execute BUY")
+            # ⭐ HIGH CONTRAST ACTION BUTTON
+            is_buy = (result.get('signal', result.get('action', 'HOLD')) == 'BUY')
+            btn_text = "📈 Execute BUY" if is_buy else "📉 Execute SELL"
+            action_btn = QPushButton(btn_text)
+            
+            if is_buy:
                 action_btn.setStyleSheet("""
                     QPushButton {
+                        background-color: #059669;
+                        color: #FFFFFF;
                         font-size: 13px; 
-                        font-weight: bold;
-                        padding: 8px 12px; 
-                        border-radius: 5px;
-                        border: none;
+                        font-weight: 800;
+                        padding: 7px 14px; 
+                        border-radius: 6px;
+                        border: 1px solid #10B981;
+                    }
+                    QPushButton:hover {
+                        background-color: #10B981;
+                        color: #FFFFFF;
                     }
                 """)
-            else:  # SELL
-                action_btn = QPushButton("📉 Execute SELL")
+            else:
                 action_btn.setStyleSheet("""
                     QPushButton {
+                        background-color: #DC2626;
+                        color: #FFFFFF;
                         font-size: 13px; 
-                        font-weight: bold;
-                        padding: 8px 12px; 
-                        border-radius: 5px;
-                        border: none;
+                        font-weight: 800;
+                        padding: 7px 14px; 
+                        border-radius: 6px;
+                        border: 1px solid #EF4444;
+                    }
+                    QPushButton:hover {
+                        background-color: #EF4444;
+                        color: #FFFFFF;
                     }
                 """)
             
@@ -386,6 +448,7 @@ class AnalyzerTab(QWidget):
             )
             action_btn.setCursor(Qt.PointingHandCursor)
             self.table.setCellWidget(row, 6, action_btn)
+
         
         # Don't enable sorting - keep ranked by confidence
         self.table.setSortingEnabled(False)

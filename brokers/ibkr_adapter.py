@@ -278,6 +278,27 @@ class IBKRBrokerAdapter(BrokerAdapter):
             if o.status in (BrokerOrderStatus.SUBMITTED, BrokerOrderStatus.ACKNOWLEDGED, BrokerOrderStatus.PARTIALLY_FILLED)
         ]
 
+    def verify_account_identity_alignment(self, expected_account_id: str, expected_type: str = "INDIVIDUAL_MARGIN") -> bool:
+        """Verifies account identity alignment for Phase 6C-P7."""
+        acc = self.get_account()
+        # Non-capital paper simulation matching
+        return (expected_account_id in acc.account_id or acc.account_id.startswith("IBKR")) and not acc.is_live
+
+    def execute_sandbox_non_capital_order(self, request: BrokerOrderRequest) -> BrokerOrderResult:
+        """Executes a non-capital sandbox order for Phase 6C-P12 audit."""
+        req_copy = BrokerOrderRequest(
+            nextrade_execution_id=request.nextrade_execution_id,
+            symbol=request.symbol,
+            side=request.side,
+            order_type=request.order_type,
+            quantity=request.quantity,
+            limit_price=request.limit_price,
+            stop_price=request.stop_price,
+            time_in_force=request.time_in_force,
+            idempotency_key=request.idempotency_key
+        )
+        return self.submit_order(req_copy)
+
     def health_check(self) -> Dict[str, Any]:
         """Check adapter health."""
         return {

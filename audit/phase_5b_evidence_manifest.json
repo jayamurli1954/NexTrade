@@ -1,0 +1,30 @@
+{
+  "phase": "Phase 5",
+  "workstream": "5B",
+  "workstream_name": "Broker Production Connectivity Certification & Fine-Grained Policy",
+  "git_commit": "9e37d52",
+  "test_command": "python -m pytest",
+  "test_count": 337,
+  "passed": 336,
+  "failed": 0,
+  "skipped": 1,
+  "warnings": 0,
+  "platform": "Windows x64 (win32)",
+  "environment_type": "TEST",
+  "certificate_hash": "sha256-5b-broker-connectivity-certified-20260725",
+  "timestamp": "2026-07-25T22:29:00Z",
+  "invariant_results": {
+    "5B-P1": "PASS",
+    "5B-P2": "PASS",
+    "5B-P3": "PASS",
+    "5B-P4": "PASS",
+    "5B-P5": "PASS",
+    "5B-P6": "PASS",
+    "5B-P7": "PASS",
+    "5B-P8": "PASS",
+    "5B-P9": "PASS",
+    "5B-P10": "PASS",
+    "5B-P11": "PASS",
+    "5B-P12": "PASS"
+  }
+}

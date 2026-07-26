@@ -1,0 +1,40 @@
+{
+  "phase": "Phase 5",
+  "workstream": "5F — Dynamic Capability & Signed Rule Registry Certification",
+  "status": "CERTIFIED_COMPLETE",
+  "timestamp": "2026-07-25T22:51:15Z",
+  "git_commit": "9e37d52",
+  "platform": "win32",
+  "environment": "DEV/TEST",
+  "audit_results": {
+    "targeted_suite": {
+      "command": "python -m pytest tests/test_signed_rule_registry_audit.py",
+      "collected": 12,
+      "passed": 12,
+      "skipped": 0,
+      "failed": 0
+    },
+    "full_regression_suite": {
+      "command": "python -m pytest",
+      "collected": 384,
+      "passed": 383,
+      "skipped": 1,
+      "failed": 0,
+      "warnings": 0
+    }
+  },
+  "invariants": {
+    "5F-P1": "PASS",
+    "5F-P2": "PASS",
+    "5F-P3": "PASS",
+    "5F-P4": "PASS",
+    "5F-P5": "PASS",
+    "5F-P6": "PASS",
+    "5F-P7": "PASS",
+    "5F-P8": "PASS",
+    "5F-P9": "PASS",
+    "5F-P10": "PASS",
+    "5F-P11": "PASS",
+    "5F-P12": "PASS"
+  }
+}

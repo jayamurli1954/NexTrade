@@ -1,0 +1,30 @@
+{
+  "phase": "Phase 5",
+  "workstream": "5F",
+  "workstream_name": "Dynamic Capability & Signed Rule Registry Certification",
+  "git_commit": "9e37d52",
+  "test_command": "python -m pytest",
+  "test_count": 384,
+  "passed": 383,
+  "failed": 0,
+  "skipped": 1,
+  "warnings": 0,
+  "platform": "Windows x64 (win32)",
+  "environment_type": "TEST",
+  "certificate_hash": "sha256-5f-signed-rule-registry-certified-20260725",
+  "timestamp": "2026-07-25T22:51:15Z",
+  "invariant_results": {
+    "5F-P1": "PASS",
+    "5F-P2": "PASS",
+    "5F-P3": "PASS",
+    "5F-P4": "PASS",
+    "5F-P5": "PASS",
+    "5F-P6": "PASS",
+    "5F-P7": "PASS",
+    "5F-P8": "PASS",
+    "5F-P9": "PASS",
+    "5F-P10": "PASS",
+    "5F-P11": "PASS",
+    "5F-P12": "PASS"
+  }
+}

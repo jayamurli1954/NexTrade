@@ -20,16 +20,16 @@ from tabs.history_tab import HistoryTab
 from tabs.analyzer_tab import AnalyzerTab
 from tabs.premarket_tab import PreMarketTab
 from tabs.settings_tab import SettingsTab
-from tabs.paper_trading_tab import PaperTradingTab  # NEW
+from tabs.paper_trading_tab import PaperTradingTab
+from tabs.subsystem_tab import SubsystemTab
 
 class MainWindow(QMainWindow):
     """
     Main Trading Bot Window
     
     Now includes:
-    - Complete paper trading integration
-    - Analyzer -> Paper Trading workflow
-    - Auto-monitoring of trades
+    - NexTrade Phase 3 Execution Subsystem Control Center
+    - Complete paper trading & live analytics integration
     """
     
     def __init__(self, conn_mgr, trade_logger):
@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
         self.conn_mgr = conn_mgr
         self.trade_logger = trade_logger
         
-        self.setWindowTitle("Angel One Trading Bot - Modular")
+        self.setWindowTitle("NexTrade Engine & Trading Terminal — Baseline v3.0-phase-3-complete")
         self.setGeometry(100, 100, 1600, 900)
         
         self.init_ui()
@@ -59,6 +59,7 @@ class MainWindow(QMainWindow):
         
         # Initialize all tabs
         self.dashboard_tab = DashboardTab(self, self.conn_mgr, self.trade_logger)
+        self.subsystem_tab = SubsystemTab(self, self.conn_mgr)
         self.holdings_tab = HoldingsTab(self, self.conn_mgr)
         self.watchlist_tab = WatchlistTab(self, self.conn_mgr)
         self.positions_tab = PositionsTab(self, self.conn_mgr)
@@ -76,6 +77,7 @@ class MainWindow(QMainWindow):
         # Add tabs in order
         icon_color = '#ecf0f1'  # Light gray color for icons
         self.tabs.addTab(self.dashboard_tab, qta.icon('fa5s.tachometer-alt', color=icon_color), "Dashboard")
+        self.tabs.addTab(self.subsystem_tab, qta.icon('fa5s.shield-alt', color=icon_color), "🛡️ Phase 3 Subsystem")
         self.tabs.addTab(self.holdings_tab, qta.icon('fa5s.briefcase', color=icon_color), "Holdings")
         self.tabs.addTab(self.watchlist_tab, qta.icon('fa5s.eye', color=icon_color), "Watchlist")
         self.tabs.addTab(self.positions_tab, qta.icon('fa5s.chart-line', color=icon_color), "Live Positions")
@@ -84,6 +86,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.paper_trading_tab, qta.icon('fa5s.file-invoice-dollar', color=icon_color), "Paper Trading")
         self.tabs.addTab(self.premarket_tab, qta.icon('fa5s.sun', color=icon_color), "Pre-Market")
         self.tabs.addTab(self.settings_tab, qta.icon('fa5s.cog', color=icon_color), "Settings")
+
         
         # Status bar
         self.status_bar = QStatusBar()

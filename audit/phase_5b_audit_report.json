@@ -1,0 +1,40 @@
+{
+  "phase": "Phase 5",
+  "workstream": "5B — Broker Production Connectivity Certification & Fine-Grained Policy",
+  "status": "CERTIFIED_COMPLETE",
+  "timestamp": "2026-07-25T22:29:00Z",
+  "git_commit": "9e37d52",
+  "platform": "win32",
+  "environment": "DEV/TEST",
+  "audit_results": {
+    "targeted_suite": {
+      "command": "python -m pytest tests/test_broker_connectivity_audit.py",
+      "collected": 14,
+      "passed": 14,
+      "skipped": 0,
+      "failed": 0
+    },
+    "full_regression_suite": {
+      "command": "python -m pytest",
+      "collected": 337,
+      "passed": 336,
+      "skipped": 1,
+      "failed": 0,
+      "warnings": 0
+    }
+  },
+  "invariants": {
+    "5B-P1": "PASS",
+    "5B-P2": "PASS",
+    "5B-P3": "PASS",
+    "5B-P4": "PASS",
+    "5B-P5": "PASS",
+    "5B-P6": "PASS",
+    "5B-P7": "PASS",
+    "5B-P8": "PASS",
+    "5B-P9": "PASS",
+    "5B-P10": "PASS",
+    "5B-P11": "PASS",
+    "5B-P12": "PASS"
+  }
+}

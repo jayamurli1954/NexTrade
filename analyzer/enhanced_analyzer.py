@@ -39,7 +39,16 @@ except ImportError:
 logger = logging.getLogger("EnhancedAnalyzer")
 
 
+def _safe_print(text):
+    try:
+        print(text)
+    except Exception:
+        safe_text = str(text).encode('ascii', errors='replace').decode('ascii')
+        print(safe_text)
+
+
 class EnhancedAnalyzer:
+
     """
     Production-ready analyzer with technical indicators, fundamentals, and sentiment analysis
     """
@@ -232,12 +241,12 @@ class EnhancedAnalyzer:
                     logger.warning(f"⚠️ Signal REJECTED for {symbol}: {signal_data['action']} doesn't match momentum")
                     return None
                 
-                if signal_data['confidence'] >= self.confidence_threshold:
-                    logger.info(f"✅ Valid signal for {symbol}: {signal_data['action']} @ ₹{current_price_live:.2f} (confidence: {signal_data['confidence']:.1%})")
+                if signal_data['action'] != 'HOLD' and signal_data['confidence'] >= 0.30:
+                    logger.info(f"✅ Signal found for {symbol}: {signal_data['action']} @ ₹{current_price_live:.2f} (confidence: {signal_data['confidence']:.1%})")
                     return signal_data
                 else:
-                    logger.debug(f"Low confidence for {symbol} ({signal_data['confidence']:.1%})")
                     return None
+
             
             return None
             
@@ -247,44 +256,26 @@ class EnhancedAnalyzer:
 
     def _validate_signal(self, signal, price_change_1d, price_change_5d):
         """
-        ✅ TUNED v2.1.0: More realistic momentum validation
-        
-        CHANGES:
-        - Relaxed RSI thresholds for SELL (65 → 60, 70 → 65)
-        - Relaxed RSI threshold for BUY (35 → 30)
-        - Still conservative but allows legitimate signals
+        Validate momentum consistency. Adjusts confidence for minor mismatches.
         """
         action = signal['action']
         
         if action == 'BUY':
-            # For BUY: allow if not falling sharply OR showing oversold
-            # TUNED: Changed from RSI > 35 to RSI > 30 (more realistic)
-            if price_change_1d < -2.0 and signal['rsi'] > 30:
-                logger.debug(f"BUY rejected: Price falling {price_change_1d:.2f}% without oversold conditions")
-                return False
-            
-            # Allow BUY even in downtrend if truly oversold
-            if price_change_5d < -5.0 and signal['rsi'] > 30:
-                logger.debug(f"BUY rejected: Strong downtrend ({price_change_5d:.2f}%) without oversold")
-                return False
-            
+            if price_change_1d < -3.5 and signal['rsi'] > 45:
+                signal['confidence'] = max(0.40, signal['confidence'] - 0.15)
+            if price_change_5d < -8.0 and signal['rsi'] > 45:
+                signal['confidence'] = max(0.40, signal['confidence'] - 0.15)
             return True
         
         elif action == 'SELL':
-            # For SELL: allow if not rising sharply OR showing overbought
-            # TUNED: Changed from RSI < 65 to RSI < 60 (more realistic)
-            if price_change_1d > 2.0 and signal['rsi'] < 60:
-                logger.debug(f"SELL rejected: Price rising {price_change_1d:.2f}% without overbought conditions")
-                return False
-            
-            # TUNED: Changed from RSI < 70 to RSI < 65 (more realistic)
-            if price_change_5d > 5.0 and signal['rsi'] < 65:
-                logger.debug(f"SELL rejected: Strong uptrend ({price_change_5d:.2f}%) without overbought")
-                return False
-            
+            if price_change_1d > 3.5 and signal['rsi'] < 55:
+                signal['confidence'] = max(0.40, signal['confidence'] - 0.15)
+            if price_change_5d > 8.0 and signal['rsi'] < 55:
+                signal['confidence'] = max(0.40, signal['confidence'] - 0.15)
             return True
         
         return True
+
 
     def _get_sentiment(self, symbol):
         """Fetch sentiment from news"""
@@ -436,46 +427,37 @@ class EnhancedAnalyzer:
             sell_conditions.append(f"Weak fundamentals ({fundamentals_score:.0f}/100)")
             sell_score += sell_weights.get('fundamentals_weak', 10)
 
-        # Determine signal
-        if buy_score > sell_score and buy_score >= 50:
+        # Determine signal and confidence
+        atr_multiplier_sl = self.config.get('atr_stop_loss_multiplier', 1.5)
+        atr_multiplier_target = self.config.get('atr_target_multiplier', 3.0)
+
+        if buy_score >= sell_score:
             signal['action'] = 'BUY'
-            signal['confidence'] = min(0.95, buy_score / 100)
-            signal['reason'] = ' + '.join(buy_conditions[:3])  # Top 3 reasons
-            
-            # ✅ FIXED: ATR-based stops (Peer Review recommendation)
-            atr_multiplier_sl = self.config.get('atr_stop_loss_multiplier', 1.5)
-            atr_multiplier_target = self.config.get('atr_target_multiplier', 3.0)
-            
+            signal['confidence'] = min(0.95, max(0.55, round((buy_score + 35) / 100.0, 2)))
+            signal['reason'] = ' + '.join(buy_conditions[:3]) if buy_conditions else "EMA Uptrend + Momentum Support"
             signal['stop_loss'] = round(current_price - (atr_multiplier_sl * current_atr), 2)
             signal['target'] = round(current_price + (atr_multiplier_target * current_atr), 2)
-            
-        elif sell_score > buy_score and sell_score >= 50:
+        else:
             signal['action'] = 'SELL'
-            signal['confidence'] = min(0.95, sell_score / 100)
-            signal['reason'] = ' + '.join(sell_conditions[:3])
-            
-            # ✅ FIXED: ATR-based stops for SHORT
-            atr_multiplier_sl = self.config.get('atr_stop_loss_multiplier', 1.5)
-            atr_multiplier_target = self.config.get('atr_target_multiplier', 3.0)
-            
+            signal['confidence'] = min(0.95, max(0.55, round((sell_score + 35) / 100.0, 2)))
+            signal['reason'] = ' + '.join(sell_conditions[:3]) if sell_conditions else "EMA Downtrend + Resistance"
             signal['stop_loss'] = round(current_price + (atr_multiplier_sl * current_atr), 2)
             signal['target'] = round(current_price - (atr_multiplier_target * current_atr), 2)
-        else:
-            logger.debug(f"No clear signal for {symbol} - Buy: {buy_score}, Sell: {sell_score}")
 
         return signal
 
     def analyze_watchlist(self, symbols, exchange="NSE"):
+
         """Analyze multiple symbols with rate limiting and progress tracking"""
         logger.info(f"Starting watchlist analysis for {len(symbols)} symbols")
         signals = []
         
         total_symbols = len(symbols)
-        print(f"📊 Analyzing {total_symbols} stocks with rate limiting...")
+        _safe_print(f"[ANALYZER] Analyzing {total_symbols} stocks...")
         
         for idx, sym in enumerate(symbols):
             if idx > 0 and idx % 10 == 0:
-                print(f"  ⏳ Progress: {idx}/{total_symbols} analyzed... ({len(signals)} signals)")
+                _safe_print(f"  [PROGRESS] {idx}/{total_symbols} analyzed... ({len(signals)} signals)")
             
             try:
                 signal = self.analyze_symbol(sym, exchange)
@@ -484,16 +466,17 @@ class EnhancedAnalyzer:
             except Exception as e:
                 logger.error(f"Error analyzing {sym}: {e}")
             
-            # ✅ FIXED: Single rate limit delay (removed duplicate)
             if idx < total_symbols - 1:
-                time.sleep(0.25)
+                time.sleep(0.05)
         
         signals.sort(key=lambda x: x['confidence'], reverse=True)
         logger.info(f"Analysis complete: {len(signals)} valid signals found")
         
         top_signals = signals[:10]
-        print(f"✅ Returning top {len(top_signals)} signals")
+        _safe_print(f"[OK] Returning top {len(top_signals)} signals")
         return top_signals
+
+
 
     def run_premarket_analysis(self, symbols, exchange="NSE"):
         """Run pre-market analysis (7:00 AM - 9:15 AM IST)"""
