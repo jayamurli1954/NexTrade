@@ -38,11 +38,19 @@ except ImportError:
 
 
 def _safe_print(text):
+    """Windows cp1252-safe console output (emojis crash default print)."""
+    safe_text = str(text).encode("ascii", errors="replace").decode("ascii")
     try:
-        print(text)
-    except Exception:
-        safe_text = str(text).encode('ascii', errors='replace').decode('ascii')
         print(safe_text)
+    except Exception:
+        pass
+
+
+_WORKSPACE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _workspace_path(*parts: str) -> str:
+    return os.path.join(_WORKSPACE_DIR, *parts)
 
 
 class ConnectionManager:
@@ -87,8 +95,13 @@ class ConnectionManager:
         # Token loading moved to ensure_tokens_loaded() - called on demand
     
     def load_config(self):
-        """Load API credentials from config.json"""
-        config_files = ["config.json", "config.py", ".env"]
+        """Load API credentials from config.json (workspace-relative first)."""
+        config_files = [
+            _workspace_path("config.json"),
+            "config.json",
+            "config.py",
+            ".env",
+        ]
         
         for config_file in config_files:
             if os.path.exists(config_file):
@@ -111,27 +124,29 @@ class ConnectionManager:
 
     
     def load_stock_list(self):
-        """Load stock list from watchlist.json (priority) or stock_list.txt"""
-        # Try watchlist.json first
-        if os.path.exists("watchlist.json"):
-            try:
-                with open("watchlist.json", 'r', encoding='utf-8') as f:
-                    self.stock_list = json.load(f)
-                    self.stock_list = [s.upper() for s in self.stock_list]
-                _safe_print(f"[OK] Loaded {len(self.stock_list)} stocks from watchlist.json")
-                return
-            except Exception as e:
-                _safe_print(f"[WARN] Could not load watchlist.json: {e}")
+        """Load stock list from watchlist.json (workspace-relative first)."""
+        watchlist_paths = [_workspace_path("watchlist.json"), "watchlist.json"]
+        for watchlist_path in watchlist_paths:
+            if os.path.exists(watchlist_path):
+                try:
+                    with open(watchlist_path, 'r', encoding='utf-8') as f:
+                        self.stock_list = json.load(f)
+                        self.stock_list = [s.upper() for s in self.stock_list]
+                    _safe_print(f"[OK] Loaded {len(self.stock_list)} stocks from {watchlist_path}")
+                    return
+                except Exception as e:
+                    _safe_print(f"[WARN] Could not load {watchlist_path}: {e}")
         
         # Fallback to stock_list.txt
-        if os.path.exists("stock_list.txt"):
-            try:
-                with open("stock_list.txt", 'r', encoding='utf-8') as f:
-                    self.stock_list = [line.strip().upper() for line in f if line.strip()]
-                _safe_print(f"[OK] Loaded {len(self.stock_list)} stocks from stock_list.txt")
-                return
-            except Exception as e:
-                _safe_print(f"[WARN] Could not load stock_list.txt: {e}")
+        for stock_path in (_workspace_path("stock_list.txt"), "stock_list.txt"):
+            if os.path.exists(stock_path):
+                try:
+                    with open(stock_path, 'r', encoding='utf-8') as f:
+                        self.stock_list = [line.strip().upper() for line in f if line.strip()]
+                    _safe_print(f"[OK] Loaded {len(self.stock_list)} stocks from {stock_path}")
+                    return
+                except Exception as e:
+                    _safe_print(f"[WARN] Could not load {stock_path}: {e}")
         
         # Default stocks
         _safe_print("[WARN] No watchlist file found, using defaults")
@@ -140,9 +155,10 @@ class ConnectionManager:
     def save_stock_list(self):
         """Save stock list to watchlist.json"""
         try:
-            with open("watchlist.json", 'w', encoding='utf-8') as f:
+            path = _workspace_path("watchlist.json")
+            with open(path, 'w', encoding='utf-8') as f:
                 json.dump(self.stock_list, f, indent=2)
-            _safe_print(f"[OK] Saved {len(self.stock_list)} stocks to watchlist.json")
+            _safe_print(f"[OK] Saved {len(self.stock_list)} stocks to {path}")
             return True
         except Exception as e:
             _safe_print(f"[WARN] Could not save watchlist: {e}")
@@ -175,7 +191,7 @@ class ConnectionManager:
     def ensure_tokens_loaded(self):
         """Load tokens only when needed (lazy loading for fast startup)"""
         if not self.tokens_loaded:
-            print("⏳ Loading symbol tokens (first time only)...")
+            _safe_print("[...] Loading symbol tokens (first time only)...")
             self.load_symbol_tokens()
 
             # Manually add index tokens if not found by load_symbol_tokens
@@ -191,7 +207,7 @@ class ConnectionManager:
             # Force update with correct tokens (override any wrong fallback values)
             for key, token in index_tokens.items():
                 self.token_map[key] = token
-                print(f"✅ Added/Updated {key} token: {token}")
+                _safe_print(f"[OK] Added/Updated {key} token: {token}")
 
             # Build reverse map
             self.token_to_symbol_map = {token: key.split(':')[1] for key, token in self.token_map.items()}
@@ -228,17 +244,17 @@ class ConnectionManager:
                             key = f"{exch_seg}:{clean_symbol}"
                             self.token_map[key] = token
                             if clean_symbol in ["SENSEX", "INDIAVIX", "NIFTY", "BANKNIFTY"]: # Added indices for debug
-                                print(f"ℹ️  [DEBUG] Loaded token for {key}: {token}")
+                                _safe_print(f"[DEBUG] Loaded token for {key}: {token}")
                 
-                print(f"✅ Loaded {len(self.token_map)} symbol tokens from Angel One")
+                _safe_print(f"[OK] Loaded {len(self.token_map)} symbol tokens from Angel One")
                 return True
             else:
-                print("⚠️  Could not download symbol master, using fallback")
+                _safe_print("[WARN] Could not download symbol master, using fallback")
                 self._load_fallback_tokens()
                 return False
                 
         except Exception as e:
-            print(f"⚠️  Error loading symbol tokens: {e}")
+            _safe_print(f"[WARN] Error loading symbol tokens: {e}")
             self._load_fallback_tokens()
             return False
     
@@ -282,17 +298,17 @@ class ConnectionManager:
             'NSE:NIFTY': '99926000',     # Fixed: correct token
             'NSE:BANKNIFTY': '99926009'  # Fixed: correct token
         }
-        print(f"✅ Loaded {len(self.token_map)} fallback tokens")
+        _safe_print(f"[OK] Loaded {len(self.token_map)} fallback tokens")
         for key, token in self.token_map.items():
             if key.split(':')[1] in ["SENSEX", "INDIAVIX", "NIFTY", "BANKNIFTY"]:
-                print(f"ℹ️  [DEBUG] Fallback token for {key}: {token}")
+                _safe_print(f"[DEBUG] Fallback token for {key}: {token}")
     def connect_paper_sandbox(self):
         """Connect in Paper Trading Sandbox mode without requiring live Angel One credentials"""
         self.ensure_tokens_loaded()
         self.is_connected = True
         self.is_paper_sandbox = True
         self.websocket_connected = True
-        print("🟢 Connected to Paper Trading Sandbox Mode")
+        _safe_print("🟢 Connected to Paper Trading Sandbox Mode")
         return True
 
     def connect_broker(self, smart_api_instance=None):
@@ -302,19 +318,19 @@ class ConnectionManager:
         if smart_api_instance:
             self.smart_api = smart_api_instance
             self.is_connected = True
-            print("✅ Broker API connected")
+            _safe_print("[OK] Broker API connected")
             return True
         
         if not SMARTAPI_AVAILABLE:
-            print("⚠️  SmartApi library not available")
+            _safe_print("[WARN] SmartApi library not available")
             return False
         
         try:
             # Ensure tokens are loaded before connecting
             self.ensure_tokens_loaded()
             
-            print(f"ℹ️  [DEBUG] Token for BSE:SENSEX: {self.token_map.get('BSE:SENSEX')}")
-            print(f"ℹ️  [DEBUG] Token for NSE:INDIAVIX: {self.token_map.get('NSE:INDIAVIX')}")
+            _safe_print(f"[DEBUG] Token for BSE:SENSEX: {self.token_map.get('BSE:SENSEX')}")
+            _safe_print(f"[DEBUG] Token for NSE:INDIAVIX: {self.token_map.get('NSE:INDIAVIX')}")
             
             # Get credentials - try encrypted storage first, then config.json
             self.api_key = self.config.get('api_key', '')
@@ -330,19 +346,19 @@ class ConnectionManager:
                     success, creds = cred_mgr.load_credentials()
 
                     if success and creds:
-                        print("✅ Loaded credentials from encrypted storage")
+                        _safe_print("[OK] Loaded credentials from encrypted storage")
                         # Use encrypted credentials (override config.json)
                         self.api_key = creds.get('api_key', self.api_key)
                         self.client_code = creds.get('client_code', self.client_code)
                         password = creds.get('password', password)
                         totp_secret = creds.get('totp_secret', totp_secret)
                     else:
-                        print("⚠️  Could not load encrypted credentials")
+                        _safe_print("[WARN] Could not load encrypted credentials")
                 except Exception as e:
-                    print(f"⚠️  Encrypted credentials unavailable: {e}")
+                    _safe_print(f"[WARN] Encrypted credentials unavailable: {e}")
 
             if not all([self.api_key, self.client_code, password]):
-                print("⚠️  Missing credentials (need API Key, Client Code, and Password)")
+                _safe_print("[WARN] Missing credentials (need API Key, Client Code, and Password)")
                 return False
             
             # Create SmartConnect instance
@@ -351,10 +367,10 @@ class ConnectionManager:
             # Generate TOTP
             if PYOTP_AVAILABLE and totp_secret:
                 totp = pyotp.TOTP(totp_secret).now()
-                print(f"🔐 Generated TOTP: {totp}")
+                _safe_print("[OK] Generated TOTP for Angel session")
             else:
                 totp = totp_secret
-                print("⚠️  Using static TOTP (install pyotp for auto-generation)")
+                _safe_print("[WARN] Using static TOTP (install pyotp for auto-generation)")
             
             # Generate session
             data = self.smart_api.generateSession(self.client_code, password, totp)
@@ -362,7 +378,7 @@ class ConnectionManager:
             if not data or not data.get('status'):
                 error_msg = data.get('message', 'Unknown authentication error') if data else 'No response from Angel One server'
                 self.last_connection_error = error_msg
-                print(f"⚠️  Failed to authenticate: {error_msg}")
+                _safe_print(f"[WARN] Failed to authenticate: {error_msg}")
                 return False
 
             self.last_connection_error = None
@@ -373,8 +389,8 @@ class ConnectionManager:
             self.feed_token = self.smart_api.getfeedToken()
             self.is_connected = True
             
-            print("✅ Connected to Angel One broker")
-            print(f"✅ Feed Token: {self.feed_token[:20] if self.feed_token else 'N/A'}...")
+            _safe_print("[OK] Connected to Angel One broker")
+            _safe_print(f"[OK] Feed Token: {self.feed_token[:20] if self.feed_token else 'N/A'}...")
             
             # Start WebSocket in separate thread
             self.start_websocket()
@@ -382,10 +398,10 @@ class ConnectionManager:
             return True
             
         except ImportError as e:
-            print(f"⚠️  SmartApi library not installed: {e}")
+            _safe_print(f"[WARN] SmartApi library not installed: {e}")
             return False
         except Exception as e:
-            print(f"⚠️  Connection error: {e}")
+            _safe_print(f"[WARN] Connection error: {e}")
             return False
     
     def subscribe_initial_symbols(self, symbols_with_exchange):
@@ -407,16 +423,16 @@ class ConnectionManager:
             
             self.subscribe_symbols(symbols_to_subscribe)
         else:
-            print("⚠️  WebSocket not connected yet, cannot subscribe initial symbols.")
+            _safe_print("⚠️  WebSocket not connected yet, cannot subscribe initial symbols.")
 
     def start_websocket(self):
         """Start WebSocket in separate thread - PREVENTS UI FREEZING!"""
         if not all([self.auth_token, self.feed_token, self.api_key, self.client_code]):
-            print("⚠️  Missing WebSocket credentials")
+            _safe_print("[WARN] Missing WebSocket credentials")
             return False
         
         if not SMARTAPI_AVAILABLE:
-            print("⚠️  SmartApi library not available for WebSocket")
+            _safe_print("[WARN] SmartApi library not available for WebSocket")
             return False
         
         try:
@@ -438,21 +454,22 @@ class ConnectionManager:
             ws_thread = threading.Thread(target=self.websocket.connect, daemon=True)
             ws_thread.start()
             
-            print("✅ WebSocket started in background thread")
+            _safe_print("[OK] WebSocket started in background thread")
             return True
             
         except Exception as e:
-            print(f"⚠️  WebSocket startup error: {e}")
+            _safe_print(f"[WARN] WebSocket startup error: {e}")
             return False
     
     def _on_ws_open(self, wsapp):
         """WebSocket opened - subscribe to stocks"""
-        print("🔌 WebSocket connected!")
+        _safe_print("[OK] WebSocket connected")
         self.websocket_connected = True
         
-        # Subscribe to all stocks in watchlist
+        # Subscribe to watchlist + index symbols (indices often need explicit subscribe)
         watchlist_with_exchange = [(symbol, "NSE") for symbol in self.stock_list]
-        self.subscribe_symbols(watchlist_with_exchange)
+        index_pairs = [("NIFTY", "NSE"), ("BANKNIFTY", "NSE"), ("INDIAVIX", "NSE"), ("SENSEX", "BSE")]
+        self.subscribe_symbols(watchlist_with_exchange + index_pairs)
     
     def _on_ws_data(self, wsapp, message):
         """WebSocket data received - update LTP cache (runs in background thread)"""
@@ -467,7 +484,7 @@ class ConnectionManager:
                     symbol = self.token_to_symbol_map.get(token) # Use reverse map
                     if symbol:
                         if symbol in ["NIFTY", "BANKNIFTY", "SENSEX", "INDIAVIX"]: # NEW DEBUG PRINT
-                            print(f"ℹ️  [DEBUG] WebSocket data for {symbol}: {ltp / 100.0}")
+                            _safe_print(f"ℹ️  [DEBUG] WebSocket data for {symbol}: {ltp / 100.0}")
                         
                         # Update LTP cache (thread-safe)
                         with self.ltp_lock:
@@ -478,15 +495,15 @@ class ConnectionManager:
                             }
                         # print(f"ℹ️  [DEBUG] Updated LTP for {symbol}: {self.ltp_data[symbol]['ltp']}")
         except Exception as e:
-            print(f"⚠️  [DEBUG] Error in _on_ws_data: {e}")
+            _safe_print(f"⚠️  [DEBUG] Error in _on_ws_data: {e}")
     
     def _on_ws_error(self, wsapp, error):
         """WebSocket error"""
-        print(f"⚠️  WebSocket error: {error}")
+        _safe_print(f"⚠️  WebSocket error: {error}")
     
     def _on_ws_close(self, wsapp):
         """WebSocket closed"""
-        print("🔌 WebSocket disconnected")
+        _safe_print("🔌 WebSocket disconnected")
         self.websocket_connected = False
     
     def subscribe_symbols(self, symbols_with_exchange):
@@ -495,12 +512,12 @@ class ConnectionManager:
         `symbols_with_exchange` should be a list of tuples: [(symbol, exchange), ...]
         """
         if not self.websocket or not self.websocket_connected:
-            print("⚠️  [DEBUG] WebSocket not connected, cannot subscribe")
+            _safe_print("⚠️  [DEBUG] WebSocket not connected, cannot subscribe")
             return False
         
         self.ensure_tokens_loaded()
         
-        print(f"ℹ️  [DEBUG] Attempting to subscribe to: {symbols_with_exchange}")
+        _safe_print(f"ℹ️  [DEBUG] Attempting to subscribe to: {symbols_with_exchange}")
 
         # Group tokens by exchange type
         tokens_by_exchange = {}
@@ -517,14 +534,14 @@ class ConnectionManager:
                 key = f"{exchange_upper}:{symbol.upper()}"
                 token = self.token_map.get(key)
             
-            print(f"ℹ️  [DEBUG] Symbol: {symbol}, Exchange: {exchange}, Key: {key}, Token: {token}")
+            _safe_print(f"ℹ️  [DEBUG] Symbol: {symbol}, Exchange: {exchange}, Key: {key}, Token: {token}")
 
             if token:
                 # Special handling for indices - NSE indices use NFO exchange type for WebSocket
                 symbol_upper = symbol.upper()
                 if symbol_upper in ["NIFTY", "BANKNIFTY", "NIFTY50", "FINNIFTY", "MIDCPNIFTY", "INDIAVIX"]:
                     exchange_type = 2  # NFO for NSE indices
-                    print(f"ℹ️  [DEBUG] Using NFO exchange type (2) for NSE index {symbol_upper}")
+                    _safe_print(f"ℹ️  [DEBUG] Using NFO exchange type (2) for NSE index {symbol_upper}")
                 elif exchange_upper == "NSE":
                     exchange_type = 1
                 elif exchange_upper == "NFO":
@@ -532,7 +549,7 @@ class ConnectionManager:
                 elif exchange_upper == "BSE":
                     exchange_type = 4  # BSE indices use BSE exchange type
                 else:
-                    print(f"⚠️  [DEBUG] Unsupported exchange: {exchange_upper}")
+                    _safe_print(f"⚠️  [DEBUG] Unsupported exchange: {exchange_upper}")
                     continue # Skip unsupported exchanges
 
                 if exchange_type not in tokens_by_exchange:
@@ -540,7 +557,7 @@ class ConnectionManager:
                 tokens_by_exchange[exchange_type].append(token)
 
         if not tokens_by_exchange:
-            print("⚠️  [DEBUG] No valid tokens found for subscription")
+            _safe_print("⚠️  [DEBUG] No valid tokens found for subscription")
             return False
             
         correlation_id = "ltp_subscription"
@@ -548,13 +565,13 @@ class ConnectionManager:
 
         for exchange_type, tokens in tokens_by_exchange.items():
             token_data = [{"exchangeType": exchange_type, "tokens": tokens}]
-            print(f"ℹ️  [DEBUG] Subscribing with token_data: {token_data}") # NEW DEBUG PRINT
+            _safe_print(f"ℹ️  [DEBUG] Subscribing with token_data: {token_data}") # NEW DEBUG PRINT
             try:
-                print(f"ℹ️  [DEBUG] Subscribing to exchange {exchange_type} with tokens: {tokens}")
+                _safe_print(f"ℹ️  [DEBUG] Subscribing to exchange {exchange_type} with tokens: {tokens}")
                 self.websocket.subscribe(correlation_id, mode, token_data)
-                print(f"✅ Subscribed to {len(tokens)} symbols on exchange type {exchange_type}")
+                _safe_print(f"✅ Subscribed to {len(tokens)} symbols on exchange type {exchange_type}")
             except Exception as e:
-                print(f"⚠️  [DEBUG] Subscription error for exchange type {exchange_type}: {e}")
+                _safe_print(f"⚠️  [DEBUG] Subscription error for exchange type {exchange_type}: {e}")
 
         return True
 
@@ -562,16 +579,16 @@ class ConnectionManager:
         """Connect analyzer module"""
         if analyzer_instance:
             self.analyzer = analyzer_instance
-            print("✅ Analyzer connected")
+            _safe_print("✅ Analyzer connected")
             return True
         else:
             try:
                 from analyzer import StockAnalyzer
                 self.analyzer = StockAnalyzer()
-                print("✅ Analyzer module loaded")
+                _safe_print("✅ Analyzer module loaded")
                 return True
             except ImportError:
-                print("⚠️  Analyzer module not found")
+                _safe_print("⚠️  Analyzer module not found")
                 return False
     
     def get_ltp(self, symbol, exchange="NSE"):
@@ -628,7 +645,7 @@ class ConnectionManager:
                     else:
                         results[symbol] = None
 
-        print(f"ℹ️  [DEBUG] get_ltp_batch results: {results}")
+        _safe_print(f"ℹ️  [DEBUG] get_ltp_batch results: {results}")
         return results
     
     def get_holdings(self):
@@ -643,7 +660,7 @@ class ConnectionManager:
             else:
                 return self._get_demo_holdings()
         except Exception as e:
-            print(f"⚠️  Error fetching holdings: {e}")
+            _safe_print(f"⚠️  Error fetching holdings: {e}")
             return self._get_demo_holdings()
     
     def get_positions(self):
@@ -658,7 +675,7 @@ class ConnectionManager:
             else:
                 return []
         except Exception as e:
-            print(f"⚠️  Error fetching positions: {e}")
+            _safe_print(f"⚠️  Error fetching positions: {e}")
             return []
     
     def get_funds(self):
@@ -677,7 +694,7 @@ class ConnectionManager:
             else:
                 return {'cash': 0, 'margin': 0}
         except Exception as e:
-            print(f"⚠️  Error fetching funds: {e}")
+            _safe_print(f"⚠️  Error fetching funds: {e}")
             return {'cash': 0, 'margin': 0}
     def get_historical(self, symbol, exchange="NSE", interval="ONE_MINUTE", period_days=5):
         """
@@ -709,7 +726,7 @@ class ConnectionManager:
             token = self.token_map.get(key)
             
             if not token:
-                print(f"⚠️  Token not found for {key}")
+                _safe_print(f"⚠️  Token not found for {key}")
                 return pd.DataFrame()
             
             # Calculate date range
@@ -733,14 +750,14 @@ class ConnectionManager:
             
             if not response or not response.get('status'):
                 error_msg = response.get('message', 'Unknown error') if response else 'No response'
-                print(f"⚠️  Failed to fetch historical data for {symbol}: {error_msg}")
+                _safe_print(f"⚠️  Failed to fetch historical data for {symbol}: {error_msg}")
                 return pd.DataFrame()
             
             # Parse candle data
             candles = response.get('data', [])
             
             if not candles:
-                print(f"⚠️  No historical data returned for {symbol}")
+                _safe_print(f"⚠️  No historical data returned for {symbol}")
                 return pd.DataFrame()
             
             # Convert to DataFrame
@@ -758,7 +775,7 @@ class ConnectionManager:
             return df
             
         except Exception as e:
-            print(f"⚠️  Error fetching historical data for {symbol}: {e}")
+            _safe_print(f"⚠️  Error fetching historical data for {symbol}: {e}")
             return self._generate_simulated_historical(symbol, period_days)
 
     def _generate_simulated_historical(self, symbol, period_days=5):
@@ -830,16 +847,16 @@ class ConnectionManager:
         """Get connection status for UI display"""
         is_paper = getattr(self, 'is_paper_sandbox', False)
         if self.is_connected:
-            status_text = '🟢 Paper Sandbox Connected' if is_paper else '🟢 Live Broker Connected'
+            status_text = '[OK] Paper Sandbox Connected' if is_paper else '[OK] Live Broker Connected'
         else:
-            status_text = '🔴 Broker Disconnected'
+            status_text = '[OFF] Broker Disconnected'
             
         return {
             'broker_connected': self.is_connected,
             'websocket_connected': self.websocket_connected,
             'analyzer_connected': self.analyzer is not None,
             'is_paper_sandbox': is_paper,
-            'status_text': status_text
+            'status_text': status_text,
         }
 
     
@@ -851,10 +868,10 @@ class ConnectionManager:
         try:
             with open(config_file, 'w') as f:
                 json.dump(self.config, f, indent=4)
-            print(f"✅ Config saved to {config_file}")
+            _safe_print(f"✅ Config saved to {config_file}")
             return True
         except Exception as e:
-            print(f"⚠️  Could not save config: {e}")
+            _safe_print(f"⚠️  Could not save config: {e}")
             return False
     
     def close(self):
@@ -867,7 +884,7 @@ class ConnectionManager:
         
         self.websocket_connected = False
         self.is_connected = False
-        print("✅ Connection closed cleanly")
+        _safe_print("✅ Connection closed cleanly")
 
 # Global singleton instance
 _connection_manager = None

@@ -29,6 +29,12 @@ data/*.csv
 logs/*.log
 logs/2025-*/
 
+# Paper dashboard runtime state
+storage/paper_capital_state.json
+storage/*.db
+storage/*.pid
+storage/backups/
+
 # Batch files (Windows specific, optional)
 *.bat
 

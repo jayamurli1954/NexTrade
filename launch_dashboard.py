@@ -8,8 +8,10 @@ Run this file to launch the visual NexTrade Web Dashboard:
 import sys
 import os
 
-# Ensure root workspace is in python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Always run from repo root so config.json / watchlist.json resolve correctly
+_ROOT = os.path.dirname(os.path.abspath(__file__))
+os.chdir(_ROOT)
+sys.path.insert(0, _ROOT)
 
 from web_dashboard import start_dashboard_server
 
