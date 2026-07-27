@@ -16,8 +16,21 @@ import webbrowser
 import logging
 from datetime import datetime
 from typing import List, Dict, Any, Tuple, Optional
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
+import socket
+
+
+class _ExclusiveThreadingHTTPServer(ThreadingHTTPServer):
+    """Refuse to share a port on Windows (SO_REUSEADDR can silently dual-bind)."""
+
+    allow_reuse_address = False
+
+    def server_bind(self):
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
+
 
 from hardening.safety_control_plane import SafetyControlPlane, SafetyState
 from trading_app.trade_ticket_engine import TradeTicketEngine, TradePlan, MissingProtectionException, UIBoundaryViolationException, UserIntentViolationException
@@ -32,11 +45,23 @@ from governance.multi_account_portfolio_manager import MultiAccountPortfolioMana
 from trading_app.strategy_registry import StrategyRegistry, StrategyMetadata, MarketRegimeType, AutomationTier
 from trading_app.regime_recommendation_engine import RegimeRecommendationEngine, DailyRecommendationOutcome
 from trading_app.daily_mandate_engine import DailyMandateManager, DailyMandate, MandateState, U5MandateViolationException, MandateLimits
+from trading_app.angel_market_data_bridge import (
+    start_angel_market_data,
+    get_ltp_map as angel_get_ltp_map,
+    get_ltp_quote as angel_get_ltp_quote,
+    get_index_board as angel_get_index_board,
+    get_cockpit_index_inputs as angel_get_cockpit_index_inputs,
+    get_market_data_status as angel_get_market_data_status,
+    require_ltp as angel_require_ltp,
+    ensure_subscribed as angel_ensure_subscribed,
+    ensure_angel_connected as angel_ensure_angel_connected,
+)
 
 logger = logging.getLogger("NexTradeUnifiedWebApp")
 
 PORT = 8580
-TOTAL_CAPITAL = 100000.0
+DEFAULT_PAPER_CAPITAL = 100000.0
+TOTAL_CAPITAL = DEFAULT_PAPER_CAPITAL
 UTILIZED_MARGIN = 0.0
 TODAYS_PNL = 0.0
 OVERALL_PNL = 0.0
@@ -48,6 +73,120 @@ ALLOW_OFFMARKET_SIMULATION = False
 ACTIVE_PAPER_POSITIONS = []
 EXECUTED_TRADES_LOG = []
 CURRENT_TRADE_PLAN = None
+
+# Persist paper capital across browser refresh / server restart (UI operational only)
+_WORKSPACE_DIR = os.path.dirname(os.path.abspath(__file__))
+PAPER_STATE_PATH = os.path.join(_WORKSPACE_DIR, "storage", "paper_capital_state.json")
+
+# Legacy sample prices — display fallback only when Angel is offline (never used for paper execute)
+_SAMPLE_FALLBACK_PRICES = {
+    "RELIANCE": 2742.00, "HDFCBANK": 1742.00, "INFY": 1440.00, "TCS": 3850.00,
+    "BHARTIARTL": 1898.20, "ICICIBANK": 1432.90, "SBIN": 1015.00, "TITAN": 4677.00,
+    "WIPRO": 177.12, "LT": 3785.60, "ABB": 7375.50, "ADANIENT": 3026.40,
+    "ADANIGREEN": 1395.10, "ADANIPORTS": 1768.30, "ADANIPOWER": 213.66, "ATGL": 652.85,
+    "AMBUJACEM": 425.15, "ASIANPAINT": 2637.90, "DMART": 4018.80, "AXISBANK": 1227.30
+}
+
+
+def _fetch_nse_ltp_map(symbols: List[str]) -> Dict[str, Dict[str, Any]]:
+    """
+    Exchange-authenticated LTP via Angel WebSocket (primary) + REST (fallback).
+    Returns empty for symbols without a live Angel quote — no yfinance on this path.
+    """
+    uniq = [s.strip().upper() for s in symbols if s and str(s).strip()]
+    if not uniq:
+        return {}
+    angel_ensure_subscribed(uniq, "NSE")
+    return angel_get_ltp_map(uniq, "NSE")
+
+
+def _fetch_index_board() -> Dict[str, Any]:
+    """Dashboard index strip — Angel LTP for NSE/BSE indices."""
+    return angel_get_index_board()
+
+
+def _fetch_live_index_inputs() -> Dict[str, Any]:
+    """NIFTY / BANKNIFTY / VIX for 15-min cockpit — Angel authority."""
+    return angel_get_cockpit_index_inputs()
+
+
+def _enrich_positions_with_ltp(positions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Attach live LTP + mark-to-market PnL so Paper Simulator proves price freshness."""
+    if not positions:
+        return []
+    symbols = [str(p.get("symbol", "")).upper() for p in positions if p.get("symbol")]
+    live_map = _fetch_nse_ltp_map(symbols)
+    enriched: List[Dict[str, Any]] = []
+    for pos in positions:
+        row = dict(pos)
+        sym = str(row.get("symbol", "")).upper()
+        entry = float(row.get("entry_price_raw") or 0.0)
+        qty = int(row.get("quantity") or 0)
+        direction = str(row.get("direction") or "BUY").upper()
+        q = live_map.get(sym)
+        if q and float(q.get("ltp") or 0) > 0:
+            ltp = float(q["ltp"])
+            chg = float(q.get("change_pct") or 0.0)
+            if direction in ("SELL", "SHORT"):
+                pnl = (entry - ltp) * qty
+            else:
+                pnl = (ltp - entry) * qty
+            row["ltp"] = round(ltp, 2)
+            row["ltp_fmt"] = f"₹{ltp:,.2f}"
+            row["current_price"] = f"₹{ltp:,.2f}"
+            row["pnl_raw"] = round(pnl, 2)
+            row["pnl"] = (f"+₹{pnl:,.2f}" if pnl >= 0 else f"-₹{abs(pnl):,.2f}")
+            row["ltp_source"] = q.get("source", "ANGEL")
+            row["ltp_change_pct"] = round(chg, 2)
+            row["ltp_live"] = True
+        else:
+            row["ltp"] = None
+            row["ltp_fmt"] = "—"
+            row["ltp_source"] = "UNAVAILABLE"
+            row["ltp_change_pct"] = None
+            row["ltp_live"] = False
+        enriched.append(row)
+
+    return enriched
+
+
+def _save_paper_capital_state() -> None:
+    """Persist capital counters used by the paper dashboard."""
+    try:
+        os.makedirs(os.path.dirname(PAPER_STATE_PATH), exist_ok=True)
+        payload = {
+            "total_capital": float(TOTAL_CAPITAL),
+            "utilized_margin": float(UTILIZED_MARGIN),
+            "todays_pnl": float(TODAYS_PNL),
+            "overall_pnl": float(OVERALL_PNL),
+            "active_risk": float(ACTIVE_RISK),
+            "updated_at": datetime.now().isoformat(timespec="seconds"),
+        }
+        with open(PAPER_STATE_PATH, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except Exception as exc:
+        logger.warning("Failed to persist paper capital state: %s", exc)
+
+
+def _load_paper_capital_state() -> None:
+    """Load persisted capital counters into module globals."""
+    global TOTAL_CAPITAL, UTILIZED_MARGIN, TODAYS_PNL, OVERALL_PNL, ACTIVE_RISK
+    if not os.path.exists(PAPER_STATE_PATH):
+        return
+    try:
+        with open(PAPER_STATE_PATH, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+        TOTAL_CAPITAL = float(payload.get("total_capital", DEFAULT_PAPER_CAPITAL))
+        UTILIZED_MARGIN = float(payload.get("utilized_margin", 0.0))
+        TODAYS_PNL = float(payload.get("todays_pnl", 0.0))
+        OVERALL_PNL = float(payload.get("overall_pnl", 0.0))
+        ACTIVE_RISK = float(payload.get("active_risk", 0.0))
+        logger.info("Loaded paper capital state: TOTAL_CAPITAL=%.2f", TOTAL_CAPITAL)
+    except Exception as exc:
+        logger.warning("Failed to load paper capital state: %s", exc)
+
+
+_load_paper_capital_state()
 
 # Phase 7K Managers
 strategy_registry = StrategyRegistry()
@@ -84,6 +223,8 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
     def _set_html_headers(self):
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
         self.end_headers()
 
     def do_OPTIONS(self):
@@ -102,6 +243,31 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
             self._set_json_headers(200)
             data = self.get_system_status()
             self.wfile.write(json.dumps(data).encode("utf-8"))
+            return
+
+        if path == "/api/ltp":
+            self._set_json_headers(200)
+            qs = parse_qs(parsed.query)
+            symbol = (qs.get("symbol") or ["RELIANCE"])[0].strip().upper()
+            exchange = (qs.get("exchange") or ["NSE"])[0].strip().upper()
+            angel_ensure_subscribed([symbol], exchange)
+            quote = angel_get_ltp_quote(symbol, exchange)
+            mds = angel_get_market_data_status()
+            if quote:
+                self.wfile.write(json.dumps({
+                    "success": True,
+                    "symbol": symbol,
+                    "ltp": quote.get("ltp"),
+                    "source": quote.get("source"),
+                    "market_data": mds,
+                }).encode("utf-8"))
+            else:
+                self.wfile.write(json.dumps({
+                    "success": False,
+                    "symbol": symbol,
+                    "error": mds.get("last_error") or "No live Angel LTP available",
+                    "market_data": mds,
+                }).encode("utf-8"))
             return
 
         if path == "/api/mandate/today":
@@ -137,15 +303,28 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
                     "trading_style": o.trading_style,
                     "strategy": o.strategy,
                     "signal_strength_pct": o.signal_strength_pct,
-                    "suggested_entry": f"₹{o.suggested_entry:,.2f}",
-                    "suggested_stop_loss": f"₹{o.suggested_stop_loss:,.2f}",
-                    "suggested_target": f"₹{o.suggested_target:,.2f}",
+                    "suggested_entry": float(o.suggested_entry),
+                    "suggested_stop_loss": float(o.suggested_stop_loss),
+                    "suggested_target": float(o.suggested_target),
                     "suggested_quantity": o.suggested_quantity,
                     "risk_reward_ratio": f"1 : {o.risk_reward_ratio}",
                     "why_this_trade": o.why_this_trade,
-                    "invalidation_rules": o.invalidation_rules
+                    "invalidation_rules": o.invalidation_rules,
+                    "price_source": "SAMPLE_TEMPLATE"
                 } for o in opp_engine.get_top_opportunities()
             ]
+            live = _fetch_nse_ltp_map([o["symbol"] for o in opps])
+            for o in opps:
+                q = live.get(o["symbol"])
+                if not q:
+                    continue
+                old_entry = float(o["suggested_entry"]) or 1.0
+                new_entry = float(q["ltp"])
+                scale = new_entry / old_entry
+                o["suggested_entry"] = round(new_entry, 2)
+                o["suggested_stop_loss"] = round(float(o["suggested_stop_loss"]) * scale, 2)
+                o["suggested_target"] = round(float(o["suggested_target"]) * scale, 2)
+                o["price_source"] = q.get("source", "ANGEL")
             self.wfile.write(json.dumps(opps).encode("utf-8"))
             return
 
@@ -157,7 +336,7 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
 
         if path == "/api/positions":
             self._set_json_headers(200)
-            self.wfile.write(json.dumps(ACTIVE_PAPER_POSITIONS).encode("utf-8"))
+            self.wfile.write(json.dumps(_enrich_positions_with_ltp(ACTIVE_PAPER_POSITIONS)).encode("utf-8"))
             return
 
         if path == "/api/holdings":
@@ -275,13 +454,14 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
 
         if path == "/api/reset_paper_data":
             self._set_json_headers(200)
-            TOTAL_CAPITAL = 100000.0
+            TOTAL_CAPITAL = DEFAULT_PAPER_CAPITAL
             UTILIZED_MARGIN = 0.0
             TODAYS_PNL = 0.0
             OVERALL_PNL = 0.0
             ACTIVE_RISK = 0.0
             EXECUTED_TRADES_LOG = []
             ACTIVE_PAPER_POSITIONS = []
+            _save_paper_capital_state()
 
             res = {
                 "success": True,
@@ -342,6 +522,7 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
                     return
                 TOTAL_CAPITAL -= step
 
+            _save_paper_capital_state()
             available_cash = TOTAL_CAPITAL - UTILIZED_MARGIN
             res = {
                 "success": True,
@@ -381,7 +562,7 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
                     "target_price": plan.target_price,
                     "capital_required": plan.capital_required,
                     "max_loss_amount": plan.max_loss_amount,
-                    "potential_profit": plan.potential_profit
+                    "potential_profit": plan.potential_profit_amount
                 }
                 resp = {"success": True, "plan": plan_dict, "summary": summary}
             except Exception as e:
@@ -403,7 +584,12 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
             try:
                 mandate_manager.verify_u5_autonomous_boundary()
             except U5MandateViolationException as u5_err:
-                self.wfile.write(json.dumps({"success": False, "error": str(u5_err), "u5_violation": True}).encode("utf-8"))
+                self.wfile.write(json.dumps({
+                    "success": False,
+                    "error": str(u5_err),
+                    "u5_violation": True,
+                    "user_action": "Open tab 'NEXTRADE TODAY (15-Min Cockpit)' → scroll to 'Today's Trading Mandate Boundaries' → click APPROVE & START TODAY'S TRADING MANDATE, then retry Execute Paper Trade."
+                }).encode("utf-8"))
                 return
 
             # 3. Plan Check
@@ -412,6 +598,32 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
                 return
 
             plan = CURRENT_TRADE_PLAN
+
+            # 4. Live Angel LTP required for paper fill (fail closed)
+            ok_ltp, quote, ltp_err = angel_require_ltp(plan.symbol, "NSE")
+            if not ok_ltp:
+                self.wfile.write(json.dumps({
+                    "success": False,
+                    "error": ltp_err,
+                    "live_ltp_required": True,
+                }).encode("utf-8"))
+                return
+
+            live_entry = round(float(quote["ltp"]), 2)
+            old_entry = float(plan.entry_price) or live_entry
+            if old_entry > 0 and abs(live_entry - old_entry) > 0.001:
+                scale = live_entry / old_entry
+                plan.entry_price = live_entry
+                plan.stop_loss_price = round(float(plan.stop_loss_price) * scale, 2)
+                plan.target_price = round(float(plan.target_price) * scale, 2)
+                if plan.trailing_stop and plan.trailing_stop.enabled:
+                    plan.trailing_stop.current_trigger_price = round(
+                        float(plan.trailing_stop.current_trigger_price) * scale, 2
+                    )
+            else:
+                plan.entry_price = live_entry
+
+            fill_source = quote.get("source", "ANGEL_WEBSOCKET")
             pos_id = f"pos_{uuid.uuid4().hex[:6]}"
             trade_id = f"tr_{uuid.uuid4().hex[:6]}"
 
@@ -425,6 +637,7 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
                 "entry_price": f"₹{plan.entry_price:,.2f}",
                 "entry_price_raw": plan.entry_price,
                 "current_price": f"₹{plan.entry_price:,.2f}",
+                "fill_price_source": fill_source,
                 "stop_loss": f"₹{plan.stop_loss_price:,.2f}",
                 "target": f"₹{plan.target_price:,.2f}",
                 "trailing_stop": f"₹{plan.trailing_stop.current_trigger_price:,.2f}" if plan.trailing_stop.enabled else "Disabled",
@@ -445,7 +658,8 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
                 "exit_price": plan.entry_price,
                 "exit_reason": "OPEN POSITION",
                 "pnl": 0.0,
-                "status": "OPEN"
+                "status": "OPEN",
+                "fill_price_source": fill_source,
             }
 
             ACTIVE_PAPER_POSITIONS.append(new_position)
@@ -453,11 +667,16 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
 
             UTILIZED_MARGIN += plan.capital_required
             ACTIVE_RISK += plan.max_loss_amount
+            _save_paper_capital_state()
 
             resp = {
                 "success": True,
-                "message": f"Paper Trade Executed! Position for {plan.symbol} is OPEN and live-monitored in Tab 4 (Paper Simulator) and Tab 5 (Positions & Protection).",
-                "position": new_position
+                "message": (
+                    f"Paper Trade Executed at live {fill_source} LTP ₹{plan.entry_price:,.2f} "
+                    f"for {plan.symbol}. Position is OPEN in Paper Simulator."
+                ),
+                "position": new_position,
+                "fill_price_source": fill_source,
             }
             self.wfile.write(json.dumps(resp).encode("utf-8"))
             return
@@ -495,7 +714,14 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
         self.send_error(404, "Endpoint Not Found")
 
     def get_today_mandate_data(self) -> Dict[str, Any]:
-        outcome = regime_engine.analyze_market_and_recommend()
+        idx = _fetch_live_index_inputs()
+        outcome = regime_engine.analyze_market_and_recommend(
+            nifty_pct_change=float(idx["nifty_pct"]),
+            bank_nifty_pct_change=float(idx["bank_pct"]),
+            vix_level=float(idx["vix"]),
+            advances_count=int(idx["advances"]),
+            declines_count=int(idx["declines"]),
+        )
         current = mandate_manager.get_current_mandate()
 
         if not current and outcome.trade_recommended and outcome.recommended_strategy:
@@ -523,12 +749,15 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
             "nifty_trend": outcome.nifty_trend,
             "bank_nifty_trend": outcome.bank_nifty_trend,
             "vix_level": outcome.vix_level,
-            "market_breadth": outcome.market_breadth,
+            "market_breadth": idx.get("breadth_label") or outcome.market_breadth,
             "recommended_strategy": outcome.recommended_strategy.name if outcome.recommended_strategy else "None",
             "suitability_score": outcome.suitability_score,
             "primary_rationale": outcome.primary_rationale,
             "alternative_strategies": alts,
             "no_trade_reason": outcome.no_trade_reason,
+            "market_data_source": idx.get("source"),
+            "market_data_live": bool(idx.get("ok")),
+            "broker_status": angel_get_market_data_status(),
             "limits": {
                 "capital_available": f"₹{TOTAL_CAPITAL:,.2f}",
                 "capital_deployed_limit": "₹50,000.00",
@@ -594,9 +823,20 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
         current_mandate = mandate_manager.get_current_mandate()
         mandate_status_label = current_mandate.state.value if current_mandate else "AWAITING_APPROVAL"
 
+        index_board = _fetch_index_board()
+        mds = angel_get_market_data_status()
+        broker_label = mds.get("status_text", "Angel One")
+        if mds.get("websocket_connected"):
+            broker_label = "Angel One WebSocket LIVE"
+        elif mds.get("broker_connected"):
+            broker_label = "Angel One REST (WebSocket connecting…)"
+        else:
+            broker_label = "Angel One DISCONNECTED — configure config.json credentials"
+
         return {
             "control_plane_state": state,
-            "broker_status": "Connected (Angel One Live / Paper Gateway)",
+            "broker_status": broker_label,
+            "market_data": mds,
             "governance_phase": "Phase 7K Single Unified Web Terminal",
             "certification_status": "MASTER_CERTIFIED",
             "activation_state": "CERTIFICATION_SIGNING_PENDING",
@@ -613,16 +853,13 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
             "mandate_status_label": mandate_status_label,
             "market_open": open_ok,
             "currency": "INR (₹)",
-            "gainers": [
-                {"symbol": "RELIANCE", "ltp": "₹2,742.00", "change": "+1.85%"},
-                {"symbol": "HDFCBANK", "ltp": "₹1,742.00", "change": "+1.20%"},
-                {"symbol": "BHARTIARTL", "ltp": "₹1,898.20", "change": "+0.95%"}
-            ],
-            "losers": [
-                {"symbol": "TITAN", "ltp": "₹4,677.00", "change": "-1.10%"},
-                {"symbol": "WIPRO", "ltp": "₹177.12", "change": "-0.85%"},
-                {"symbol": "LT", "ltp": "₹3,785.60", "change": "-0.60%"}
-            ],
+            "index_board": index_board,
+            "gainers": self._build_mover_rows(
+                ["RELIANCE", "HDFCBANK", "BHARTIARTL"], prefer_positive=True
+            ),
+            "losers": self._build_mover_rows(
+                ["TITAN", "WIPRO", "LT"], prefer_positive=False
+            ),
             "accounts": accounts_info,
             "technical_predicates": "10/10 PASS",
             "governance_predicate": "1/1 PENDING"
@@ -645,33 +882,49 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
             }
         }
 
+    def _build_mover_rows(self, symbols: List[str], prefer_positive: bool = True) -> List[Dict[str, str]]:
+        quotes = _fetch_nse_ltp_map(symbols)
+        rows = []
+        for sym in symbols:
+            q = quotes.get(sym)
+            if q:
+                ltp = float(q["ltp"])
+                chg = float(q.get("change_pct") or 0.0)
+                chg_str = f"+{chg:.2f}%" if chg >= 0 else f"{chg:.2f}%"
+                rows.append({"symbol": sym, "ltp": f"₹{ltp:,.2f}", "change": chg_str})
+            else:
+                rows.append({"symbol": sym, "ltp": "—", "change": "—"})
+        return rows
+
     def get_watchlist_data(self):
         symbols = self._load_watchlist_file()
         watchlist = []
-        
-        base_prices = {
-            "RELIANCE": 2742.00, "HDFCBANK": 1742.00, "INFY": 1440.00, "TCS": 3850.00,
-            "BHARTIARTL": 1898.20, "ICICIBANK": 1432.90, "SBIN": 1015.00, "TITAN": 4677.00,
-            "WIPRO": 177.12, "LT": 3785.60, "ABB": 7375.50, "ADANIENT": 3026.40,
-            "ADANIGREEN": 1395.10, "ADANIPORTS": 1768.30, "ADANIPOWER": 213.66, "ATGL": 652.85,
-            "AMBUJACEM": 425.15, "ASIANPAINT": 2637.90, "DMART": 4018.80, "AXISBANK": 1227.30
-        }
+        live_map = _fetch_nse_ltp_map(symbols)
 
-        for i, sym in enumerate(symbols):
-            base = base_prices.get(sym, 500.00 + (hash(sym) % 2500))
-            change_val = round((hash(sym) % 40) - 15 + 0.45, 2)
-            change_pct = round((change_val / base) * 100, 2)
+        for sym in symbols:
+            q = live_map.get(sym)
+            if q:
+                base = float(q["ltp"])
+                change_pct = float(q.get("change_pct") or 0.0)
+                change_val = base * change_pct / 100.0
+                source = q.get("source", "ANGEL")
+            else:
+                base = 0.0
+                change_val = 0.0
+                change_pct = 0.0
+                source = "ANGEL_UNAVAILABLE"
+
             volume = (hash(sym) % 8000000) + 1000000
-            
-            change_str = f"+₹{change_val:.2f}" if change_val >= 0 else f"-₹{abs(change_val):.2f}"
+            change_str = f"+₹{abs(change_val):.2f}" if change_val >= 0 else f"-₹{abs(change_val):.2f}"
             change_pct_str = f"+{change_pct:.2f}%" if change_pct >= 0 else f"{change_pct:.2f}%"
 
             watchlist.append({
                 "symbol": sym,
-                "ltp": f"₹{base:,.2f}",
-                "change": change_str,
-                "change_pct": change_pct_str,
-                "volume": f"{volume:,}"
+                "ltp": f"₹{base:,.2f}" if base > 0 else "—",
+                "change": change_str if base > 0 else "—",
+                "change_pct": change_pct_str if base > 0 else "—",
+                "volume": f"{volume:,}",
+                "price_source": source
             })
         return watchlist
 
@@ -750,6 +1003,16 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
 
         .metric-big { font-size: 26px; font-weight: 700; color: #fff; margin: 6px 0; }
         .sub-text { font-size: 13px; color: var(--text-muted); }
+        .index-strip { display: flex; flex-wrap: wrap; gap: 12px; }
+        .index-chip {
+            flex: 1 1 160px; min-width: 150px; padding: 12px 14px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+        }
+        .index-chip .idx-name { font-size: 11px; color: var(--text-muted); letter-spacing: 0.4px; text-transform: uppercase; }
+        .index-chip .idx-ltp { font-size: 18px; font-weight: 700; color: #fff; margin: 4px 0 2px; }
+        .index-chip .idx-chg { font-size: 12px; font-weight: 600; }
+        .index-chip .idx-exch { font-size: 10px; color: #64748b; }
 
         .btn { background: linear-gradient(135deg, #1976d2, #0288d1); color: #fff; border: none; padding: 12px 20px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; transition: opacity 0.2s; }
         .btn:hover { opacity: 0.9; }
@@ -782,6 +1045,7 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <span class="badge badge-green">🟢 SAFETY ENGINE: ACTIVE</span>
+            <span class="badge badge-amber" id="broker-status-badge">Angel One: connecting…</span>
             <span class="badge" style="background: rgba(41, 182, 246, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue);">TRADING MODE: 🟢 PAPER SANDBOX</span>
             <span class="badge badge-amber" id="market-status-badge">🔴 MARKET CLOSED (SUNDAY)</span>
             <span class="badge badge-green">INR (₹)</span>
@@ -807,7 +1071,7 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
     <!-- TAB 0: NEXTRADE TODAY (15-MINUTE MORNING COCKPIT) -->
     <div id="tab-today" class="tab-content active">
         <!-- MANDATE ACTIVE STATUS BANNER -->
-        <div id="mandate-status-banner" style="background: rgba(0, 230, 118, 0.1); border: 1px solid var(--accent-green); border-radius: 12px; padding: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <div id="mandate-status-banner" style="background: rgba(0, 230, 118, 0.1); border: 1px solid var(--accent-green); border-radius: 12px; padding: 14px; margin-bottom: 20px; display: none; justify-content: space-between; align-items: center;">
             <div>
                 <strong style="color: var(--accent-green); font-size: 15px;">🟢 NEXTRADE IS MANAGING TODAY'S APPROVED TRADING PLAN</strong>
                 <div style="font-size: 13px; color: #b0bec5; margin-top: 2px;">Autonomous trading is active within your pre-approved capital and risk limits. You may close the browser.</div>
@@ -821,7 +1085,7 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
         <div class="grid">
             <!-- 1. MARKET REGIME & BRIEF -->
             <div class="card">
-                <div class="card-header"><span class="card-title">📊 Today's Market Regime</span><span class="badge badge-green" id="cockpit-regime-badge">MODERATELY BULLISH</span></div>
+                <div class="card-header"><span class="card-title">📊 Today's Market Regime</span><span class="badge badge-green" id="cockpit-regime-badge">MODERATELY BULLISH</span><span class="badge badge-amber" id="cockpit-data-source">DATA: CHECKING…</span></div>
                 <div style="font-size: 14px; margin-bottom: 10px;">
                     NIFTY Trend: <strong style="color:var(--accent-green);" id="cockpit-nifty">POSITIVE (+1.25%)</strong><br>
                     Bank NIFTY Trend: <strong style="color:var(--accent-green);" id="cockpit-banknifty">POSITIVE (+0.85%)</strong><br>
@@ -866,7 +1130,7 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
                     <em>By approving, you authorise NexTrade to independently identify, enter, manage, and exit paper trades within the limits displayed above.</em>
                 </div>
 
-                <button class="btn btn-green" style="width: 100%; padding: 14px; font-size: 15px;" onclick="approveMandate()">🟢 APPROVE & START TODAY'S TRADING MANDATE</button>
+                <button id="btn-approve-mandate" class="btn btn-green" style="width: 100%; padding: 14px; font-size: 15px; box-shadow: 0 0 0 2px rgba(0,230,118,0.35);" onclick="approveMandate()">🟢 APPROVE & START TODAY'S TRADING MANDATE</button>
             </div>
         </div>
 
@@ -907,6 +1171,17 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
 
     <!-- TAB 1: DASHBOARD -->
     <div id="tab-dashboard" class="tab-content">
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+                <span class="card-title">📊 Market Indices</span>
+                <span class="badge badge-amber" id="idx-source-badge">LOADING</span>
+            </div>
+            <div class="index-strip" id="dash-indices">
+                <div class="sub-text">Loading Nifty 50, Bank Nifty, Sensex, India VIX, Nasdaq…</div>
+            </div>
+            <div class="sub-text" style="margin-top:10px;" id="idx-source-note">Desktop-parity index board (live quotes when feed is available).</div>
+        </div>
+
         <div class="grid">
             <div class="card">
                 <div class="card-header"><span class="card-title">💰 Dynamic Capital Summary</span><span class="badge badge-green">LIVE DYNAMIC</span></div>
@@ -961,6 +1236,23 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
         <div id="opp-container">Loading trade opportunities...</div>
     </div>
 
+    <style>
+        #opp-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+        #opp-table thead th { background: rgba(255,255,255,0.07); color: #aab4c8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); white-space: nowrap; }
+        #opp-table tbody tr.opp-main-row { background: rgba(255,255,255,0.03); transition: background 0.2s; cursor: pointer; }
+        #opp-table tbody tr.opp-main-row:hover { background: rgba(255,255,255,0.07); }
+        #opp-table tbody td { padding: 11px 12px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+        #opp-table tbody tr.opp-detail-row td { padding: 12px 16px; background: rgba(0,0,0,0.25); border-bottom: 2px solid rgba(255,255,255,0.08); }
+        .opp-detail-row { display: none; }
+        .opp-detail-row.open { display: table-row !important; }
+        .sig-bar { display: inline-block; background: linear-gradient(90deg, #22c55e, #16a34a); border-radius: 10px; padding: 2px 10px; font-size: 12px; font-weight: 700; color: #fff; }
+        .sig-bar.med { background: linear-gradient(90deg, #f59e0b, #d97706); }
+        .sig-bar.low { background: linear-gradient(90deg, #ef4444, #b91c1c); }
+        .opp-style-badge { font-size: 11px; padding: 2px 8px; border-radius: 8px; background: rgba(99,102,241,0.25); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.4); }
+        .opp-chevron { font-size: 11px; margin-left: 6px; color: #64748b; transition: transform 0.2s; }
+        .opp-main-row.open .opp-chevron { transform: rotate(180deg); }
+    </style>
+
     <!-- TAB 3: TRADE TICKET -->
     <div id="tab-ticket" class="tab-content">
         <div class="grid">
@@ -1000,7 +1292,7 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
                 </div>
 
                 <div style="display: flex; gap: 10px;">
-                    <div class="input-group" style="flex: 1;"><label>Entry Price (₹)</label><input type="number" id="tk-entry" value="2742.00"></div>
+                    <div class="input-group" style="flex: 1;"><label>Entry Price (₹) <span id="tk-ltp-badge" class="sub-text" style="font-weight:normal;">— fetching Angel LTP…</span></label><input type="number" id="tk-entry" value="" placeholder="Live Angel LTP"></div>
                     <div class="input-group" style="flex: 1;"><label>Quantity / Lots</label><input type="number" id="tk-qty" value="10"></div>
                 </div>
 
@@ -1197,10 +1489,19 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
 
     <script>
         function showTab(evt, tabId) {
+            const panel = document.getElementById(tabId);
+            if (!panel) {
+                console.error('Unknown tab:', tabId);
+                return;
+            }
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            evt.currentTarget.classList.add('active');
+            panel.classList.add('active');
+            let btn = evt && evt.currentTarget ? evt.currentTarget : null;
+            if (!btn) {
+                btn = document.querySelector('.tab-btn[onclick*="' + tabId + '"]');
+            }
+            if (btn) btn.classList.add('active');
         }
 
         async function fetchTodayMandate() {
@@ -1211,8 +1512,28 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
                 document.getElementById('cockpit-regime-badge').innerText = data.market_regime_label;
                 document.getElementById('cockpit-nifty').innerText = data.nifty_trend;
                 document.getElementById('cockpit-banknifty').innerText = data.bank_nifty_trend;
-                document.getElementById('cockpit-vix').innerText = data.vix_level + ' (Normal Volatility)';
+                document.getElementById('cockpit-vix').innerText = data.vix_level + ' (India VIX)';
                 document.getElementById('cockpit-breadth').innerText = data.market_breadth;
+                const srcEl = document.getElementById('cockpit-data-source');
+                if (srcEl) {
+                    const mds = data.broker_status || {};
+                    const brokerUp = !!(mds.broker_connected);
+                    const wsUp = !!(mds.websocket_connected);
+                    const live = !!data.market_data_live;
+                    if (live) {
+                        srcEl.innerText = 'DATA: LIVE (' + (data.market_data_source || 'ANGEL') + ')';
+                        srcEl.className = 'badge badge-green';
+                    } else if (brokerUp && wsUp) {
+                        srcEl.innerText = 'BROKER LIVE · index quotes loading…';
+                        srcEl.className = 'badge badge-green';
+                    } else if (brokerUp) {
+                        srcEl.innerText = 'BROKER REST OK · WebSocket connecting…';
+                        srcEl.className = 'badge badge-amber';
+                    } else {
+                        srcEl.innerText = 'ANGEL DISCONNECTED — check config.json & restart';
+                        srcEl.className = 'badge badge-red';
+                    }
+                }
 
                 document.getElementById('cockpit-strategy-name').innerText = data.recommended_strategy;
                 document.getElementById('cockpit-score').innerText = `Suitability: ${data.suitability_score} / 100`;
@@ -1273,7 +1594,50 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
                 document.getElementById('dash-overall-pnl').innerText = data.overall_pnl_fmt;
                 document.getElementById('dash-risk').innerText = data.active_risk_fmt;
 
+                const brokerBadge = document.getElementById('broker-status-badge');
+                if (brokerBadge) {
+                    const mds = data.market_data || {};
+                    brokerBadge.innerText = data.broker_status || 'Angel One';
+                    if (mds.websocket_connected) {
+                        brokerBadge.className = 'badge badge-green';
+                    } else if (mds.broker_connected) {
+                        brokerBadge.className = 'badge badge-amber';
+                    } else {
+                        brokerBadge.className = 'badge badge-red';
+                    }
+                }
+
                 document.getElementById('eod-pnl').innerText = data.todays_pnl_fmt;
+
+                const board = data.index_board || {};
+                const idxBadge = document.getElementById('idx-source-badge');
+                const idxBox = document.getElementById('dash-indices');
+                const idxNote = document.getElementById('idx-source-note');
+                if (idxBadge && idxBox) {
+                    if (board.ok) {
+                        idxBadge.className = 'badge badge-green';
+                        idxBadge.innerText = 'LIVE (' + (board.source || 'ANGEL') + ')';
+                    } else {
+                        idxBadge.className = 'badge badge-amber';
+                        idxBadge.innerText = 'PARTIAL / UNAVAILABLE';
+                    }
+                    let idxHtml = '';
+                    (board.indices || []).forEach(ix => {
+                        const chgColor = (ix.change_pct == null) ? 'var(--text-muted)' : (ix.change_pct >= 0 ? 'var(--accent-green)' : 'var(--accent-red)');
+                        idxHtml += `<div class="index-chip">
+                            <div class="idx-name">${ix.name}</div>
+                            <div class="idx-ltp">${ix.ltp_fmt}</div>
+                            <div class="idx-chg" style="color:${chgColor};">${ix.change_fmt}</div>
+                            <div class="idx-exch">${ix.exchange || ''}</div>
+                        </div>`;
+                    });
+                    idxBox.innerHTML = idxHtml || '<div class="sub-text">Index quotes unavailable.</div>';
+                    if (idxNote) {
+                        idxNote.innerText = board.ok
+                            ? 'Live index board via Angel One WebSocket/REST. Source: ' + (board.source || 'ANGEL') + '.'
+                            : 'Angel index quotes unavailable — check broker login in config.json and restart dashboard.';
+                    }
+                }
 
                 const mBadge = document.getElementById('market-status-badge');
                 mBadge.innerText = data.market_status_badge;
@@ -1315,19 +1679,25 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
                     posHtml = '<div class="modal-box">No active open positions. Execute paper trades from Trade Ticket.</div>';
                     tab4Html = 'No active paper positions right now. Use Trade Ticket to execute paper trades.';
                 } else {
-                    tab4Html = '<table class="table"><thead><tr><th>ID</th><th>Timestamp</th><th>Symbol</th><th>Style</th><th>Strategy</th><th>Qty</th><th>Entry</th><th>SL</th><th>Target</th><th>Status</th></tr></thead><tbody>';
+                    tab4Html = '<table class="table"><thead><tr><th>ID</th><th>Timestamp</th><th>Symbol</th><th>Style</th><th>Strategy</th><th>Qty</th><th>Entry</th><th>LTP</th><th>PnL</th><th>SL</th><th>Target</th><th>Status</th></tr></thead><tbody>';
                     positions.forEach(p => {
+                        const ltpLive = !!p.ltp_live;
+                        const ltpColor = ltpLive ? 'var(--accent-green)' : 'var(--accent-amber)';
+                        const ltpLabel = p.ltp_fmt || p.current_price || '—';
+                        const ltpSrc = p.ltp_source ? ` <span style="font-size:10px;color:#64748b;">(${p.ltp_source})</span>` : '';
+                        const pnlColor = (p.pnl_raw == null || p.pnl_raw >= 0) ? 'var(--accent-green)' : 'var(--accent-red)';
                         posHtml += `
                             <div class="modal-box" style="margin-bottom:12px;">
                                 <strong style="color:#fff;">${p.symbol} — ${p.direction} ${p.quantity} Qty @ ${p.entry_price} (${p.trading_style})</strong><br>
-                                Current Price: <span style="color:var(--accent-green);">${p.current_price} (${p.pnl})</span><br><br>
+                                LTP: <span style="color:${ltpColor};">${ltpLabel}</span>${ltpSrc}
+                                &nbsp;|&nbsp; PnL: <span style="color:${pnlColor};">${p.pnl || '+₹0.00'}</span><br><br>
                                 🎯 Target: ${p.target}<br>
                                 🛡️ Trailing SL: ${p.trailing_stop}<br>
                                 🛑 Original SL: ${p.stop_loss}<br><br>
                                 <span class="badge badge-green">Auto-Exit: ACTIVE</span>
                             </div>
                         `;
-                        tab4Html += `<tr><td>${p.position_id}</td><td>${p.timestamp}</td><td><strong>${p.symbol}</strong></td><td>${p.trading_style}</td><td>${p.strategy}</td><td>${p.quantity}</td><td>${p.entry_price}</td><td style="color:var(--accent-red);">${p.stop_loss}</td><td style="color:var(--accent-green);">${p.target}</td><td><span class="badge badge-green">${p.status}</span></td></tr>`;
+                        tab4Html += `<tr><td>${p.position_id}</td><td>${p.timestamp}</td><td><strong>${p.symbol}</strong></td><td>${p.trading_style}</td><td>${p.strategy}</td><td>${p.quantity}</td><td>${p.entry_price}</td><td style="color:${ltpColor};">${ltpLabel}${ltpSrc}</td><td style="color:${pnlColor};">${p.pnl || '—'}</td><td style="color:var(--accent-red);">${p.stop_loss}</td><td style="color:var(--accent-green);">${p.target}</td><td><span class="badge badge-green">${p.status}</span></td></tr>`;
                     });
                     tab4Html += '</tbody></table>';
                 }
@@ -1386,36 +1756,83 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
             } catch (err) { console.error(err); }
         }
 
+        function formatInrPrice(v) {
+            if (v == null || v === '') return '—';
+            if (typeof v === 'number' && !Number.isNaN(v)) {
+                return v.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+            const cleaned = String(v).replace(/[^0-9.\-]/g, '');
+            const n = parseFloat(cleaned);
+            if (Number.isNaN(n)) return '—';
+            return n.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
         async function fetchOpportunities() {
             try {
                 const res = await fetch('/api/opportunities');
                 const opps = await res.json();
-                let html = '';
-                opps.forEach(o => {
-                    html += `
-                        <div class="opp-card">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <strong style="font-size:18px; color:#fff;">${o.symbol} — ${o.trading_style}</strong>
-                                <span class="badge badge-green">${o.signal_strength_pct}% Signal Strength</span>
-                            </div>
-                            <div class="sub-text" style="margin-top:4px;">Strategy: ${o.strategy} | R:R Ratio: ${o.risk_reward_ratio}</div>
-                            <div style="margin-top:10px; font-size:14px;">
-                                Entry: <strong>${o.suggested_entry}</strong> | SL: <span style="color:var(--accent-red);">${o.suggested_stop_loss}</span> | Target: <span style="color:var(--accent-green);">${o.suggested_target}</span>
-                            </div>
-                            <div style="margin-top:10px;">
-                                <strong style="color:var(--accent-blue);">Why This Trade?</strong>
-                                <ul class="bullet-list">${o.why_this_trade.map(w => `<li>✓ ${w}</li>`).join('')}</ul>
-                            </div>
-                            <div style="margin-top:10px;">
-                                <strong style="color:var(--accent-amber);">Trade Invalidation Rule:</strong>
-                                <ul class="bullet-list">${o.invalidation_rules.map(r => `<li>⚠️ ${r}</li>`).join('')}</ul>
-                            </div>
-                            <button class="btn btn-green" style="margin-top:12px; width:100%;" onclick="populateTicket('${o.symbol}', '${o.suggested_entry}', '${o.suggested_stop_loss}', '${o.suggested_target}')">🎟️ View Trade Plan</button>
-                        </div>
+
+                let rows = '';
+                opps.forEach((o, idx) => {
+                    const sigPct = parseInt(o.signal_strength_pct) || 0;
+                    const sigClass = sigPct >= 85 ? '' : sigPct >= 75 ? 'med' : 'low';
+                    const whyHtml = o.why_this_trade.map(w => `<span style="display:block; margin-bottom:3px;">✅ ${w}</span>`).join('');
+                    const invHtml = o.invalidation_rules.map(r => `<span style="display:block; margin-bottom:3px; color:#f87171;">⚠️ ${r}</span>`).join('');
+                    const entryFmt = formatInrPrice(o.suggested_entry);
+                    const slFmt = formatInrPrice(o.suggested_stop_loss);
+                    const tpFmt = formatInrPrice(o.suggested_target);
+                    rows += `
+                        <tr class="opp-main-row" id="opp-row-${idx}" onclick="toggleOppDetail(${idx})">
+                            <td><strong style="color:#e2e8f0; font-size:14px;">${o.symbol}</strong> <span class="opp-chevron" id="chev-${idx}">▼</span></td>
+                            <td><span class="opp-style-badge">${o.trading_style}</span></td>
+                            <td style="color:#94a3b8; font-size:12px;">${o.strategy}</td>
+                            <td><strong style="color:#fff;">₹${entryFmt}</strong></td>
+                            <td><strong style="color:#f87171;">₹${slFmt}</strong></td>
+                            <td><strong style="color:#4ade80;">₹${tpFmt}</strong></td>
+                            <td style="color:#fbbf24; font-weight:700;">${o.risk_reward_ratio}</td>
+                            <td><span class="sig-bar ${sigClass}">${sigPct}%</span></td>
+                            <td><button class="btn btn-green" style="padding:5px 14px; font-size:12px;" onclick="event.stopPropagation(); populateTicket('${o.symbol}', '${o.suggested_entry}', '${o.suggested_stop_loss}', '${o.suggested_target}')">🎟️ Trade</button></td>
+                        </tr>
+                        <tr class="opp-detail-row" id="opp-detail-${idx}">
+                            <td colspan="9">
+                                <div style="display:flex; gap:40px;">
+                                    <div style="flex:1;"><strong style="color:#60a5fa; font-size:12px;">WHY THIS TRADE?</strong><div style="margin-top:6px; font-size:12px; color:#cbd5e1;">${whyHtml}</div></div>
+                                    <div style="flex:1;"><strong style="color:#fbbf24; font-size:12px;">INVALIDATION RULES</strong><div style="margin-top:6px; font-size:12px;">${invHtml}</div></div>
+                                    <div style="display:flex; align-items:center;"><button class="btn btn-green" style="padding:8px 20px;" onclick="populateTicket('${o.symbol}', '${o.suggested_entry}', '${o.suggested_stop_loss}', '${o.suggested_target}')">🎟️ View Full Trade Plan</button></div>
+                                </div>
+                            </td>
+                        </tr>
                     `;
                 });
-                document.getElementById('opp-container').innerHTML = html;
+
+                const tableHtml = `
+                    <div class="card" style="padding:0; overflow:hidden;">
+                        <div class="card-header" style="padding:14px 16px;"><span class="card-title">🔎 Today's Trade Opportunities</span><span class="badge badge-blue">${opps.length} Signals Detected</span></div>
+                        <div style="overflow-x:auto;">
+                        <table id="opp-table">
+                            <thead><tr>
+                                <th>Symbol</th><th>Style</th><th>Strategy</th>
+                                <th>Entry (₹)</th><th>Stop Loss (₹)</th><th>Target (₹)</th>
+                                <th>R:R</th><th>Signal</th><th>Action</th>
+                            </tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                        </div>
+                        <div style="padding:10px 16px; font-size:11px; color:#64748b;">💡 Click any row to expand rationale & invalidation rules.</div>
+                    </div>
+                `;
+                document.getElementById('opp-container').innerHTML = tableHtml;
             } catch(e) { console.error(e); }
+        }
+
+        function toggleOppDetail(idx) {
+            const detailRow = document.getElementById('opp-detail-' + idx);
+            const mainRow = document.getElementById('opp-row-' + idx);
+            const chev = document.getElementById('chev-' + idx);
+            const isOpen = detailRow.classList.contains('open');
+            detailRow.classList.toggle('open', !isOpen);
+            if (!isOpen) { chev.style.transform = 'rotate(180deg)'; chev.style.color = '#60a5fa'; }
+            else { chev.style.transform = ''; chev.style.color = '#64748b'; }
         }
 
         async function fetchWatchlist() {
@@ -1537,10 +1954,30 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
             document.getElementById('tk-entry').value = parseFloat(entry.replace(/[^0-9.]/g, ''));
             document.getElementById('tk-sl').value = parseFloat(sl.replace(/[^0-9.]/g, ''));
             document.getElementById('tk-tp').value = parseFloat(tp.replace(/[^0-9.]/g, ''));
+            fetchTicketLiveLtp();
             
             // Switch tab to ticket
             const btn = document.querySelectorAll('.tab-btn')[3];
             btn.click();
+        }
+
+        async function fetchTicketLiveLtp() {
+            const sym = (document.getElementById('tk-symbol').value || 'RELIANCE').trim().toUpperCase();
+            const badge = document.getElementById('tk-ltp-badge');
+            if (badge) badge.innerText = '— fetching Angel LTP…';
+            try {
+                const res = await fetch('/api/ltp?symbol=' + encodeURIComponent(sym));
+                const data = await res.json();
+                if (data.success && data.ltp) {
+                    const ltp = parseFloat(data.ltp);
+                    document.getElementById('tk-entry').value = ltp.toFixed(2);
+                    if (badge) badge.innerText = '(LTP ' + ltp.toFixed(2) + ' · ' + (data.source || 'ANGEL') + ')';
+                } else {
+                    if (badge) badge.innerText = '(Angel LTP unavailable — ' + (data.error || 'offline') + ')';
+                }
+            } catch (e) {
+                if (badge) badge.innerText = '(Angel LTP fetch failed)';
+            }
         }
 
         async function generatePlan() {
@@ -1575,16 +2012,50 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
         }
 
         async function executePaperTrade() {
-            const res = await fetch('/api/execute_paper_trade', { method: 'POST' });
-            const data = await res.json();
-            if (data.success) {
-                alert("✅ " + data.message);
-                updateStatus();
-                fetchJournal();
-                const btn = document.querySelectorAll('.tab-btn')[5];
-                btn.click();
-            } else {
-                alert(data.error || "Failed to execute paper trade");
+            const btn = document.querySelector('button[onclick="executePaperTrade()"]');
+            const oldText = btn ? btn.innerText : '';
+            if (btn) { btn.innerText = 'Waiting Angel LTP…'; btn.disabled = true; }
+
+            try {
+                const maxRetries = 15; // ~45s (3s interval) to cover WS warm-up without manual second click
+                let attempt = 0;
+                while (true) {
+                    const res = await fetch('/api/execute_paper_trade', { method: 'POST' });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        alert("✅ " + data.message);
+                        updateStatus();
+                        fetchJournal();
+                        const tabBtn = document.querySelectorAll('.tab-btn')[5];
+                        tabBtn.click();
+                        break;
+                    }
+
+                    if (data.u5_violation) {
+                        alert(
+                            "⏸️ Paper trade blocked — today's Trading Mandate is not approved yet.\\n\\n" +
+                            (data.user_action || "Open NEXTRADE TODAY (15-Min Cockpit), scroll to Today's Trading Mandate Boundaries, click APPROVE & START TODAY'S TRADING MANDATE, then try again.") +
+                            "\\n\\n(This is Invariant U5 safety — not a crash.)"
+                        );
+                        const todayBtn = document.querySelector('.tab-btn[onclick*="tab-today"]');
+                        showTab({ currentTarget: todayBtn }, 'tab-today');
+                        try { document.getElementById('btn-approve-mandate').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+                        break;
+                    }
+
+                    if (data.live_ltp_required && attempt < maxRetries) {
+                        attempt += 1;
+                        if (btn) btn.innerText = `Waiting Angel LTP… retry ${attempt}/${maxRetries}`;
+                        await new Promise(r => setTimeout(r, 3000));
+                        continue;
+                    }
+
+                    alert(data.error || "Failed to execute paper trade");
+                    break;
+                }
+            } finally {
+                if (btn) { btn.innerText = oldText; btn.disabled = false; }
             }
         }
 
@@ -1631,6 +2102,8 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
         fetchHoldings();
         fetchPremarket();
         fetchJournal();
+        fetchTicketLiveLtp();
+        document.getElementById('tk-symbol').addEventListener('change', fetchTicketLiveLtp);
         setInterval(updateStatus, 3000);
     </script>
 </body>
@@ -1640,21 +2113,66 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
 
 def start_dashboard_server():
     # Phase 7P freeze-allowed security boundary: localhost only (not LAN/Internet)
+    global PORT
     _bind_host = "127.0.0.1"
-    server = HTTPServer((_bind_host, PORT), UnifiedWebAppHandler)
+    os.chdir(_WORKSPACE_DIR)
+    # Fresh Angel session each dashboard boot (avoid stale singleton from wrong CWD)
+    import ui_new.connection_manager as _cm_mod
+    import trading_app.angel_market_data_bridge as _amb
+    _cm_mod._connection_manager = None
+    _amb._conn_mgr = None
+    _amb._bridge_started = False
+    _amb._last_error = None
+    start_angel_market_data()
+
+    # Threading: UI polls (/api/status, /api/ltp, …) must not block serving the HTML page.
+    # A single-threaded HTTPServer turns any slow Angel call into a blank browser tab.
+    server = None
+    bind_error = None
+    for candidate in (PORT, PORT + 1, PORT + 2, 8590):
+        try:
+            server = _ExclusiveThreadingHTTPServer((_bind_host, candidate), UnifiedWebAppHandler)
+            server.daemon_threads = True
+            if candidate != PORT:
+                print(f"[!] Port {PORT} busy — using {_bind_host}:{candidate} instead.")
+                print("[!] Close the old dashboard window (Ctrl+C) or end that python.exe in Task Manager.")
+            PORT = candidate
+            break
+        except OSError as exc:
+            bind_error = exc
+            server = None
+    if server is None:
+        print(f"[!] Failed to bind {_bind_host}:{PORT}: {bind_error}")
+        print("[!] Another process may still be using the port. Stop it (Ctrl+C / Task Manager) and retry.")
+        raise bind_error if bind_error else OSError("bind failed")
+
     url = f"http://127.0.0.1:{PORT}"
     print("\n" + "="*70)
     print("[+] NEXTRADE UNIFIED 15-MINUTE COCKPIT & AUTONOMOUS SYSTEM IS RUNNING (INR / Rs)")
     print(f"[*] Opening Web Dashboard: {url}")
     print(f"[*] Listen address: {_bind_host}:{PORT} (paper boundary — localhost only)")
+    print("[*] Angel One WebSocket market data starting in background…")
+    print("[*] Paper trades require live Angel LTP (fail closed if quote unavailable)")
     print("="*70 + "\n")
     
-    threading.Thread(target=lambda: (time.sleep(1), webbrowser.open(url)), daemon=True).start()
+    def _open_browser():
+        time.sleep(1)
+        try:
+            opened = webbrowser.open(url)
+            if not opened:
+                print(f"[!] Browser auto-open did not succeed. Open manually: {url}")
+        except Exception as exc:
+            print(f"[!] Browser auto-open failed ({exc}). Open manually: {url}")
+
+    print(f"[*] If the browser does not open, visit: {url}")
+    print("[*] Keep this window open. Closing it OR pressing Ctrl+C stops the dashboard.")
+    threading.Thread(target=_open_browser, daemon=True).start()
     
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         print("\nStopping NexTrade Unified Server...")
+        server.shutdown()
         server.server_close()
 
 
