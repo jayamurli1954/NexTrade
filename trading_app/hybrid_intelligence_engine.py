@@ -121,24 +121,77 @@ class HybridIntelligenceEngine:
 
     def evaluate_and_recommend(
         self,
-        nifty_pct_change: float = 1.25,
-        bank_nifty_pct_change: float = 0.85,
-        vix_level: float = 13.8,
-        advances_count: int = 1420,
-        declines_count: int = 580,
+        nifty_pct_change: Optional[float] = None,
+        bank_nifty_pct_change: Optional[float] = None,
+        vix_level: Optional[float] = None,
+        advances_count: Optional[int] = None,
+        declines_count: Optional[int] = None,
         force_unstable: bool = False
     ) -> HybridIntelligenceOutcome:
-        """Main evidence-driven evaluation pipeline execution."""
+        """Main evidence-driven evaluation pipeline execution.
+
+        OIE-001 / GS P1: when market inputs are omitted, pull Angel-backed snapshot
+        via MarketDataFeedManager. Scoring formulas are unchanged.
+        """
+        snap = self.data_feed.get_latest_market_snapshot(allow_simulated_fallback=False)
+        if nifty_pct_change is None:
+            nifty_pct_change = float(snap.nifty_50.change_pct) if snap.data_quality_passed else 0.0
+        if bank_nifty_pct_change is None:
+            bank_nifty_pct_change = float(snap.bank_nifty.change_pct) if snap.data_quality_passed else 0.0
+        if vix_level is None:
+            vix_level = float(snap.india_vix) if snap.data_quality_passed else 0.0
+        if advances_count is None:
+            advances_count = int(snap.breadth.advances)
+        if declines_count is None:
+            declines_count = int(snap.breadth.declines) if snap.breadth.declines > 0 else 1
+
+        # Fail closed on intelligence path when live index data is not quality-passed
+        # and caller did not supply explicit overrides for all core inputs.
+        if not snap.data_quality_passed and vix_level <= 0:
+            now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            features = QuantitativeFeatureVector(
+                nifty_trend_pct=float(nifty_pct_change),
+                bank_nifty_trend_pct=float(bank_nifty_pct_change),
+                vix_level=0.0,
+                breadth_ratio=0.0,
+                adx_14=0.0,
+                atr_14_pct=0.0,
+                rsi_14=0.0,
+                price_to_vwap_pct=0.0,
+                relative_volume=0.0,
+            )
+            outcome = HybridIntelligenceOutcome(
+                trade_recommended=False,
+                market_regime=MarketRegimeType.HIGH_VOLATILITY_UNSTABLE,
+                market_regime_label="DATA_QUALITY_BLOCK",
+                feature_vector=features,
+                recommended_strategy=None,
+                suitability_score=0,
+                llm_explanation_summary=(
+                    "Market data quality gate failed (Angel authority). "
+                    "No recommendation until live index LTP is valid."
+                ),
+                llm_why_this_strategy=[],
+                llm_why_not_alternatives=[],
+                llm_invalidation_rules=[],
+                score_cards=[],
+                no_trade_reason=snap.error_message or "Angel market data unavailable",
+            )
+            self._log_audit(outcome, approved=False)
+            return outcome
+
         breadth_ratio = advances_count / max(declines_count, 1)
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        nifty_close = float(snap.nifty_50.last_price) if snap.nifty_50.last_price > 0 else 0.0
+        bank_close = float(snap.bank_nifty.last_price) if snap.bank_nifty.last_price > 0 else 0.0
 
         # 1. Compute Quantitative Feature Vector
         features = QuantitativeFeatureVector(
-            nifty_trend_pct=nifty_pct_change,
-            bank_nifty_trend_pct=bank_nifty_pct_change,
-            vix_level=vix_level,
+            nifty_trend_pct=float(nifty_pct_change),
+            bank_nifty_trend_pct=float(bank_nifty_pct_change),
+            vix_level=float(vix_level),
             breadth_ratio=breadth_ratio,
-            adx_14=28.5 if nifty_pct_change > 0.5 else 14.2,
+            adx_14=28.5 if float(nifty_pct_change) > 0.5 else 14.2,
             atr_14_pct=1.45,
             rsi_14=62.4,
             price_to_vwap_pct=0.95,
@@ -148,12 +201,12 @@ class HybridIntelligenceEngine:
         # 2. ML Market Regime Classification
         regime, regime_label, ml_confidence = self._ml_regime_classifier(features, force_unstable=force_unstable)
 
-        # Persist Feature Vector
+        # Persist Feature Vector (live closes when available — no hard-coded LTP)
         self.store.record_feature_vector(MarketFeatureRecord(
             timestamp=now_str,
-            nifty_close=24850.40,
-            bank_nifty_close=52410.15,
-            vix_level=vix_level,
+            nifty_close=nifty_close,
+            bank_nifty_close=bank_close,
+            vix_level=float(vix_level),
             breadth_ratio=breadth_ratio,
             adx_14=features.adx_14,
             rsi_14=features.rsi_14,

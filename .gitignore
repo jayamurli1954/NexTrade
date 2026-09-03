@@ -25,15 +25,29 @@ env/
 data/*.json
 data/*.csv
 
-# Logs
-logs/*.log
-logs/2025-*/
+# Logs and generated artifacts
+logs/
+reports/
+backtesting/results/
+graphify-out/
+.cursor/
+debug-*.log
+_probe_*.py
 
 # Paper dashboard runtime state
 storage/paper_capital_state.json
+storage/angel_scrip_token_map.json
 storage/*.db
 storage/*.pid
+storage/*.lock
+storage/*_state.json
+storage/manual_zerodha_holdings.json
+storage/paper_day_risk_policy.json
+storage/research/
 storage/backups/
+
+# Research datasets (regenerated locally)
+research/data/
 
 # Batch files (Windows specific, optional)
 *.bat

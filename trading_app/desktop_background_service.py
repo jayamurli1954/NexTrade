@@ -36,7 +36,8 @@ class DesktopBackgroundAutonomousService:
 
     def __init__(self, mandate_engine: Optional[DailyMandateEngine] = None):
         self.mandate_engine = mandate_engine or DailyMandateEngine()
-        self.data_gate = DataQualityGate()
+        # OIE-001 WS freshness ceiling is 15s (not the aspirational 3s default).
+        self.data_gate = DataQualityGate(max_freshness_sla_sec=15.0)
         self._is_running = False
         self._thread: Optional[threading.Thread] = None
         self._last_heartbeat = time.time()
@@ -59,17 +60,51 @@ class DesktopBackgroundAutonomousService:
             self._thread.join(timeout=2.0)
         logger.info("🛑 NexTrade Desktop Autonomous Service STOPPED.")
 
+    def _live_feed_health(self) -> DataQualityCheckResult:
+        """OIE-001 / GS P1: evaluate quality from Angel authority, never hard-coded LTP."""
+        try:
+            from trading_app.market_data_service import get_market_data_service
+
+            mds = get_market_data_service()
+            status = mds.get_status()
+            idx = mds.get_index_inputs()
+            age = status.get("last_tick_age_sec")
+            last_ts = time.time() - float(age) if age is not None else 0.0
+            last_price = float(idx.get("nifty_ltp") or 0.0)
+            if not idx.get("ok") or last_price <= 0:
+                return DataQualityCheckResult(
+                    passed=False,
+                    data_age_seconds=float(age) if age is not None else 999.0,
+                    missing_candles_count=0,
+                    price_anomaly_detected=last_price <= 0,
+                    quality_score_pct=0.0,
+                    status_label="🔴 NO VALID MARKET DATA",
+                    rejection_reason="Angel index LTP unavailable for desktop health check",
+                )
+            return self.data_gate.evaluate_feed_health(
+                last_tick_timestamp=last_ts if last_ts > 0 else time.time() - 999.0,
+                last_price=last_price,
+                volume=1,
+            )
+        except Exception as exc:
+            logger.warning("Live feed health check failed: %s", exc)
+            return DataQualityCheckResult(
+                passed=False,
+                data_age_seconds=999.0,
+                missing_candles_count=0,
+                price_anomaly_detected=False,
+                quality_score_pct=0.0,
+                status_label="🔴 FEED HEALTH ERROR",
+                rejection_reason=str(exc),
+            )
+
     def get_service_status(self) -> ServiceHealthStatus:
         now = time.time()
         heartbeat_age = round(now - self._last_heartbeat, 2)
         current_mandate = self.mandate_engine.get_current_mandate()
         mandate_id = current_mandate.mandate_id if current_mandate else None
 
-        gate_res = self.data_gate.evaluate_feed_health(
-            last_tick_timestamp=now,
-            last_price=24850.40,
-            volume=500000
-        )
+        gate_res = self._live_feed_health()
 
         return ServiceHealthStatus(
             service_active=self._is_running,
@@ -90,12 +125,8 @@ class DesktopBackgroundAutonomousService:
                 # 1. Verify Active Mandate Boundaries
                 current_mandate = self.mandate_engine.get_current_mandate()
                 if current_mandate and current_mandate.state.name == "AUTONOMOUS_TRADING_ACTIVE":
-                    # 2. Check Data Quality Gate
-                    gate_res = self.data_gate.evaluate_feed_health(
-                        last_tick_timestamp=time.time(),
-                        last_price=24850.40,
-                        volume=500000
-                    )
+                    # 2. Check Data Quality Gate (Angel-backed)
+                    gate_res = self._live_feed_health()
                     if not gate_res.passed:
                         logger.warning("Data quality gate failed during autonomous operation: %s", gate_res.rejection_reason)
                         self.mandate_engine.pause_mandate(current_mandate.mandate_id, reason=gate_res.rejection_reason or "Data Health Fault")

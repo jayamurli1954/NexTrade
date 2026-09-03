@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "universe": "watchlist",
+  "lookback_calendar_days": 730,
+  "rsi_period": 14,
+  "ema_short": 20,
+  "ema_long": 50,
+  "atr_period": 14,
+  "adx_period": 14,
+  "technical_source": "yfinance_research_cache",
+  "fundamental_point_in_time": true,
+  "reserve_columns": ["pcr", "oi", "vwap", "max_pain", "breadth"],
+  "platform_name": "SanMitra Research Platform",
+  "b1c_note": "Daily RSI/EMA/ATR/ADX + VIX + PIT fundamentals via build_feature_store --with-technicals"
+}

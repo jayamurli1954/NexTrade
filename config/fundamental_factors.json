@@ -1,0 +1,54 @@
+{
+  "version": "1.1",
+  "overall_weights": {
+    "quality": 0.25,
+    "growth": 0.20,
+    "value": 0.20,
+    "financial_health": 0.15,
+    "consistency": 0.20
+  },
+  "quality_weights": {
+    "roe": 0.25,
+    "roce": 0.30,
+    "profit_margin": 0.20,
+    "promoter": 0.15,
+    "ocf_pat": 0.10
+  },
+  "growth_weights": {
+    "sales_yoy": 0.35,
+    "pat_yoy": 0.35,
+    "sales_cagr_3y": 0.15,
+    "pat_cagr_3y": 0.15
+  },
+  "value_weights_current": {
+    "pe_absolute": 0.30,
+    "pe_peer_relative": 0.40,
+    "dividend_yield": 0.15,
+    "roce_peer_relative": 0.15
+  },
+  "value_weights_historical": {
+    "pe_absolute": 0.70,
+    "dividend_yield": 0.30
+  },
+  "health_weights": {
+    "debt_to_equity": 0.45,
+    "interest_coverage": 0.25,
+    "current_ratio": 0.15,
+    "pat_volatility": 0.15
+  },
+  "consistency_weights": {
+    "roe_roce_cv": 0.35,
+    "margin_cv": 0.25,
+    "sales_yoy_vol": 0.25,
+    "positive_pat_years": 0.15
+  },
+  "thesis_max_bullets": 6,
+  "support_threshold": 65,
+  "caution_threshold": 40,
+  "financials_industry_keywords": ["Bank", "Finance", "NBFC", "Insurance"],
+  "min_peers_for_relative": 3,
+  "consistency_lookback_years": 5,
+  "peer_pe_min": 8.0,
+  "peer_pe_max": 60.0,
+  "note_peer_filter": "Exclude extreme peer P/Es so sector median is not dominated by distressed/ultra-cheap outliers"
+}

@@ -22,6 +22,7 @@ from typing import Dict, List, Tuple, Optional, Any
 import time as time_module
 import pandas as pd
 import numpy as np
+import threading
 
 try:
     from SmartApi import SmartConnect
@@ -32,6 +33,18 @@ except ImportError:
 from config.credentials_manager import SecureCredentialsManager
 
 logger = logging.getLogger("AngelProvider")
+
+# Cache + rate-limit for Angel historical candles.
+# This prevents storms that trigger "Access denied because of exceeding access rate".
+_hist_cache_lock = threading.Lock()
+_hist_cache: dict = {}
+_HIST_CACHE_TTL_SEC = 120.0
+
+# Centralized cooldown + serialization for Angel REST calls
+try:
+    from trading_app.angel_rest_limiter import angel_rest_call
+except Exception:
+    angel_rest_call = None  # type: ignore
 
 
 class AngelProvider(DataProviderInterface):
@@ -337,6 +350,14 @@ class AngelProvider(DataProviderInterface):
         """Get historical data"""
         self._check_token_validity()
         
+        cache_key = (exchange, str(symbol).upper(), interval, int(period_days))
+        now = time_module.time()
+        with _hist_cache_lock:
+            hit = _hist_cache.get(cache_key)
+            if hit and (now - float(hit.get("fetched_at") or 0.0)) < _HIST_CACHE_TTL_SEC:
+                df_hit = hit.get("df")
+                return df_hit.copy(deep=True) if isinstance(df_hit, pd.DataFrame) else pd.DataFrame()
+
         if self.is_connected:
             try:
                 token = self.get_token(symbol, exchange)
@@ -352,18 +373,34 @@ class AngelProvider(DataProviderInterface):
                     'fromdate': fromdate,
                     'todate': todate
                 }
-                data = self.smart_api.getCandleData(params)
-                if data.get('status'):
+
+                def _call_candles():
+                    return self.smart_api.getCandleData(params)
+
+                if angel_rest_call:
+                    data = angel_rest_call(
+                        f"historical:getCandleData:{exchange}:{str(symbol).upper()}:{interval}",
+                        _call_candles,
+                    )
+                else:
+                    data = _call_candles()
+
+                if data and data.get('status'):
                     df = pd.DataFrame(
-                        data['data'],
+                        data.get('data') or [],
                         columns=['timestamp', 'open', 'high', 'low', 'close', 'volume']
                     )
                     df['timestamp'] = pd.to_datetime(df['timestamp'])
                     df.set_index('timestamp', inplace=True)
+                    with _hist_cache_lock:
+                        _hist_cache[cache_key] = {"fetched_at": now, "df": df}
                     return df
             except Exception as e:
                 logger.error(f"Historical data error: {e}")
-        
+                # Fail-closed while connected: no simulated candles for integrity.
+                return pd.DataFrame()
+
+        # Offline / disconnected: only then use fallback simulation.
         return self._generate_fallback_historical(symbol, period_days)
 
     def _generate_fallback_historical(self, symbol, period_days):

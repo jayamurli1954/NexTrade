@@ -1,0 +1,19 @@
+# Graphify: skip bulky runtime/research artifacts (code-only extract still benefits)
+graphify-out/
+research/data/
+logs/
+reports/
+backtesting/results/
+storage/
+*.xlsx
+*.csv
+*.jsonl
+*.pkl
+*.joblib
+__pycache__/
+.venv/
+venv/
+angelbot/
+node_modules/
+.cursor/debug*
+debug-*.log

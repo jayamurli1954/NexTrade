@@ -10,15 +10,16 @@ Analyzes financial health metrics:
 - Profit Margins
 - Dividend Yield
 
-Data sources supported:
-1. yfinance (Yahoo Finance) - Free, good for Indian stocks
-2. NSE/BSE APIs - Official but may require parsing
-3. Screener.in - Good Indian stock data but needs web scraping
+Data sources (in order):
+1. Local research store (Screener.in bulk download under research/data/fundamentals/)
+2. yfinance (Yahoo Finance) fallback for symbols outside the watchlist store
 """
 
 import logging
-import pandas as pd
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from research.fundamentals_loader import build_fundamentals_highlights, load_fundamentals_from_store
 
 logger = logging.getLogger("FundamentalsAnalyzer")
 
@@ -27,102 +28,165 @@ class FundamentalsAnalyzer:
     """
     Analyze fundamental metrics and return a score 0-100
     """
-    
+
     def __init__(self, data_provider):
         self.data_provider = data_provider
-        self.cache = {}  # Cache fundamentals for 24 hours
-        
-        # Try to import yfinance
+        self.cache: Dict[str, Dict[str, Any]] = {}
+
         try:
             import yfinance as yf
+
             self.yf = yf
             self.has_yfinance = True
-            logger.info("✅ yfinance available for fundamentals")
+            logger.info("yfinance available for fundamentals fallback")
         except ImportError:
             self.has_yfinance = False
-            logger.warning("⚠️ yfinance not installed - install with: pip install yfinance")
-    
-    def analyze_fundamentals(self, symbol):
+            logger.warning("yfinance not installed - local store only")
+
+    def analyze_fundamentals(self, symbol: str) -> int:
+        """Analyze fundamentals and return score 0-100."""
+        return int(self.analyze_fundamentals_bundle(symbol).get("score") or 0)
+
+    def analyze_fundamentals_bundle(self, symbol: str) -> Dict[str, Any]:
         """
-        Analyze fundamentals and return score 0-100
-        
-        Higher score = Better fundamentals for LONG positions
+        Gate score (legacy) + FI-2 display intelligence from FundamentalService.
+
+        Returns:
+            {
+              "score": int,                      # LEGACY — used for BUY/SELL points only
+              "highlights": list[str],           # legacy raw highlights
+              "investment_thesis": list[str],    # FI-2 display
+              "factor_scores": dict | None,
+              "factor_badges": dict | None,
+              "factor_trends": dict | None,
+              "valuation_relatives": dict | None,
+              "ai_summary_seed": None,           # filled by OpportunityEngine with direction
+              "fundamentals_meta": dict | None,
+              "source": "local" | "yfinance" | None,  # gate score source
+              "display_source": "factor_store" | None,
+            }
         """
-        # Check cache (24-hour validity)
-        cache_key = f"{symbol}_{datetime.now().strftime('%Y-%m-%d')}"
+        cache_key = f"{symbol}_{datetime.now().strftime('%Y-%m-%d')}_fi2"
         if cache_key in self.cache:
-            logger.debug(f"Using cached fundamentals for {symbol}")
             return self.cache[cache_key]
-        
+
+        # --- Display path (FI-2): Fundamental Service → factor store ---
+        display: Dict[str, Any] = {}
         try:
-            fundamentals = self._fetch_fundamentals(symbol)
-            
-            if not fundamentals:
-                logger.warning(f"No fundamentals data for {symbol}")
-                return 0
-            
-            score = self._calculate_score(fundamentals)
-            
-            # Cache the result
-            self.cache[cache_key] = score
-            
-            logger.info(f"{symbol} fundamentals: {score}/100 - {self._get_rating(score)}")
-            return score
-            
+            from research.fundamental_service import get_fundamental_service
+
+            intel = get_fundamental_service().get_symbol_intelligence(symbol)
+            if intel:
+                display = {
+                    "investment_thesis": list(intel.get("investment_thesis") or []),
+                    "factor_scores": intel.get("factor_scores"),
+                    "factor_badges": intel.get("factor_badges"),
+                    "factor_trends": intel.get("factor_trends"),
+                    "valuation_relatives": intel.get("valuation_relatives"),
+                    "fundamentals_meta": {
+                        "source": "factor_store",
+                        "factor_version": intel.get("factor_version"),
+                        "generated_at": intel.get("generated_at"),
+                        "fiscal_year": intel.get("fiscal_year"),
+                        "as_of_label": intel.get("as_of_label"),
+                    },
+                    "display_source": "factor_store",
+                }
         except Exception as e:
-            logger.error(f"Fundamentals error for {symbol}: {e}")
-            return 0
-    
-    def _fetch_fundamentals(self, symbol):
-        """
-        Fetch fundamental data from available sources
-        """
+            logger.debug("Factor display unavailable for %s: %s", symbol, e)
+
+        # --- Gate path: legacy local/yfinance score (unchanged math) ---
+        fundamentals = self._fetch_fundamentals(symbol)
+        if not fundamentals:
+            bundle = {
+                "score": 0,
+                "highlights": [],
+                "source": None,
+                "metrics": None,
+                **{
+                    "investment_thesis": display.get("investment_thesis") or [],
+                    "factor_scores": display.get("factor_scores"),
+                    "factor_badges": display.get("factor_badges"),
+                    "factor_trends": display.get("factor_trends"),
+                    "valuation_relatives": display.get("valuation_relatives"),
+                    "fundamentals_meta": display.get("fundamentals_meta"),
+                    "display_source": display.get("display_source"),
+                },
+            }
+            self.cache[cache_key] = bundle
+            return bundle
+
+        source = str(fundamentals.get("_source") or "unknown")
+        metrics = {k: v for k, v in fundamentals.items() if not str(k).startswith("_")}
+        score = self._calculate_score(metrics)
+        highlights = build_fundamentals_highlights(metrics, source=source)
+
+        bundle = {
+            "score": score,
+            "highlights": highlights,
+            "source": source,
+            "metrics": metrics,
+            "investment_thesis": display.get("investment_thesis") or [],
+            "factor_scores": display.get("factor_scores"),
+            "factor_badges": display.get("factor_badges"),
+            "factor_trends": display.get("factor_trends"),
+            "valuation_relatives": display.get("valuation_relatives"),
+            "fundamentals_meta": display.get("fundamentals_meta"),
+            "display_source": display.get("display_source"),
+        }
+        self.cache[cache_key] = bundle
+        logger.info("%s fundamentals gate (%s): %s/100 - %s", symbol, source, score, self._get_rating(score))
+        return bundle
+
+    def _fetch_fundamentals(self, symbol: str) -> Optional[Dict[str, Any]]:
+        local = load_fundamentals_from_store(symbol)
+        if local:
+            logger.debug("Loaded local fundamentals for %s", symbol)
+            return local
+
         if not self.has_yfinance:
-            logger.warning("yfinance not available - fundamentals disabled")
+            logger.warning("No local fundamentals for %s and yfinance unavailable", symbol)
             return None
-        
+
+        return self._fetch_fundamentals_yfinance(symbol)
+
+    def _fetch_fundamentals_yfinance(self, symbol: str) -> Optional[Dict[str, Any]]:
         try:
-            # For NSE stocks, append .NS suffix
-            ticker_symbol = f"{symbol}.NS" if not symbol.endswith('.NS') else symbol
-            
+            ticker_symbol = f"{symbol}.NS" if not symbol.endswith(".NS") else symbol
             ticker = self.yf.Ticker(ticker_symbol)
             info = ticker.info
-            
-            # Extract key metrics
+
             fundamentals = {
-                'pe_ratio': info.get('trailingPE', info.get('forwardPE', None)),
-                'pb_ratio': info.get('priceToBook', None),
-                'debt_to_equity': info.get('debtToEquity', None),
-                'roe': info.get('returnOnEquity', None),
-                'profit_margin': info.get('profitMargins', None),
-                'revenue_growth': info.get('revenueGrowth', None),
-                'dividend_yield': info.get('dividendYield', None),
-                'market_cap': info.get('marketCap', None),
-                'current_ratio': info.get('currentRatio', None),
-                'quick_ratio': info.get('quickRatio', None)
+                "pe_ratio": info.get("trailingPE", info.get("forwardPE", None)),
+                "pb_ratio": info.get("priceToBook", None),
+                "debt_to_equity": info.get("debtToEquity", None),
+                "roe": info.get("returnOnEquity", None),
+                "profit_margin": info.get("profitMargins", None),
+                "revenue_growth": info.get("revenueGrowth", None),
+                "dividend_yield": info.get("dividendYield", None),
+                "market_cap": info.get("marketCap", None),
+                "current_ratio": info.get("currentRatio", None),
+                "quick_ratio": info.get("quickRatio", None),
+                "_source": "yfinance",
             }
-            
-            # Convert percentages to decimals if needed
-            if fundamentals['roe'] and fundamentals['roe'] > 1:
-                fundamentals['roe'] = fundamentals['roe'] / 100
-            
-            if fundamentals['profit_margin'] and fundamentals['profit_margin'] > 1:
-                fundamentals['profit_margin'] = fundamentals['profit_margin'] / 100
-            
-            if fundamentals['revenue_growth'] and fundamentals['revenue_growth'] > 1:
-                fundamentals['revenue_growth'] = fundamentals['revenue_growth'] / 100
-            
-            logger.debug(f"{symbol} fundamentals: {fundamentals}")
+
+            if fundamentals["roe"] and fundamentals["roe"] > 1:
+                fundamentals["roe"] = fundamentals["roe"] / 100
+            if fundamentals["profit_margin"] and fundamentals["profit_margin"] > 1:
+                fundamentals["profit_margin"] = fundamentals["profit_margin"] / 100
+            if fundamentals["revenue_growth"] and fundamentals["revenue_growth"] > 1:
+                fundamentals["revenue_growth"] = fundamentals["revenue_growth"] / 100
+
+            logger.debug("%s yfinance fundamentals: %s", symbol, fundamentals)
             return fundamentals
-            
         except Exception as e:
-            logger.error(f"Failed to fetch fundamentals for {symbol}: {e}")
+            logger.error("Failed to fetch yfinance fundamentals for %s: %s", symbol, e)
             return None
-    
-    def _calculate_score(self, fundamentals):
+
+    def _calculate_score(self, fundamentals: Dict[str, Any]) -> int:
         """
-        Calculate fundamental score 0-100 based on metrics
-        
+        Calculate fundamental score 0-100 based on metrics.
+
         Scoring breakdown:
         - P/E Ratio: 20 points (lower is better for value)
         - Debt-to-Equity: 15 points (lower is better)
@@ -134,9 +198,8 @@ class FundamentalsAnalyzer:
         """
         score = 0
         max_score = 100
-        
-        # 1. P/E Ratio (20 points) - Lower is better for value
-        pe = fundamentals.get('pe_ratio')
+
+        pe = fundamentals.get("pe_ratio")
         if pe:
             if pe < 15:
                 score += 20
@@ -146,10 +209,8 @@ class FundamentalsAnalyzer:
                 score += 10
             elif pe < 50:
                 score += 5
-            # Very high P/E (>50) gets 0 points
-        
-        # 2. Debt-to-Equity (15 points) - Lower is better
-        dte = fundamentals.get('debt_to_equity')
+
+        dte = fundamentals.get("debt_to_equity")
         if dte is not None:
             if dte < 0.5:
                 score += 15
@@ -159,10 +220,8 @@ class FundamentalsAnalyzer:
                 score += 8
             elif dte < 3.0:
                 score += 4
-            # High debt (>3) gets 0 points
-        
-        # 3. ROE (20 points) - Higher is better
-        roe = fundamentals.get('roe')
+
+        roe = fundamentals.get("roe")
         if roe:
             roe_pct = roe * 100 if roe < 1 else roe
             if roe_pct > 20:
@@ -175,9 +234,8 @@ class FundamentalsAnalyzer:
                 score += 8
             elif roe_pct > 0:
                 score += 4
-        
-        # 4. Profit Margin (15 points) - Higher is better
-        pm = fundamentals.get('profit_margin')
+
+        pm = fundamentals.get("profit_margin")
         if pm:
             pm_pct = pm * 100 if pm < 1 else pm
             if pm_pct > 15:
@@ -190,9 +248,8 @@ class FundamentalsAnalyzer:
                 score += 6
             elif pm_pct > 0:
                 score += 3
-        
-        # 5. Revenue Growth (15 points) - Higher is better
-        rg = fundamentals.get('revenue_growth')
+
+        rg = fundamentals.get("revenue_growth")
         if rg:
             rg_pct = rg * 100 if rg < 1 else rg
             if rg_pct > 20:
@@ -205,10 +262,8 @@ class FundamentalsAnalyzer:
                 score += 7
             elif rg_pct > 0:
                 score += 4
-            # Negative growth gets 0 points
-        
-        # 6. Current Ratio (10 points) - Liquidity measure
-        cr = fundamentals.get('current_ratio')
+
+        cr = fundamentals.get("current_ratio")
         if cr:
             if cr > 2.0:
                 score += 10
@@ -218,9 +273,8 @@ class FundamentalsAnalyzer:
                 score += 6
             elif cr > 0.8:
                 score += 3
-        
-        # 7. Dividend Yield (5 points) - Bonus for income
-        dy = fundamentals.get('dividend_yield')
+
+        dy = fundamentals.get("dividend_yield")
         if dy:
             dy_pct = dy * 100 if dy < 1 else dy
             if dy_pct > 3:
@@ -231,68 +285,44 @@ class FundamentalsAnalyzer:
                 score += 3
             elif dy_pct > 0:
                 score += 2
-        
+
         return min(score, max_score)
-    
-    def _get_rating(self, score):
-        """Convert score to rating"""
+
+    def _get_rating(self, score: int) -> str:
         if score >= 80:
-            return "Excellent 🌟"
-        elif score >= 65:
-            return "Good ✅"
-        elif score >= 50:
-            return "Fair ⚠️"
-        elif score >= 35:
-            return "Weak ⚠️"
-        else:
-            return "Poor ❌"
-    
-    def get_detailed_analysis(self, symbol):
-        """
-        Get detailed fundamental analysis with all metrics
-        """
-        fundamentals = self._fetch_fundamentals(symbol)
-        
-        if not fundamentals:
+            return "Excellent"
+        if score >= 65:
+            return "Good"
+        if score >= 50:
+            return "Fair"
+        if score >= 35:
+            return "Weak"
+        return "Poor"
+
+    def get_detailed_analysis(self, symbol: str) -> Optional[Dict[str, Any]]:
+        bundle = self.analyze_fundamentals_bundle(symbol)
+        if not bundle.get("metrics"):
             return None
-        
-        score = self._calculate_score(fundamentals)
-        
         return {
-            'symbol': symbol,
-            'score': score,
-            'rating': self._get_rating(score),
-            'metrics': fundamentals,
-            'timestamp': datetime.now().isoformat()
+            "symbol": symbol,
+            "score": bundle["score"],
+            "rating": self._get_rating(bundle["score"]),
+            "metrics": bundle["metrics"],
+            "highlights": bundle.get("highlights") or [],
+            "source": bundle.get("source"),
+            "timestamp": datetime.now().isoformat(),
         }
 
 
-# Example usage and testing
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    
-    # Mock data provider for testing
+
     class MockDataProvider:
         pass
-    
+
     analyzer = FundamentalsAnalyzer(MockDataProvider())
-    
-    # Test with some NSE stocks
-    test_symbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK']
-    
-    for symbol in test_symbols:
-        print(f"\n{'='*60}")
-        print(f"Testing {symbol}")
-        print('='*60)
-        
-        score = analyzer.analyze_fundamentals(symbol)
-        print(f"Score: {score}/100")
-        
-        # Get detailed analysis
-        detailed = analyzer.get_detailed_analysis(symbol)
-        if detailed:
-            print(f"Rating: {detailed['rating']}")
-            print("\nKey Metrics:")
-            for key, value in detailed['metrics'].items():
-                if value is not None:
-                    print(f"  {key}: {value}")
+    for test_symbol in ["RELIANCE", "TCS", "INFY", "HDFCBANK"]:
+        bundle = analyzer.analyze_fundamentals_bundle(test_symbol)
+        print(f"\n{'=' * 60}\n{test_symbol}: {bundle['score']}/100 ({bundle['source']})")
+        for line in bundle.get("highlights") or []:
+            print(f"  - {line}")

@@ -10,7 +10,6 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QHeaderView, QLineEdit, QScrollBar)
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QColor
-import random
 
 class WatchlistTab(QWidget):
     """Watchlist Monitor with working scroller"""
@@ -151,6 +150,7 @@ class WatchlistTab(QWidget):
             return
         
         self.watchlist.append(symbol)
+        self.watchlist.sort()
         self.conn_mgr.add_stock(symbol)
         
         self.symbol_input.clear()
@@ -194,21 +194,30 @@ class WatchlistTab(QWidget):
             ltp = ltp_data.get(symbol)
             if ltp is None:
                 ltp = 0
-            
-            # Simulated data (you can enhance with real data)
-            change = random.uniform(-50, 50)
-            change_pct = (change / ltp) * 100 if ltp > 0 else 0
-            volume = random.randint(100000, 10000000)
-            
-            # Create items
+
+            # Prefer live WS quote fields (change_pct / volume) — never invent random movers.
+            change = 0.0
+            change_pct = 0.0
+            volume = 0
+            with self.conn_mgr.ltp_lock:
+                tick = self.conn_mgr.ltp_data.get(symbol.upper()) or {}
+            if tick:
+                change_pct = float(tick.get("change_pct") or 0.0)
+                close_px = float(tick.get("closed_price") or 0.0)
+                if close_px > 0 and float(ltp) > 0:
+                    change = float(ltp) - close_px
+                    if abs(change_pct) < 1e-12:
+                        change_pct = (change / close_px) * 100.0
+                volume = int(tick.get("volume") or 0)
+
             items = [
                 QTableWidgetItem(symbol),
-                QTableWidgetItem(f"₹{ltp:.2f}"),
-                QTableWidgetItem(f"₹{change:.2f}"),
-                QTableWidgetItem(f"{change_pct:.2f}%"),
-                QTableWidgetItem(f"{volume:,}")
+                QTableWidgetItem(f"₹{ltp:.2f}" if ltp else "—"),
+                QTableWidgetItem(f"₹{change:.2f}" if ltp and change else "—"),
+                QTableWidgetItem(f"{change_pct:.2f}%" if ltp else "—"),
+                QTableWidgetItem(f"{volume:,}" if volume > 0 else "—")
             ]
-            
+
             # Color coding
             if change > 0:
                 items[2].setForeground(QColor(0, 150, 0))

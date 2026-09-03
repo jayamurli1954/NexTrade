@@ -95,16 +95,53 @@ class TestPhase7UXSafetyAudit:
         assert new_plan.trade_plan_id != plan.trade_plan_id
 
     def test_opportunity_to_trade_plan_conversion(self):
-        """Verify 1-click conversion from Opportunity Card to Trade Plan."""
+        """Verify analyzer signals convert to Trade Plans with Angel LTP (no hardcoded cards)."""
         opp_engine = OpportunityEngine()
-        opps = opp_engine.get_top_opportunities()
-        assert len(opps) > 0
+        signals = [
+            {
+                "symbol": "INFY",
+                "action": "BUY",
+                "confidence": 0.88,
+                "current_price": 1500.0,
+                "stop_loss": 1470.0,
+                "target": 1560.0,
+                "reason": "EMA Uptrend + Near Golden Ratio (61.8%) + Volume Surge",
+                "rsi": 42.0,
+                "volume_ratio": 2.1,
+            },
+            {
+                "symbol": "SBIN",
+                "action": "BUY",
+                "confidence": 0.72,
+                "current_price": 800.0,
+                "stop_loss": 780.0,
+                "target": 840.0,
+                "reason": "RSI Oversold Bounce",
+                "rsi": 28.0,
+                "volume_ratio": 1.5,
+            },
+        ]
+        live = {
+            "INFY": {"ltp": 1512.5, "source": "ANGEL_WEBSOCKET"},
+            "SBIN": {"ltp": 805.0, "source": "ANGEL_REST"},
+        }
+        opps = opp_engine.get_top_opportunities(live_ltp_map=live, signals=signals)
+        assert len(opps) == 2
+        assert opps[0].symbol == "INFY"
+        assert opps[0].suggested_entry == 1512.5
+        assert opps[0].price_source.startswith("ANGEL")
+        assert opps[0].signal_strength_pct == 88.0
+        assert "EMA Uptrend" in opps[0].why_this_trade[0] or any("EMA" in w for w in opps[0].why_this_trade)
 
-        opp = opps[0]
-        plan = opp_engine.convert_opportunity_to_trade_plan(opp)
-        assert plan.symbol == opp.symbol
-        assert plan.entry_price == opp.suggested_entry
-        assert plan.stop_loss_price == opp.suggested_stop_loss
+        # No signals / no live → empty (never RELIANCE 2742 demo)
+        assert opp_engine.get_top_opportunities(live_ltp_map={}, signals=[]) == []
+        assert opp_engine.get_top_opportunities(live_ltp_map=live, signals=[]) == []
+
+        plan = opp_engine.convert_opportunity_to_trade_plan(opps[0])
+        assert plan.symbol == "INFY"
+        assert plan.entry_price == 1512.5
+        assert plan.entry_price != 2742.0
+        assert plan.quantity == int(100_000 // 1512.5)
 
     def test_trade_journal_analytics(self):
         """Verify Trade Journal analytics calculation in INR (₹)."""
