@@ -1,6 +1,6 @@
 # analyzer/enhanced_analyzer.py - PRODUCTION-READY VERSION
 """
-VERSION: 3.0.0 - HONEST INTRADAY SIGNALS
+VERSION: 3.0.1 - HONEST INTRADAY SIGNALS
 
 WHY THIS VERSION EXISTS
 This is a paper-trading tool today, but the plan is to trade real money on
@@ -25,11 +25,13 @@ CHANGES IN v3.0.0 (over v2.1.0):
    stop_target_basis = intraday_5m_atr | daily_atr_fallback so paper logs
    stay honest. Daily ATR alone is multi-day distance; 3:15 PM square-off
    otherwise closes most trades by the clock, not by the signal's own levels.
+9. BUY Fibonacci uses support_618 / support_500 (pullback near the low), not
+   level_618 (near the high). SELL checks 78.6% resistance before 61.8%.
+   Two-sided proximity bands from v3.0.0 are unchanged.
 
 WHAT THIS DOES NOT CHANGE
-The underlying strategy (Fibonacci + RSI + EMA + volume + Bollinger Bands +
-sentiment + fundamentals confluence) is untouched. This pass is about making
-the signal honest, not about changing what it's looking for.
+RSI / EMA / volume / Bollinger / sentiment / fundamentals confluence is
+untouched. v3.0.1 only corrects which Fibonacci ladder BUY vs SELL use.
 
 HORIZON NOTE (honest): opportunity scanner feeds ONE_DAY candles for direction
 (swing-style confluence). Live LTP times entry; 5m ATR sizes same-day SL/TP.
@@ -591,18 +593,19 @@ class EnhancedAnalyzer:
         sell_weights = self.config.get('strategy_weights', {}).get('sell', {})
 
         tol = self.fib_proximity_pct
-        fib_618 = fib_levels['level_618']
-        fib_500 = fib_levels['level_500']
-        fib_786 = fib_levels.get('level_786', fib_618)
+        fib_support_618 = fib_levels['support_618']
+        fib_support_500 = fib_levels['support_500']
+        fib_resist_618 = fib_levels['level_618']
+        fib_resist_786 = fib_levels.get('level_786', fib_resist_618)
 
         buy_conditions = []
         buy_score = 0
 
-        if fib_618 * (1 - tol) <= current_price <= fib_618 * (1 + tol):
-            buy_conditions.append("Near Golden Ratio (61.8%)")
+        if fib_support_618 * (1 - tol) <= current_price <= fib_support_618 * (1 + tol):
+            buy_conditions.append("Near Golden Ratio support (61.8% retracement)")
             buy_score += buy_weights.get('fib_618', 25)
-        elif fib_500 * (1 - tol) <= current_price <= fib_500 * (1 + tol):
-            buy_conditions.append("At Fib 50%")
+        elif fib_support_500 * (1 - tol) <= current_price <= fib_support_500 * (1 + tol):
+            buy_conditions.append("At Fib 50% retracement")
             buy_score += buy_weights.get('fib_500', 20)
 
         if current_rsi <= self.rsi_oversold:
@@ -640,12 +643,12 @@ class EnhancedAnalyzer:
         sell_conditions = []
         sell_score = 0
 
-        if fib_618 * (1 - tol) <= current_price <= fib_618 * (1 + tol):
-            sell_conditions.append("Near Golden Ratio resistance")
-            sell_score += sell_weights.get('fib_618', 25)
-        elif fib_786 * (1 - tol) <= current_price <= fib_786 * (1 + tol):
-            sell_conditions.append("At Fib 78.6%")
+        if fib_resist_786 * (1 - tol) <= current_price <= fib_resist_786 * (1 + tol):
+            sell_conditions.append("At Fib 78.6% resistance")
             sell_score += sell_weights.get('fib_786', 20)
+        elif fib_resist_618 * (1 - tol) <= current_price <= fib_resist_618 * (1 + tol):
+            sell_conditions.append("Near Golden Ratio resistance (61.8%)")
+            sell_score += sell_weights.get('fib_618', 25)
 
         if current_rsi >= self.rsi_overbought:
             sell_conditions.append(f"RSI overbought ({current_rsi:.1f})")

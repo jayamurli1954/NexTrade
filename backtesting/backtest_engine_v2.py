@@ -221,7 +221,7 @@ class BacktestEngineV2:
         Uses same logic as your enhanced_analyzer
         """
         try:
-            from indicators.ta import rsi, ema, fibonacci_retracement, bollinger_bands
+            from indicators.ta import atr, rsi, ema, fibonacci_retracement, bollinger_bands
             
             close = historical_df['close']
             high = historical_df['high']
@@ -246,7 +246,15 @@ class BacktestEngineV2:
             fib_levels = fibonacci_retracement(period_high, period_low)
             
             current_price = close.iloc[-1]
-            current_atr = current_price * 0.02  # 2% volatility proxy
+            atr_values = atr(high, low, close, period=14)
+            try:
+                atr_last = float(atr_values.iloc[-1]) if atr_values is not None and len(atr_values) else float("nan")
+            except (TypeError, ValueError, IndexError):
+                atr_last = float("nan")
+            if atr_last != atr_last or atr_last <= 0:
+                current_atr = float(current_price) * 0.02
+            else:
+                current_atr = atr_last
             
             current_volume = volume.iloc[-1]
             avg_volume = volume.mean()
@@ -294,7 +302,8 @@ class BacktestEngineV2:
         if price <= bb_lower:
             buy_score += 8
         
-        if price <= fib_levels['level_618'] * 1.02:
+        support_618 = fib_levels['support_618']
+        if support_618 * 0.98 <= price <= support_618 * 1.02:
             buy_score += 25
         
         # SELL conditions
@@ -312,7 +321,11 @@ class BacktestEngineV2:
         if price >= bb_upper:
             sell_score += 8
         
-        if price >= fib_levels['level_618'] * 0.98:
+        level_786 = fib_levels.get('level_786', fib_levels['level_618'])
+        level_618 = fib_levels['level_618']
+        if level_786 * 0.98 <= price <= level_786 * 1.02:
+            sell_score += 20
+        elif level_618 * 0.98 <= price <= level_618 * 1.02:
             sell_score += 25
         
         # Determine action
