@@ -19,6 +19,8 @@ import logging
 import os
 import threading
 import time
+from collections import Counter
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("OpportunityScanner")
@@ -26,6 +28,8 @@ logger = logging.getLogger("OpportunityScanner")
 _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _SCAN_STATE_PATH = os.path.join(_root, "storage", "opportunity_scan_state.json")
 _OHLC_CACHE_DIR = os.path.join(_root, "research", "data", "feature_store", "ohlc_cache")
+_PAPER_TRADES_PATH = os.path.join(_root, "paper_trades.json")
+_ANALYZER_CONFIG_PATH = os.path.join(_root, "analyzer_config.json")
 
 _lock = threading.Lock()
 _started = False
@@ -51,6 +55,104 @@ _status: Dict[str, Any] = {
 # Align with EnhancedAnalyzer / analyzer_config confidence_threshold (0.60)
 _MIN_CONFIDENCE = 0.60
 _TOP_N = 10
+
+_CONCENTRATION_DEFAULTS = {
+    "max_trades_per_symbol_per_day": 2,
+    "symbol_cooldown_minutes": 60,
+    "pause_symbol_after_consecutive_losses": 2,
+    "max_symbols_per_day": 8,
+}
+
+
+def _now_ist() -> datetime:
+    """Naive IST clock (entry_time in paper_trades.json is naive IST)."""
+    return (datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)).replace(tzinfo=None)
+
+
+def _load_concentration_cfg() -> Dict[str, Any]:
+    cfg = dict(_CONCENTRATION_DEFAULTS)
+    try:
+        with open(_ANALYZER_CONFIG_PATH, "r", encoding="utf-8") as fh:
+            block = (json.load(fh) or {}).get("concentration_control", {})
+        for k in _CONCENTRATION_DEFAULTS:
+            if isinstance(block.get(k), (int, float)):
+                cfg[k] = block[k]
+    except Exception as exc:
+        logger.debug("concentration cfg load failed, using defaults: %s", exc)
+    return cfg
+
+
+def _todays_trades() -> List[Dict[str, Any]]:
+    """Closed + active paper trades whose entry is today (IST)."""
+    try:
+        with open(_PAPER_TRADES_PATH, "r", encoding="utf-8") as fh:
+            book = json.load(fh) or {}
+    except Exception:
+        return []
+    today = _now_ist().date()
+    out: List[Dict[str, Any]] = []
+    for bucket in ("closed_trades", "active_trades"):
+        for t in book.get(bucket, []) or []:
+            raw = str(t.get("entry_time") or "")[:19]
+            try:
+                et = datetime.strptime(raw, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                continue
+            if et.date() == today:
+                out.append({"symbol": str(t.get("symbol") or "").upper(),
+                            "entry_time": et,
+                            "pnl": float(t.get("pnl") or 0.0)})
+    return out
+
+
+def apply_concentration_guard(
+    signals: List[Dict[str, Any]],
+    todays_trades: Optional[List[Dict[str, Any]]] = None,
+    cfg: Optional[Dict[str, Any]] = None,
+) -> List[Dict[str, Any]]:
+    """Drop signals that would over-concentrate the day into a few names.
+
+    Caps repeat entries per symbol, enforces a cooldown after a fresh trade,
+    pauses a symbol after consecutive losses, and limits distinct symbols/day.
+    Signals are assumed pre-sorted best-first so survivors keep their ranking.
+    """
+    if todays_trades is None:
+        todays_trades = _todays_trades()
+    if cfg is None:
+        cfg = _load_concentration_cfg()
+
+    now = _now_ist()
+    counts = Counter(t["symbol"] for t in todays_trades)
+    symbols_today = set(counts)
+    max_per = int(cfg["max_trades_per_symbol_per_day"])
+    cooldown_s = float(cfg["symbol_cooldown_minutes"]) * 60.0
+    loss_pause = int(cfg["pause_symbol_after_consecutive_losses"])
+    max_symbols = int(cfg["max_symbols_per_day"])
+
+    kept: List[Dict[str, Any]] = []
+    for s in signals:
+        sym = str(s.get("symbol") or "").upper()
+        recent = [t for t in todays_trades if t["symbol"] == sym]
+
+        if counts.get(sym, 0) >= max_per:
+            continue
+        last = max((t["entry_time"] for t in recent), default=None)
+        if last is not None and (now - last).total_seconds() < cooldown_s:
+            continue
+        streak = 0
+        for t in sorted(recent, key=lambda x: x["entry_time"], reverse=True):
+            if t["pnl"] < 0:
+                streak += 1
+            else:
+                break
+        if streak >= loss_pause:
+            continue
+        if sym not in symbols_today and len(symbols_today) >= max_symbols:
+            continue
+
+        kept.append(s)
+        symbols_today.add(sym)  # taking this name counts against the daily breadth cap
+    return kept
 
 
 def _load_local_daily_ohlc(symbol: str, period_days: int = 50):
@@ -458,6 +560,13 @@ def run_scan_once(max_symbols: Optional[int] = None, *, scan_mode: str = "daily_
         len(signals),
     )
     signals.sort(key=lambda x: float(x.get("confidence") or 0), reverse=True)
+    pre_guard = len(signals)
+    signals = apply_concentration_guard(signals)
+    if len(signals) < pre_guard:
+        logger.info(
+            "Concentration guard filtered %s/%s signals (per-symbol cap / cooldown / loss-pause / breadth)",
+            pre_guard - len(signals), pre_guard,
+        )
     top = signals[:_TOP_N]
     scan_completed = not scan_aborted and symbols_done >= len(symbols)
 

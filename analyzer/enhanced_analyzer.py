@@ -94,6 +94,13 @@ class EnhancedAnalyzer:
         self.analysis_period = self.config.get('analysis_period', 50)
         self.atr_period = int(self.config.get('atr_period', 14))
         self.fib_proximity_pct = float(self.config.get('fib_proximity_pct', 0.02))
+        # A "Golden Ratio" entry must actually sit at a Fib level, and the trend
+        # must agree with the direction (no buying a downtrend on RSI alone).
+        self.require_fib_for_entry = bool(self.config.get('require_fib_for_entry', True))
+        self.require_trend_agreement = bool(self.config.get('require_trend_agreement', True))
+        # Minimum target move (% of price) a signal must project to clear the
+        # ~0.2% round-trip cost floor and still pay — else it is not worth taking.
+        self.min_target_move_pct = float(self.config.get('min_target_move_pct', 0.8))
 
         # Momentum-contradiction thresholds used by _validate_signal.
         self.moderate_momentum_1d_pct = float(self.config.get('moderate_momentum_1d_pct', 3.5))
@@ -600,13 +607,16 @@ class EnhancedAnalyzer:
 
         buy_conditions = []
         buy_score = 0
+        buy_fib_hit = False
 
         if fib_support_618 * (1 - tol) <= current_price <= fib_support_618 * (1 + tol):
             buy_conditions.append("Near Golden Ratio support (61.8% retracement)")
             buy_score += buy_weights.get('fib_618', 25)
+            buy_fib_hit = True
         elif fib_support_500 * (1 - tol) <= current_price <= fib_support_500 * (1 + tol):
             buy_conditions.append("At Fib 50% retracement")
             buy_score += buy_weights.get('fib_500', 20)
+            buy_fib_hit = True
 
         if current_rsi <= self.rsi_oversold:
             buy_conditions.append(f"RSI oversold ({current_rsi:.1f})")
@@ -642,13 +652,16 @@ class EnhancedAnalyzer:
 
         sell_conditions = []
         sell_score = 0
+        sell_fib_hit = False
 
         if fib_resist_786 * (1 - tol) <= current_price <= fib_resist_786 * (1 + tol):
             sell_conditions.append("At Fib 78.6% resistance")
             sell_score += sell_weights.get('fib_786', 20)
+            sell_fib_hit = True
         elif fib_resist_618 * (1 - tol) <= current_price <= fib_resist_618 * (1 + tol):
             sell_conditions.append("Near Golden Ratio resistance (61.8%)")
             sell_score += sell_weights.get('fib_618', 25)
+            sell_fib_hit = True
 
         if current_rsi >= self.rsi_overbought:
             sell_conditions.append(f"RSI overbought ({current_rsi:.1f})")
@@ -693,8 +706,29 @@ class EnhancedAnalyzer:
         prefer_sell = sell_score > buy_score
         winning_score = max(buy_score, sell_score)
 
-        buy_ok = prefer_buy and buy_score >= min_score and len(buy_conditions) >= min_confluence
-        sell_ok = prefer_sell and sell_score >= min_score and len(sell_conditions) >= min_confluence
+        # Golden-Ratio entries must actually be at a Fib level when required.
+        buy_fib_ok = buy_fib_hit or not self.require_fib_for_entry
+        sell_fib_ok = sell_fib_hit or not self.require_fib_for_entry
+
+        # Trend must agree with direction — never buy a downtrend (or sell an
+        # uptrend) on an oscillator alone. This is what stopped the daily
+        # falling-knife re-entries into the same losing names.
+        buy_trend_ok = (ema_short > ema_long) or not self.require_trend_agreement
+        sell_trend_ok = (ema_short < ema_long) or not self.require_trend_agreement
+
+        # Cost hurdle: the projected target move must beat the round-trip cost
+        # floor, else the trade cannot pay even when it works.
+        expected_move_pct = (atr_multiplier_target * atr_px / current_price * 100.0) if current_price else 0.0
+        target_move_ok = expected_move_pct >= self.min_target_move_pct
+
+        buy_ok = (
+            prefer_buy and buy_score >= min_score and len(buy_conditions) >= min_confluence
+            and buy_fib_ok and buy_trend_ok and target_move_ok
+        )
+        sell_ok = (
+            prefer_sell and sell_score >= min_score and len(sell_conditions) >= min_confluence
+            and sell_fib_ok and sell_trend_ok and target_move_ok
+        )
 
         if buy_ok:
             signal['action'] = 'BUY'
