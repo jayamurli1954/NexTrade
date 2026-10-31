@@ -1,24 +1,64 @@
 {
   "analyzer_config": {
     "golden_ratio": 1.618,
-    "confidence_threshold": 0.65,
+    "confidence_threshold": 0.60,
+    "min_signal_score": 60,
+    "min_confluence_count": 2,
+    "fib_proximity_pct": 0.02,
+    "moderate_momentum_1d_pct": 3.5,
+    "moderate_momentum_5d_pct": 8.0,
+    "severe_momentum_1d_pct": 5.0,
+    "severe_momentum_5d_pct": 12.0,
+    "rsi_reject_buy": 50,
+    "rsi_reject_sell": 50,
+    "_comment_score": "min_signal_score ≥60 + min_confluence_count ≥2 before BUY/SELL. confidence = capped_score/100.",
     "rsi_oversold": 30,
     "rsi_overbought": 70,
     "volume_threshold": 1.2,
     "ema_short_period": 8,
     "ema_long_period": 21,
     "analysis_period": 50,
+    "atr_period": 14,
     
-    "_comment_atr": "ATR (Average True Range) multipliers for stop-loss and targets",
+    "_comment_atr": "ATR (Average True Range) multipliers for stop-loss and targets — real ATR, not fixed 2% stub",
     "atr_stop_loss_multiplier": 1.5,
     "atr_target_multiplier": 3.0,
     
     "_comment_fundamentals": "Set to true to enable fundamental analysis (requires yfinance)",
     "enable_fundamentals": true,
+    "enable_factor_display": true,
+    "use_factor_overall_for_gates": false,
+    "_comment_fi2": "FI-2: factor display via FundamentalService. Gate score stays legacy until FI-4.",
     
     "_comment_weights": "Weights for combining technical and fundamental scores",
     "technical_weight": 0.60,
-    "fundamental_weight": 0.40
+    "fundamental_weight": 0.40,
+    "strategy_weights": {
+      "buy": {
+        "fib_618": 25,
+        "fib_500": 20,
+        "rsi_oversold": 20,
+        "rsi_mid": 10,
+        "ema_uptrend": 20,
+        "ema_crossover": 10,
+        "volume_spike": 10,
+        "bb_lower": 8,
+        "sentiment_positive": 7,
+        "fundamentals_strong": 20
+      },
+      "sell": {
+        "fib_618": 25,
+        "fib_786": 20,
+        "rsi_overbought": 20,
+        "rsi_mid": 10,
+        "ema_downtrend": 20,
+        "ema_crossover": 10,
+        "volume_spike": 10,
+        "bb_upper": 8,
+        "sentiment_negative": 7,
+        "fundamentals_weak": 10
+      }
+    }
   },
   
   "security": {

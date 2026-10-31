@@ -48,14 +48,14 @@ class RegimeRecommendationEngine:
 
     def analyze_market_and_recommend(
         self,
-        nifty_pct_change: float = 1.25,
-        bank_nifty_pct_change: float = 0.85,
-        vix_level: float = 13.8,
-        advances_count: int = 1420,
-        declines_count: int = 580,
+        nifty_pct_change: Optional[float] = None,
+        bank_nifty_pct_change: Optional[float] = None,
+        vix_level: Optional[float] = None,
+        advances_count: Optional[int] = None,
+        declines_count: Optional[int] = None,
         force_unstable: bool = False
     ) -> DailyRecommendationOutcome:
-        """Executes hybrid evaluation pipeline with passed market parameters."""
+        """Executes hybrid evaluation; omitted inputs resolve via Angel MarketDataService."""
         outcome = self.hybrid_engine.evaluate_and_recommend(
             nifty_pct_change=nifty_pct_change,
             bank_nifty_pct_change=bank_nifty_pct_change,

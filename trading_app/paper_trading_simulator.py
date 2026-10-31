@@ -140,6 +140,46 @@ class PaperTradingSimulator:
 
         return PositionStatus.OPEN, pos.unrealized_pnl, "Position active"
 
+    def force_market_close_exits(
+        self,
+        now=None,
+        exit_prices: Optional[Dict[str, float]] = None,
+    ) -> List[Tuple[str, PositionStatus, float, str]]:
+        """
+        Angel One MIS parity: close open positions with exit_on_market_close at/after 15:15 IST.
+        INTRADAY/SCALPING styles only. `now` should be timezone-aware IST datetime when provided.
+        """
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from trading_app.paper_trade_scheduler import (
+            INTRADAY_SQUARE_OFF,
+            is_square_off_style,
+            is_past_intraday_square_off,
+        )
+
+        if now is None:
+            now = datetime.now(ZoneInfo("Asia/Kolkata"))
+        if not is_past_intraday_square_off(now):
+            return []
+
+        results: List[Tuple[str, PositionStatus, float, str]] = []
+        prices = exit_prices or {}
+        for pos_id, pos in list(self.active_positions.items()):
+            plan = pos.trade_plan
+            if not getattr(plan.auto_exit, "exit_on_market_close", True):
+                continue
+            if not is_square_off_style(getattr(plan, "trading_style", "INTRADAY")):
+                continue
+            exit_px = float(prices.get(plan.symbol) or pos.current_price or plan.entry_price)
+            status, pnl, reason = self._close_position(
+                pos,
+                exit_px,
+                PositionStatus.CLOSED_MARKET_CLOSE,
+                f"Market close square-off at {INTRADAY_SQUARE_OFF.strftime('%H:%M')} IST",
+            )
+            results.append((pos_id, status, pnl, reason))
+        return results
+
     def _close_position(self, pos: ActivePaperPosition, exit_price: float, status: PositionStatus, reason: str) -> Tuple[PositionStatus, float, str]:
         """Closes an active paper trade position and logs the audit record."""
         pos.status = status

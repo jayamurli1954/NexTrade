@@ -197,7 +197,7 @@ class BacktestEngine:
                 return None
             
             # Calculate indicators
-            from indicators.ta import rsi, ema, fibonacci_retracement, bollinger_bands
+            from indicators.ta import atr, rsi, ema, fibonacci_retracement, bollinger_bands
             
             rsi_values = rsi(close_prices, period=14)
             current_rsi = rsi_values.iloc[-1] if not rsi_values.empty else 50
@@ -213,7 +213,15 @@ class BacktestEngine:
             fib_levels = fibonacci_retracement(period_high, period_low)
             
             current_price = close_prices.iloc[-1]
-            current_atr = current_price * 0.02
+            atr_values = atr(high_prices, low_prices, close_prices, period=14)
+            try:
+                atr_last = float(atr_values.iloc[-1]) if atr_values is not None and len(atr_values) else float("nan")
+            except (TypeError, ValueError, IndexError):
+                atr_last = float("nan")
+            if atr_last != atr_last or atr_last <= 0:
+                current_atr = float(current_price) * 0.02
+            else:
+                current_atr = atr_last
             
             current_volume = volume.iloc[-1]
             avg_volume = volume.mean()
@@ -266,7 +274,8 @@ class BacktestEngine:
         if current_price <= bb_lower:
             buy_score += 8
         
-        if current_price <= fib_levels['level_618'] * 1.02:
+        support_618 = fib_levels['support_618']
+        if support_618 * 0.98 <= current_price <= support_618 * 1.02:
             buy_score += 25
         
         # Sell conditions
@@ -284,7 +293,11 @@ class BacktestEngine:
         if current_price >= bb_upper:
             sell_score += 8
         
-        if current_price >= fib_levels['level_618'] * 0.98:
+        level_786 = fib_levels.get('level_786', fib_levels['level_618'])
+        level_618 = fib_levels['level_618']
+        if level_786 * 0.98 <= current_price <= level_786 * 1.02:
+            sell_score += 20
+        elif level_618 * 0.98 <= current_price <= level_618 * 1.02:
             sell_score += 25
         
         # Determine signal

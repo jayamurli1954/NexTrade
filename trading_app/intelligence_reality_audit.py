@@ -8,6 +8,7 @@ are presented as operational intelligence to the user.
 import os
 import json
 import logging
+import time
 from dataclasses import dataclass
 from typing import Dict, List, Any
 
@@ -68,7 +69,27 @@ class IntelligenceRealityAuditor:
         ))
 
         # 3. Audit Data Quality Gate SLA
-        gate_res = self.data_gate.evaluate_feed_health(last_tick_timestamp=os.path.getmtime(MODEL_METADATA_FILE) if ml_ok else 0, last_price=24850.4, volume=10000)
+        try:
+            from trading_app.market_data_service import get_market_data_service
+            mds = get_market_data_service()
+            idx = mds.get_index_inputs()
+            status = mds.get_status()
+            last_price = float(idx.get("nifty_ltp") or 0.0)
+            age = status.get("last_tick_age_sec")
+            last_ts = time.time() - float(age) if age is not None else (
+                os.path.getmtime(MODEL_METADATA_FILE) if ml_ok else 0
+            )
+            gate_res = self.data_gate.evaluate_feed_health(
+                last_tick_timestamp=last_ts,
+                last_price=last_price if last_price > 0 else 0.0,
+                volume=10000,
+            )
+        except Exception:
+            gate_res = self.data_gate.evaluate_feed_health(
+                last_tick_timestamp=os.path.getmtime(MODEL_METADATA_FILE) if ml_ok else 0,
+                last_price=0.0,
+                volume=10000,
+            )
         items.append(RealityAuditItem(
             layer_name="Data Quality Invariant Gate",
             is_operational=True,

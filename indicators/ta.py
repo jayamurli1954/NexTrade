@@ -33,13 +33,27 @@ def macd(series: pd.Series, fast=12, slow=26, signal=9):
     return macd_line, signal_line, hist
 
 def fibonacci_retracement(high, low):
+    """
+    Two ladders over the same [low, high] range:
+
+    - level_XXX: low + diff*ratio (larger ratio → nearer the high). Use for
+      resistance / SELL checks.
+    - support_XXX: high - diff*ratio (larger ratio → nearer the low). Use for
+      pullback / BUY checks. support_618 is the classic 61.8% retracement
+      from the high, not 61.8% of the way up from the low.
+    """
     diff = high - low
     levels = {
         'level_236': low + diff * 0.236,
         'level_382': low + diff * 0.382,
         'level_500': low + diff * 0.500,
         'level_618': low + diff * 0.618,
-        'level_786': low + diff * 0.786
+        'level_786': low + diff * 0.786,
+        'support_236': high - diff * 0.236,
+        'support_382': high - diff * 0.382,
+        'support_500': high - diff * 0.500,
+        'support_618': high - diff * 0.618,
+        'support_786': high - diff * 0.786,
     }
     return levels
 
@@ -51,3 +65,24 @@ def bollinger_bands(series: pd.Series, period: int = 20, std_dev: int = 2):
     upper = sma_line + (std * std_dev)
     lower = sma_line - (std * std_dev)
     return upper, sma_line, lower
+
+
+def atr(
+    high: pd.Series,
+    low: pd.Series,
+    close: pd.Series,
+    period: int = 14,
+) -> pd.Series:
+    """Wilder Average True Range — used for volatility-based SL/TP."""
+    if len(close) < period + 1:
+        return pd.Series([np.nan] * len(close), index=close.index)
+    prev_close = close.shift(1)
+    tr = pd.concat(
+        [
+            (high - low).abs(),
+            (high - prev_close).abs(),
+            (low - prev_close).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
+    return tr.ewm(alpha=1.0 / period, adjust=False).mean()

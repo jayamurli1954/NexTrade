@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexTrade — Paper Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0e17; --card:#131927; --hover:#1c2438; --border:#232d42;
+  --green:#00e676; --blue:#29b6f6; --amber:#ffb300; --red:#ff5252;
+  --text:#f0f4f8; --muted:#8a99ad;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Outfit,sans-serif}
+html,body{height:100%;background:var(--bg);color:var(--text)}
+body{display:flex;flex-direction:column;min-height:100vh}
+a{color:var(--blue);text-decoration:none}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:10px 14px;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700}
+.logo{background:var(--green);color:#000;padding:4px 10px;border-radius:6px;font-size:12px}
+.badge{padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid}
+.badge-green{color:var(--green);border-color:var(--green);background:rgba(0,230,118,.12)}
+.badge-amber{color:var(--amber);border-color:var(--amber);background:rgba(255,179,0,.12)}
+.meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.shell{flex:1;display:grid;grid-template-columns:240px minmax(0,1fr) 340px;
+  grid-template-rows:minmax(280px,1fr) 220px;gap:8px;padding:8px;min-height:0}
+.pane{background:var(--card);border:1px solid var(--border);border-radius:10px;min-height:0;
+  display:flex;flex-direction:column;overflow:hidden}
+.pane h2{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  padding:8px 10px;border-bottom:1px solid var(--border)}
+.watch{grid-row:1/3}.blotter{grid-column:2/4}
+.list{overflow:auto;flex:1}
+.row{display:grid;grid-template-columns:1fr auto auto;gap:6px;padding:7px 10px;cursor:pointer;
+  font-size:12px;border-bottom:1px solid rgba(35,45,66,.6)}
+.row:hover,.row.active{background:var(--hover)}
+.up{color:var(--green)}.down{color:var(--red)}
+.chart-head{display:flex;justify-content:space-between;align-items:baseline;padding:8px 10px 0}
+.ltp{font-size:22px;font-weight:700}
+.chart-wrap{flex:1;padding:8px;min-height:0}
+svg{width:100%;height:100%;display:block}
+.ticket{padding:0 10px 10px;overflow:auto}
+label{display:block;font-size:11px;color:var(--muted);margin:8px 0 3px}
+input,select{width:100%;background:#0a0e17;color:#fff;border:1px solid var(--border);
+  border-radius:6px;padding:6px 8px;font-size:13px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{border:0;border-radius:8px;padding:8px 10px;font-weight:600;cursor:pointer;font-size:13px;width:100%;margin-top:8px}
+.btn-green{background:var(--green);color:#000}
+.btn-amber{background:var(--amber);color:#000}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.charges{margin-top:10px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;line-height:1.55}
+.muted{color:var(--muted);font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+th{color:var(--muted);font-weight:600}
+@media(max-width:1100px){.shell{grid-template-columns:1fr;grid-template-rows:auto}
+.watch,.blotter{grid-row:auto;grid-column:auto;max-height:280px}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand">
+    <span class="logo">NT</span>
+    Paper Terminal
+    <span class="badge badge-green">PAPER ONLY</span>
+    <span class="badge badge-amber">TARIFF PREVIEW · NOT LEDGER</span>
+  </div>
+  <div class="meta">
+    <span id="ist">IST —</span>
+    <span id="mkt">Market —</span>
+    <span id="cap">Capital —</span>
+    <a href="/">Cockpit</a>
+  </div>
+</div>
+<div class="shell">
+  <section class="pane watch">
+    <h2>Watchlist</h2>
+    <div class="list" id="wl"></div>
+  </section>
+  <section class="pane">
+    <div class="chart-head">
+      <div>
+        <div class="muted" id="sym-label">Select a symbol</div>
+        <div class="ltp" id="ltp">—</div>
+      </div>
+      <div class="muted" id="chart-src">Daily OHLC · local cache</div>
+    </div>
+    <div class="chart-wrap"><svg id="chart" viewBox="0 0 640 240" preserveAspectRatio="none"></svg></div>
+  </section>
+  <section class="pane">
+    <h2>Ticket · U1/U2 bound</h2>
+    <div class="ticket">
+      <label>Symbol</label>
+      <input id="tk-symbol" value="RELIANCE" autocomplete="off">
+      <div class="pair">
+        <div>
+          <label>Direction</label>
+          <select id="tk-direction"><option value="BUY">BUY</option><option value="SELL">SELL</option></select>
+        </div>
+        <div>
+          <label>Style</label>
+          <select id="tk-style">
+            <option value="INTRADAY">Intraday</option>
+            <option value="SCALPING">Scalping</option>
+            <option value="SWING">Swing</option>
+          </select>
+        </div>
+      </div>
+      <label>Strategy</label>
+      <select id="tk-strategy">
+        <option>Momentum Breakout</option>
+        <option>VWAP Mean Reversion</option>
+        <option>Opening Range Breakout (ORB)</option>
+        <option>ADX Trend Acceleration</option>
+        <option>RSI Oversold/Overbought Reversion</option>
+      </select>
+      <div class="pair">
+        <div><label>Entry (₹)</label><input id="tk-entry" type="number" step="0.05"></div>
+        <div><label>Qty (ticket)</label><input id="tk-qty" type="number" value="10"></div>
+      </div>
+      <div class="pair">
+        <div><label>Stop (₹)</label><input id="tk-sl" type="number" step="0.05"></div>
+        <div><label>Target (₹)</label><input id="tk-tp" type="number" step="0.05"></div>
+      </div>
+      <div class="pair">
+        <div>
+          <label>Brokerage profile</label>
+          <select id="tk-profile">
+            <option value="ARROW">Arrow (min ₹20 / 0.03%)</option>
+            <option value="FLAT20">Flat ₹20 / order</option>
+          </select>
+        </div>
+        <div>
+          <label>Start</label>
+          <select id="tk-start">
+            <option value="IMMEDIATE">Immediate</option>
+            <option value="09:30" selected>09:30</option>
+            <option value="10:00">10:00</option>
+            <option value="11:00">11:00</option>
+          </select>
+        </div>
+      </div>
+      <label class="muted" style="display:flex;gap:6px;align-items:center;margin-top:8px;">
+        <input id="tk-v3" type="checkbox" style="width:auto;"> Show V3 0.05% slip scenario
+      </label>
+      <div class="charges" id="charges">Enter prices — live V2 preview appears here. Does not change the paper ledger.</div>
+      <button class="btn btn-amber" id="btn-plan">Generate plan + bind protection</button>
+      <button class="btn btn-green" id="btn-exec">Execute / arm paper</button>
+      <button class="btn btn-ghost" id="btn-ltp">Refresh Angel LTP</button>
+      <div class="muted" id="plan-msg" style="margin-top:8px;"></div>
+    </div>
+  </section>
+  <section class="pane blotter">
+    <h2>Blotter · open paper positions</h2>
+    <div class="list" id="blotter"><div class="muted" style="padding:10px;">Loading…</div></div>
+  </section>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+let activeSym = 'RELIANCE';
+let previewTimer = null;
+let planReady = false;
+
+function scripQty(ltp) {
+  const p = Number(ltp);
+  if (!p || p <= 0) return 1;
+  return Math.max(1, Math.floor(100000 / p));
+}
+function fmt(n) {
+  const x = Number(n || 0);
+  return '₹' + x.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function paintChart(bars, ltp) {
+  const svg = $('chart');
+  if (!bars || !bars.length) {
+    svg.innerHTML = '<text x="20" y="120" fill="#8a99ad" font-size="14">No local daily OHLC for this symbol</text>';
+    return;
+  }
+  const w = 640, h = 240, pad = 16;
+  const closes = bars.map(b => b.close);
+  if (ltp > 0) closes.push(ltp);
+  const min = Math.min(...closes), max = Math.max(...closes), span = (max - min) || 1;
+  const x = (i) => pad + (i * (w - pad * 2) / Math.max(bars.length - 1, 1));
+  const y = (v) => pad + (1 - (v - min) / span) * (h - pad * 2);
+  let d = '';
+  bars.forEach((b, i) => { d += (i ? 'L' : 'M') + x(i) + ' ' + y(b.close) + ' '; });
+  let ltpLine = '';
+  if (ltp > 0) {
+    const yy = y(ltp);
+    ltpLine = `<line x1="${pad}" y1="${yy}" x2="${w-pad}" y2="${yy}" stroke="#29b6f6" stroke-dasharray="4 4" stroke-width="1"/>`;
+  }
+  svg.innerHTML = `${ltpLine}<path d="${d}" fill="none" stroke="#00e676" stroke-width="2"/>`;
+}
+async function loadOhlc(sym, ltp) {
+  try {
+    const res = await fetch('/api/terminal/ohlc?symbol=' + encodeURIComponent(sym));
+    const data = await res.json();
+    $('chart-src').textContent = data.success ? ('Daily OHLC · ' + (data.path || 'local cache')) : (data.error || 'No cache');
+    paintChart(data.bars || [], ltp);
+  } catch (e) { paintChart([], ltp); }
+}
+async function loadWatchlist() {
+  const res = await fetch('/api/watchlist');
+  const rows = await res.json();
+  $('wl').innerHTML = (rows || []).map(r => {
+    const cls = (r.change_pct_raw || 0) >= 0 && r.ltp_raw > 0 ? 'up' : 'down';
+    const active = r.symbol === activeSym ? ' active' : '';
+    return `<div class="row${active}" data-sym="${r.symbol}" data-ltp="${r.ltp_raw || 0}">
+      <span>${r.symbol}</span><span>${r.ltp}</span><span class="${cls}">${r.change_pct}</span></div>`;
+  }).join('');
+  $('wl').querySelectorAll('.row').forEach(el => {
+    el.onclick = () => selectSymbol(el.dataset.sym, Number(el.dataset.ltp || 0));
+  });
+}
+function defaultLevels(ltp, dir) {
+  if (!ltp) return;
+  const buy = dir !== 'SELL';
+  $('tk-entry').value = ltp.toFixed(2);
+  $('tk-qty').value = scripQty(ltp);
+  $('tk-sl').value = (buy ? ltp * 0.985 : ltp * 1.015).toFixed(2);
+  $('tk-tp').value = (buy ? ltp * 1.03 : ltp * 0.97).toFixed(2);
+}
+function selectSymbol(sym, ltp) {
+  activeSym = sym;
+  $('tk-symbol').value = sym;
+  $('sym-label').textContent = sym;
+  if (ltp > 0) {
+    $('ltp').textContent = fmt(ltp);
+    defaultLevels(ltp, $('tk-direction').value);
+  }
+  planReady = false;
+  loadOhlc(sym, ltp);
+  fetchLtp(sym, false);
+  previewCharges();
+  loadWatchlist();
+}
+async function fetchLtp(sym, preserve) {
+  const s = (sym || $('tk-symbol').value || '').trim().toUpperCase();
+  try {
+    const res = await fetch('/api/ltp?symbol=' + encodeURIComponent(s));
+    const data = await res.json();
+    if (data.success && data.ltp) {
+      const ltp = Number(data.ltp);
+      $('ltp').textContent = fmt(ltp);
+      $('sym-label').textContent = s + ' · ' + (data.source || 'ANGEL');
+      if (!preserve) defaultLevels(ltp, $('tk-direction').value);
+      else $('tk-entry').value = ltp.toFixed(2);
+      loadOhlc(s, ltp);
+      previewCharges();
+    }
+  } catch (e) {}
+}
+function ticketPayload() {
+  return {
+    symbol: ($('tk-symbol').value || '').trim().toUpperCase(),
+    trading_style: $('tk-style').value,
+    strategy: $('tk-strategy').value,
+    direction: $('tk-direction').value,
+    entry_price: Number($('tk-entry').value),
+    quantity: parseInt($('tk-qty').value, 10),
+    stop_loss_price: Number($('tk-sl').value),
+    target_price: Number($('tk-tp').value),
+    trailing_stop_amount: 20,
+    profile_id: $('tk-profile').value,
+    include_v3: $('tk-v3').checked,
+    start_hhmm: $('tk-start').value
+  };
+}
+async function previewCharges() {
+  const p = ticketPayload();
+  if (!p.entry_price || !p.target_price || !p.quantity) return;
+  try {
+    const res = await fetch('/api/tariff/preview', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(p)
+    });
+    const data = await res.json();
+    const t = data.ticket || {}, f = data.fill || {};
+    const v3 = p.include_v3
+      ? `<div>V3 fill-qty (+${t.slippage_pct}% slip scenario): <strong>${fmt(f.v3_charges)}</strong></div>`
+      : `<div class="muted">V3 slip off — not a tariff line.</div>`;
+    $('charges').innerHTML = `
+      <div><strong>${data.v2_line || ''}</strong></div>
+      <div class="muted">${data.qty_note || ''}</div>
+      <div>Brokerage ${fmt(f.brokerage)} · STT ${fmt(f.stt)} · Stamp ${fmt(f.stamp)} · Txn ${fmt(f.exchange)} · GST ${fmt(f.gst)}</div>
+      ${v3}
+      <div class="muted">${t.authority || ''} · ${t.profile_id || ''} · effective ${t.rate_effective || ''}</div>`;
+  } catch (e) {
+    $('charges').textContent = 'Charge preview unavailable.';
+  }
+}
+async function generatePlan() {
+  const p = ticketPayload();
+  const res = await fetch('/api/create_trade_plan', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(p)
+  });
+  const data = await res.json();
+  if (!data.success) {
+    planReady = false;
+    $('plan-msg').textContent = data.error || 'Plan failed';
+    $('plan-msg').style.color = '#ff5252';
+    return;
+  }
+  planReady = true;
+  const s = data.summary || {};
+  $('plan-msg').innerHTML = `Plan bound: ${s.title || p.symbol} · max loss ${s.maximum_loss || ''} · R:R ${s.risk_reward_ratio || ''}`;
+  $('plan-msg').style.color = '#00e676';
+  if (data.charges) {
+    $('charges').insertAdjacentHTML('beforeend',
+      '<div class="muted">Plan created — charges are preview only; ledger still uses Angel flat template on close.</div>');
+  }
+}
+async function executePaper() {
+  if (!planReady) {
+    await generatePlan();
+    if (!planReady) return;
+  }
+  const res = await fetch('/api/schedule_paper_trade', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ start_hhmm: $('tk-start').value })
+  });
+  const data = await res.json();
+  $('plan-msg').textContent = data.success ? (data.message || 'Paper order accepted') : (data.error || 'Blocked');
+  $('plan-msg').style.color = data.success ? '#00e676' : '#ff5252';
+  loadBlotter();
+}
+async function loadBlotter() {
+  try {
+    const res = await fetch('/api/positions');
+    const data = await res.json();
+    const pos = data.positions || [];
+    const sum = data.summary || {};
+    $('cap').textContent = 'Capital ' + (sum.total_capital_fmt || '—') + ' · net ' + (sum.todays_net_pnl_fmt || '—');
+    if (!pos.length) {
+      $('blotter').innerHTML = '<div class="muted" style="padding:10px;">No open paper positions. Generate a plan, then execute.</div>';
+      return;
+    }
+    $('blotter').innerHTML = `<table><thead><tr><th>Symbol</th><th>Side</th><th>Qty</th><th>Entry</th><th>LTP</th><th>P&L</th><th></th></tr></thead><tbody>
+      ${pos.map(p => `<tr>
+        <td>${p.symbol || ''}</td>
+        <td>${p.direction || p.side || ''}</td>
+        <td>${p.quantity || ''}</td>
+        <td>${p.entry_price || p.entry_price_raw || ''}</td>
+        <td>${p.ltp_fmt || p.current_price || '—'}</td>
+        <td>${p.pnl || ''}</td>
+        <td><button class="btn btn-ghost" style="margin:0;width:auto;padding:4px 8px;" data-close="${p.position_id}">Close</button></td>
+      </tr>`).join('')}
+    </tbody></table>`;
+    $('blotter').querySelectorAll('[data-close]').forEach(btn => {
+      btn.onclick = async () => {
+        if (!confirm('Close this paper trade at live Angel LTP?')) return;
+        await fetch('/api/positions/close', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ position_id: btn.dataset.close })
+        });
+        loadBlotter();
+      };
+    });
+  } catch (e) {
+    $('blotter').innerHTML = '<div class="muted" style="padding:10px;">Blotter unavailable.</div>';
+  }
+}
+async function heartbeat() {
+  try {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    $('ist').textContent = data.ist_datetime || 'IST';
+    $('mkt').textContent = data.market_open ? 'Market OPEN' : (data.market_status_badge || 'Market closed');
+  } catch (e) {}
+}
+['tk-entry','tk-qty','tk-sl','tk-tp','tk-direction','tk-style','tk-profile','tk-v3'].forEach(id => {
+  $(id).addEventListener('input', () => {
+    planReady = false;
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(previewCharges, 250);
+  });
+  $(id).addEventListener('change', () => { planReady = false; previewCharges(); });
+});
+$('tk-symbol').addEventListener('change', () =>
+  selectSymbol(($('tk-symbol').value || '').trim().toUpperCase(), Number($('tk-entry').value || 0)));
+$('btn-plan').onclick = generatePlan;
+$('btn-exec').onclick = executePaper;
+$('btn-ltp').onclick = () => fetchLtp(activeSym, false);
+$('tk-direction').addEventListener('change', () => {
+  const ltp = Number($('tk-entry').value || 0);
+  if (ltp) defaultLevels(ltp, $('tk-direction').value);
+});
+selectSymbol('RELIANCE', 0);
+loadWatchlist();
+loadBlotter();
+heartbeat();
+setInterval(loadWatchlist, 8000);
+setInterval(loadBlotter, 5000);
+setInterval(heartbeat, 15000);
+</script>
+</body>
+</html>

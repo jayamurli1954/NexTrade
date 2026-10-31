@@ -64,6 +64,26 @@ class StrategyValidationAttributionEngine:
         regime_acc = (len(regime_matches) / max(total, 1)) * 100.0
         hit_rate = (len(hits) / max(len(approved), 1)) * 100.0
         total_pnl = sum(h.actual_eod_pnl for h in history)
+        wins = [h.actual_eod_pnl for h in history if h.actual_eod_pnl > 0]
+        losses = [abs(h.actual_eod_pnl) for h in history if h.actual_eod_pnl < 0]
+        gross_win = sum(wins)
+        gross_loss = sum(losses)
+        if gross_loss > 0:
+            pf = round(gross_win / gross_loss, 2)
+        elif gross_win > 0:
+            pf = round(gross_win, 2)
+        else:
+            pf = 0.0
+
+        # Simple peak-to-trough drawdown on cumulative PnL series (no invented constants)
+        equity = 0.0
+        peak = 0.0
+        max_dd = 0.0
+        for h in history:
+            equity += float(h.actual_eod_pnl or 0.0)
+            peak = max(peak, equity)
+            if peak > 0:
+                max_dd = max(max_dd, (peak - equity) / peak * 100.0)
 
         return StrategyAttributionMetrics(
             total_recommendations=total,
@@ -74,7 +94,7 @@ class StrategyValidationAttributionEngine:
             no_trade_decision_quality_pct=100.0,
             cumulative_pnl=total_pnl,
             win_rate_pct=round(hit_rate, 1),
-            profit_factor=2.01 if total_pnl >= 0 else 0.8,
-            max_drawdown_pct=1.2,
+            profit_factor=pf,
+            max_drawdown_pct=round(max_dd, 2),
             attribution_summary_label=f"VALIDATION IN PROGRESS: {len(approved)} Mandates Evaluated ({hit_rate:.1f}% Hit Rate)"
         )
