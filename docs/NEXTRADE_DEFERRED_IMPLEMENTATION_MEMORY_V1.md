@@ -204,6 +204,24 @@ When the user asks “what did we defer?” or “is X ready to implement?”, c
 
 ---
 
+## L. Options paper lane (OPT-PAPER) — freeze lifted by user (2026-11-22)
+
+**Decision (user, 2026-11-22):** Lift the VAL-PHASE freeze for an **options paper-trading lane**. Reason given:
+the equity paper-trade observation results are not encouraging, so holding new strategies back to keep that
+observation clean no longer justifies blocking options research. **Scope of the lift:** a separate options
+paper runner with its own ledger. It does **not** change the equity paper strategies, risk gates, capital
+ledger, C2 cost policy, or LIVE promotion rules (all still frozen / unchanged). **No broker orders** are sent.
+
+| ID | Item | Status | Notes |
+|----|------|--------|-------|
+| OPT-R1 | Timed short straddle research backtest | **DONE** (2026-11-22) | `research/timed_straddle/`, `docs/TIMED_STRADDLE_RESEARCH.md`. NIFTY 2016–26: +₹2.98L/1 lot @0.5pt slip; negative @1pt |
+| OPT-P1 | Options paper runner (Angel live quotes, simulated fills, own ledger) | **IN PROGRESS** | `trading_app/options_paper/`; logs `logs/options_paper/` |
+| OPT-P2 | Paper-vs-model slippage evidence | PENDING | Compare each paper fill to backtest model price |
+| OPT-P3 | More decoded strategies plugged into the runner | PENDING | Personal purchased tools; recovered rules kept outside the repo |
+| OPT-L1 | Live options orders | BLOCKED | Needs explicit separate approval + M6 FO margin |
+
+---
+
 ## H. Recall prompts (for future chats)
 
 Say any of:
@@ -257,3 +275,4 @@ Agent should read this file and the linked plan/charter, then confirm freeze/obs
 | 2026-08-25 | CAL-1 data pass DONE (312,787 rows); CAL-2 → READY TO PLAN |
 | 2026-08-25 | CAL-2 scaffold DONE (`research/calendar_spread/` + CLI + unit tests) |
 | 2026-08-25 | CAL-0 pts band amended: far−near [200,300]; added next−near mode; V1.1 |
+| 2026-11-22 | User lifted VAL-PHASE freeze for a separate options paper lane (§L); equity paper/risk/ledger unchanged |
