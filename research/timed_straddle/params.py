@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, Optional, Tuple
 
+from research.timed_straddle.profit_lock import ProfitLockRule
+
 STRIKE_STEP = {"NIFTY": 50.0, "BANKNIFTY": 100.0}
 
 
@@ -28,11 +30,13 @@ class TimedStraddleParams:
     points_from_atm: float = 0.0      # 0 = straddle; >0 = strangle (CE at ATM+pts, PE at ATM-pts)
     buy_wings: bool = False           # buy protective OTM options first
     wing_points: float = 500.0        # wing distance beyond the short strikes
+    sell_wing_on_stop: bool = True    # False = keep the wing until the position closes (Streak-style hedge)
 
     sl_pct: float = 25.0              # per-leg stop as % of leg entry premium
     trail_sl_to_cost: bool = True     # after one leg stops out, move other leg SL to its entry
     target_rupees: Optional[float] = None    # exit all when MTM > target (None = off)
     max_loss_rupees: Optional[float] = None  # exit all when MTM < -max_loss (None = off)
+    profit_lock: Optional[ProfitLockRule] = None  # trailing MTM profit lock (see profit_lock.py)
 
     lots: int = 1
     lot_size: Optional[int] = None    # None = symbol default below

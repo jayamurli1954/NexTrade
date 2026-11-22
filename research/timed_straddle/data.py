@@ -16,6 +16,9 @@ INDEX_FILES = {"NIFTY": "NIFTY 50_5minute.csv", "BANKNIFTY": "NIFTY BANK_5minute
 # BANKNIFTY weekly expiries were discontinued by NSE after 2024-11-20.
 BANKNIFTY_WEEKLY_END = pd.Timestamp("2024-11-20")
 BANKNIFTY_WED_START = pd.Timestamp("2023-09-04")  # weekly expiry moved Thursday -> Wednesday
+# Weekly index options launched: BANKNIFTY 2016-05-27, NIFTY 2019-02-11. Before that only the
+# monthly (last-Thursday) contract existed.
+WEEKLY_START = {"NIFTY": pd.Timestamp("2019-02-11"), "BANKNIFTY": pd.Timestamp("2016-05-27")}
 
 
 def load_5m(name: str, data_dir: Path = KAGGLE_DIR) -> pd.DataFrame:
@@ -65,6 +68,8 @@ def build_expiry_calendar(symbol: str, trading_days: Iterable[pd.Timestamp],
     NIFTY: real expiry dates from the NSE options file where available (captures the 2025
     Thursday->Tuesday switch and holiday shifts); weekly-Thursday rule before that.
     BANKNIFTY: Thursday rule, Wednesday from 2023-09-04, no weeklies after 2024-11-20.
+    Before weekly options existed (WEEKLY_START) only the monthly last-Thursday expiry is used,
+    so days more than 7 calendar days before it get no expiry (and are not traded).
     """
     days = pd.DatetimeIndex(sorted(pd.Timestamp(d).normalize() for d in trading_days)).unique()
     expiries: List[pd.Timestamp] = []
@@ -83,6 +88,8 @@ def build_expiry_calendar(symbol: str, trading_days: Iterable[pd.Timestamp],
             continue
         if symbol == "BANKNIFTY" and nominal > BANKNIFTY_WEEKLY_END:
             continue
+        if nominal < WEEKLY_START[symbol] and (nominal + pd.Timedelta(days=7)).month == nominal.month:
+            continue  # pre-weekly era: keep only the month's last Thursday
         e = _shift_to_trading_day(nominal, days)
         if e is not None:
             expiries.append(e)

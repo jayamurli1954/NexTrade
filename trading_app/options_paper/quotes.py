@@ -77,12 +77,15 @@ class AngelQuoteSource:
             rest_call = angel_rest_call
         self._call = rest_call
 
+    MAX_TOKENS_PER_CALL = 50  # Angel market-data limit per request
+
     def fetch(self, nse_tokens: Iterable[str], nfo_tokens: Iterable[str]) -> Dict[str, Quote]:
-        req: Dict[str, List[str]] = {}
-        nse, nfo = [str(t) for t in nse_tokens], [str(t) for t in nfo_tokens]
-        if nse:
-            req["NSE"] = nse
-        if nfo:
-            req["NFO"] = nfo
-        resp = self._call("options_paper.getMarketData", lambda: self.api.getMarketData("FULL", req))
-        return parse_market_data(resp)
+        items = [("NSE", str(t)) for t in dict.fromkeys(nse_tokens)] + [("NFO", str(t)) for t in dict.fromkeys(nfo_tokens)]
+        out: Dict[str, Quote] = {}
+        for i in range(0, len(items), self.MAX_TOKENS_PER_CALL):
+            req: Dict[str, List[str]] = {}
+            for exch, tok in items[i:i + self.MAX_TOKENS_PER_CALL]:
+                req.setdefault(exch, []).append(tok)
+            resp = self._call("options_paper.getMarketData", lambda r=req: self.api.getMarketData("FULL", r))
+            out.update(parse_market_data(resp))
+        return out

@@ -13,6 +13,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import date, datetime
 from typing import Callable, Dict, List, Optional
 
+from research.timed_straddle.profit_lock import needs_mtm
 from research.timed_straddle.costs import fill_cost
 from research.timed_straddle.params import TimedStraddleParams
 from trading_app.options_paper.instruments import INDEX_TOKENS, OptionChainIndex, OptionContract
@@ -52,13 +53,15 @@ class StraddleState:
     spot_entry: Optional[float] = None
     legs: List[PaperLeg] = field(default_factory=list)
     exit_reason: str = ""
+    extra: Dict = field(default_factory=dict)   # strategy-specific state (e.g. strike candidates)
 
 
 class TimedStraddlePaper:
     strategy_id = "timed_straddle"
 
     def __init__(self, params: TimedStraddleParams, chain: OptionChainIndex, ledger: PaperLedger,
-                 today: date, model_pricer: Optional[ModelPricer] = None):
+                 today: date, model_pricer: Optional[ModelPricer] = None, name: Optional[str] = None):
+        self.name = name or f"{self.strategy_id}_{params.symbol.lower()}"
         self.p = params
         self.chain = chain
         self.ledger = ledger
@@ -202,15 +205,10 @@ class TimedStraddlePaper:
             self._finish("all_sl", spot, vix, now)
             return
 
-        if self.p.target_rupees is not None or self.p.max_loss_rupees is not None:
+        if needs_mtm(self.p):
             mtm = self._mtm(quotes)
-            if mtm is not None:
-                if self.p.max_loss_rupees is not None and mtm < -self.p.max_loss_rupees:
-                    self._close_all(quotes, spot, vix, now, "max_loss")
-                    return
-                if self.p.target_rupees is not None and mtm > self.p.target_rupees:
-                    self._close_all(quotes, spot, vix, now, "target")
-                    return
+            if mtm is not None and self._mtm_exit(mtm, quotes, spot, vix, now):
+                return
         self._persist()
 
     # ------------------------------------------------------------------ phases
@@ -261,6 +259,23 @@ class TimedStraddlePaper:
             self._persist()
             return
         self._finish(why, spot, vix, now)
+
+    def _mtm_exit(self, mtm: float, quotes, spot, vix, now) -> bool:
+        """Max loss / profit lock / target on position MTM. Lock peak persists across restarts."""
+        from research.timed_straddle.profit_lock import ProfitLockTracker, mtm_exit_reason
+
+        peak = self.s.extra.get("lock_peak")
+        tracker = ProfitLockTracker(self.p.profit_lock, float("-inf") if peak is None else float(peak))
+        why = mtm_exit_reason(self.p, mtm, tracker)
+        if tracker.rule is not None and tracker.peak != float("-inf"):
+            before = self.s.extra.get("locked")
+            self.s.extra["lock_peak"], self.s.extra["locked"] = tracker.peak, tracker.locked
+            if tracker.locked is not None and tracker.locked != before:
+                self.ledger.event("profit_lock", mtm=round(mtm, 2), locked=tracker.locked)
+        if why:
+            self._close_all(quotes, spot, vix, now, why)
+            return True
+        return False
 
     def force_close(self, quotes: Dict[str, Quote], now: datetime, why: str = "manual_stop") -> None:
         """Operator stop (Ctrl+C) — square off open legs at current quotes."""

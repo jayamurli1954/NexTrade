@@ -1781,6 +1781,21 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
             self.wfile.write(render_terminal_html().encode("utf-8"))
             return
 
+        # OPT-PAPER: options paper lane page + status (paper only, no broker orders)
+        if path in ("/options", "/options.html"):
+            from trading_app.options_paper.service import render_options_html
+
+            self._set_html_headers()
+            self.wfile.write(render_options_html().encode("utf-8"))
+            return
+
+        if path == "/api/options_paper/status":
+            from trading_app.options_paper.service import get_service
+
+            self._set_json_headers(200)
+            self.wfile.write(json.dumps(get_service().status(), default=str).encode("utf-8"))
+            return
+
         if path == "/api/tariff":
             self._set_json_headers(200)
             self.wfile.write(json.dumps(catalog_manifest()).encode("utf-8"))
@@ -2104,6 +2119,33 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
         global PAPER_DAY_HALTED, PAPER_DAY_HALT_REASON, PAPER_DAY_HALT_DATE
         parsed = urlparse(self.path)
         path = parsed.path
+
+        # OPT-PAPER: start / stop / toggle strategies (paper only, no broker orders)
+        if path in ("/api/options_paper/start", "/api/options_paper/stop", "/api/options_paper/config"):
+            from trading_app.options_paper.service import get_service
+
+            svc = get_service()
+            try:
+                if path.endswith("/start"):
+                    out = svc.start()
+                elif path.endswith("/stop"):
+                    out = svc.stop()
+                else:
+                    body = self._read_json_body()
+                    if "auto_start" in body:
+                        svc.set_auto_start(bool(body["auto_start"]))
+                        out = {"success": True, "message": f"Auto-start {'ON' if body['auto_start'] else 'OFF'}."}
+                    elif svc.running:
+                        out = {"success": False, "message": "Stop the lane before changing strategies."}
+                    else:
+                        svc.set_enabled(str(body.get("name", "")), bool(body.get("enabled")))
+                        out = {"success": True, "message": f"{body.get('name')} {'enabled' if body.get('enabled') else 'disabled'}."}
+                self._set_json_headers(200)
+            except Exception as exc:
+                out = {"success": False, "message": str(exc)}
+                self._set_json_headers(400)
+            self.wfile.write(json.dumps(out).encode("utf-8"))
+            return
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
         payload = json.loads(body) if body else {}
@@ -3320,6 +3362,7 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
         <button class="tab-btn" onclick="showTab(event, 'tab-opportunities')">🔎 Opportunities ("Why Trade?")</button>
         <button class="tab-btn" onclick="showTab(event, 'tab-ticket')">🎟️ Trade Ticket & Plan</button>
         <a class="tab-btn" href="/terminal" style="text-decoration:none;">Paper Terminal</a>
+        <a class="tab-btn" href="/options" style="text-decoration:none;">📊 Options Paper</a>
         <button class="tab-btn" onclick="showTab(event, 'tab-paper')" id="btn-tab-paper">🧪 Paper Simulator (4 Modes)</button>
         <button class="tab-btn" onclick="showTab(event, 'tab-positions')" id="btn-tab-positions">📈 Live Positions & Protection</button>
         <button class="tab-btn" onclick="showTab(event, 'tab-holdings')">💼 Holdings & Portfolio</button>
@@ -5509,6 +5552,13 @@ def start_dashboard_server():
         square_off_fn=_paper_monitor_then_square_off,
         interval_sec=15.0,
     )
+    # OPT-PAPER: dashboard owns the single Angel login and auto-starts the options paper lane on weekday mornings
+    try:
+        from trading_app.options_paper.service import get_service as _opt_service
+
+        _opt_service().start_auto_scheduler()
+    except Exception as exc:
+        logger.warning("Options paper auto-start scheduler not started: %s", exc)
 
     # Threading: UI polls (/api/status, /api/ltp, …) must not block serving the HTML page.
     # A single-threaded HTTPServer turns any slow Angel call into a blank browser tab.
@@ -5533,6 +5583,7 @@ def start_dashboard_server():
     print("[+] NEXTRADE UNIFIED 15-MINUTE COCKPIT & AUTONOMOUS SYSTEM IS RUNNING (INR / Rs)")
     print(f"[*] Opening Web Dashboard: {url}")
     print(f"[*] Paper Terminal: {url}/terminal (T1–T3 preview · no live broker)")
+    print(f"[*] Options Paper: {url}/options (auto-start 09:00 weekdays if enabled · shares this Angel login)")
     print(f"[*] Listen address: {_bind_host}:{PORT} (paper boundary — localhost only)")
     print("[*] Angel One WebSocket market data starting in background…")
     print("[*] Paper trades require live Angel LTP (fail closed if quote unavailable)")

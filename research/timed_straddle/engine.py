@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 
 from research.timed_straddle.costs import fill_cost
+from research.timed_straddle.profit_lock import ProfitLockTracker, mtm_exit_reason, needs_mtm
 from research.timed_straddle.params import TimedStraddleParams
 from research.timed_straddle.pricing import IVCalibration, bs_price, years_to_expiry
 
@@ -133,6 +134,7 @@ class TimedStraddleEngine:
             shorts[opt] = leg
             legs.append(leg)
         credit = shorts["CE"].entry + shorts["PE"].entry
+        lock = ProfitLockTracker(p.profit_lock)
 
         reason = "time"
         for i in range(i0 + 1, len(bars)):
@@ -151,7 +153,7 @@ class TimedStraddleEngine:
                     at_open = self._px(opt, leg.strike, o[i], v[i], ts, expiry)
                     leg.exit = self._fill(leg, max(leg.stop, at_open), "BUY")
                     leg.exit_reason = "sl"
-                    if opt in wings and wings[opt].open:
+                    if p.sell_wing_on_stop and opt in wings and wings[opt].open:
                         w = wings[opt]
                         w.exit = self._fill(w, self._px(opt, w.strike, adverse_spot, v[i], ts, expiry), "SELL")
                         w.exit_reason = "sl_wing"
@@ -164,15 +166,12 @@ class TimedStraddleEngine:
                 break
 
             # --- position MTM at bar close
-            if p.target_rupees is not None or p.max_loss_rupees is not None:
+            if needs_mtm(p):
                 mtm = self._mtm(legs, c[i], v[i], ts, expiry)
-                if p.max_loss_rupees is not None and mtm < -p.max_loss_rupees:
-                    self._close_all(legs, c[i], v[i], ts, expiry, "max_loss")
-                    reason = "max_loss"
-                    break
-                if p.target_rupees is not None and mtm > p.target_rupees:
-                    self._close_all(legs, c[i], v[i], ts, expiry, "target")
-                    reason = "target"
+                why = mtm_exit_reason(p, mtm, lock)
+                if why:
+                    self._close_all(legs, c[i], v[i], ts, expiry, why)
+                    reason = why
                     break
         else:
             # ran out of bars before exit time: close at last close
