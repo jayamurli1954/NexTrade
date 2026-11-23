@@ -1,0 +1,78 @@
+{
+  "_comment": "Options paper lane (no broker orders). One Angel login and one quote poll drive all enabled strategies. Keys mirror research/run_timed_straddle_backtest.py flags. Run: python -m trading_app.options_paper.runner --config config/options_paper.json",
+  "poll_seconds": 5,
+  "auto_start": true,
+  "strategies": [
+    {
+      "name": "timed_straddle_nifty",
+      "type": "timed_straddle",
+      "enabled": true,
+      "symbol": "NIFTY",
+      "entry": "09:20",
+      "exit": "15:15",
+      "sl_pct": 25,
+      "trail_sl_to_cost": true,
+      "lots": 1,
+      "profit_lock": null
+    },
+    {
+      "name": "straddle_1100_nifty",
+      "type": "timed_straddle",
+      "enabled": true,
+      "symbol": "NIFTY",
+      "entry": "11:00",
+      "exit": "15:05",
+      "sl_pct": 40,
+      "trail_sl_to_cost": false,
+      "lots": 1,
+      "profit_lock": null
+    },
+    {
+      "name": "expiry_strangle_nifty",
+      "type": "premium_strangle",
+      "enabled": true,
+      "symbol": "NIFTY",
+      "expiry_day_only": true,
+      "entry": "10:00",
+      "exit": "15:00",
+      "target_premium": 50,
+      "min_premium": 25,
+      "max_premium": 75,
+      "sl_pct": 30,
+      "leg_target_pct": 99,
+      "trail_sl_to_cost": false,
+      "hedge_premium": 0.8,
+      "target": 3250,
+      "max_loss": 3250,
+      "lots": 1,
+      "profit_lock": null
+    },
+    {
+      "name": "bn_monthly_straddle",
+      "type": "timed_straddle",
+      "enabled": true,
+      "symbol": "BANKNIFTY",
+      "entry": "09:20",
+      "exit": "15:05",
+      "sl_pct": 35,
+      "trail_sl_to_cost": false,
+      "max_dte": 13,
+      "lots": 1,
+      "profit_lock": null
+    },
+    {
+      "name": "premium_strangle_nifty",
+      "type": "premium_strangle",
+      "enabled": false,
+      "symbol": "NIFTY",
+      "entry": "09:20",
+      "exit": "15:15",
+      "target_premium": 40,
+      "sl_pct": 40,
+      "trail_sl_to_cost": true,
+      "lots": 1,
+      "profit_lock": null
+    }
+  ],
+  "_profit_lock_help": "Optional per strategy: \"profit_lock\": {\"trigger\": 1500, \"lock\": 500, \"step\": 500, \"increment\": 250} (INR, position MTM). null = off. Backtests 2026-11-22: hurts the straddle, neutral on strangles (docs/TIMED_STRADDLE_RESEARCH.md section 9)."
+}

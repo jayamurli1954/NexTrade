@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NexTrade — Options Paper</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0e17; --card:#131927; --hover:#1c2438; --border:#232d42;
+  --green:#00e676; --blue:#29b6f6; --amber:#ffb300; --red:#ff5252;
+  --text:#f0f4f8; --muted:#8a99ad;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Outfit,sans-serif}
+html,body{background:var(--bg);color:var(--text)}
+a{color:var(--blue);text-decoration:none}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:10px 14px;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700}
+.logo{background:var(--green);color:#000;padding:4px 10px;border-radius:6px;font-size:12px}
+.badge{padding:3px 8px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid}
+.badge-green{color:var(--green);border-color:var(--green);background:rgba(0,230,118,.12)}
+.badge-amber{color:var(--amber);border-color:var(--amber);background:rgba(255,179,0,.12)}
+.badge-red{color:var(--red);border-color:var(--red);background:rgba(255,82,82,.12)}
+.badge-muted{color:var(--muted);border-color:var(--border)}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:10px;padding:10px}
+.pane{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.pane h2{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  padding:8px 10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.body{padding:10px}
+.btn{border:none;border-radius:8px;padding:9px 16px;font-weight:600;cursor:pointer;font-size:13px}
+.btn-green{background:var(--green);color:#000}.btn-red{background:var(--red);color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid rgba(35,45,66,.6);white-space:nowrap}
+th{color:var(--muted);font-weight:600}
+.up{color:var(--green)}.down{color:var(--red)}.muted{color:var(--muted)}
+.msg{font-size:12px;margin-top:8px;min-height:16px}
+.events{max-height:420px;overflow:auto;font-size:11px}
+.events div{padding:4px 10px;border-bottom:1px solid rgba(35,45,66,.5)}
+.strat{border:1px solid var(--border);border-radius:8px;margin-bottom:10px}
+.strat-head{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--hover)}
+.switch{display:flex;align-items:center;gap:8px;font-size:12px}
+.note{font-size:11px;color:var(--muted);line-height:1.5}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="brand"><span class="logo">NEXTRADE</span> Options Paper <span class="badge badge-amber">PAPER ONLY · NO ORDERS</span></div>
+  <div><a href="/">← Back to dashboard</a></div>
+</div>
+
+<div class="wrap">
+  <div>
+    <div class="pane">
+      <h2>Lane control <span id="state" class="badge badge-muted">…</span></h2>
+      <div class="body">
+        <button class="btn btn-green" id="btnStart" onclick="act('start')">▶ Start today's paper run</button>
+        <button class="btn btn-red" id="btnStop" onclick="act('stop')">■ Stop &amp; square off</button>
+        <label class="switch" style="display:inline-flex;margin-left:14px"><input type="checkbox" id="autoStart"
+          onchange="setAuto(this.checked)"> Auto-start each weekday <span class="muted" id="autoWin"></span></label>
+        <div class="msg" id="msg"></div>
+        <p class="note" style="margin-top:8px">Runs inside this dashboard on its own Angel login — equity paper trading and
+          options paper run side by side on one login. With auto-start on, the lane starts by itself at 09:00 on weekdays
+          while the dashboard is open (once a day; pressing Stop keeps it stopped for the day). Strategies wait for their
+          own entry time; expiry-only strategies skip non-expiry days.</p>
+      </div>
+    </div>
+
+    <div class="pane">
+      <h2>Live positions</h2>
+      <div class="body" id="live"><span class="muted">Not running.</span></div>
+    </div>
+
+    <div class="pane">
+      <h2>Report — daily &amp; cumulative <a class="badge badge-green" href="/api/options_paper/report.xlsx">⬇ Excel</a></h2>
+      <div class="body" style="overflow:auto">
+        <div id="repPeriod" class="note"></div>
+        <table id="repStats" style="margin-top:6px"></table>
+        <svg id="repChart" width="100%" height="190" style="margin-top:10px;background:var(--hover);border-radius:8px"></svg>
+        <div class="note" id="repLegend" style="margin:4px 0 10px"></div>
+        <table id="repDaily"></table>
+      </div>
+    </div>
+
+    <div class="pane">
+      <h2>Strategy-day detail (summary.csv)</h2>
+      <div class="body" style="overflow:auto"><table id="summary"></table></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="pane">
+      <h2>Strategies (config/options_paper.json)</h2>
+      <div class="body" id="cfg"></div>
+      <div class="body note">Switches apply from the next start. Edit the JSON file for parameters.</div>
+    </div>
+    <div class="pane">
+      <h2>Today's events</h2>
+      <div class="events" id="events"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const fmt = (v, d=2) => (v === null || v === undefined || v === '') ? '—' : (typeof v === 'number' ? v.toFixed(d) : v);
+const cls = v => (v === null || v === undefined || v === '') ? '' : (parseFloat(v) >= 0 ? 'up' : 'down');
+
+async function act(what) {
+  document.getElementById('msg').textContent = '…';
+  try {
+    const r = await fetch('/api/options_paper/' + what, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+    const j = await r.json();
+    document.getElementById('msg').textContent = j.message || JSON.stringify(j);
+  } catch (e) { document.getElementById('msg').textContent = 'Error: ' + e; }
+  refresh();
+}
+
+async function setAuto(on) {
+  const r = await fetch('/api/options_paper/config', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({auto_start: on})});
+  const j = await r.json();
+  document.getElementById('msg').textContent = j.message || '';
+  refresh();
+}
+
+async function toggle(name, enabled) {
+  const r = await fetch('/api/options_paper/config', {method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({name, enabled})});
+  const j = await r.json();
+  document.getElementById('msg').textContent = j.message || '';
+  refresh();
+}
+
+function renderCfg(cfg, running) {
+  document.getElementById('cfg').innerHTML = cfg.map(s => `
+    <div class="strat"><div class="strat-head">
+      <div><b>${s.name}</b><div class="note">${s.type} · ${s.symbol} · ${s.entry}–${s.exit}
+        ${s.sl_pct ? '· SL ' + s.sl_pct + '%' : ''}${s.expiry_day_only ? ' · expiry day only' : ''}${(s.max_dte !== null && s.max_dte !== undefined && !s.expiry_day_only) ? ' · only ≤' + s.max_dte + ' days to expiry' : ''}
+        ${s.target_premium ? ' · ₹' + s.target_premium + ' legs' : ''}${s.hedge_premium ? ' · hedge ₹' + s.hedge_premium : ''}</div></div>
+      <label class="switch"><input type="checkbox" ${s.enabled ? 'checked' : ''} ${running ? 'disabled' : ''}
+        onchange="toggle('${s.name}', this.checked)"> on</label>
+    </div></div>`).join('') || '<span class="muted">No strategies in config.</span>';
+}
+
+function renderLive(list) {
+  if (!list.length) { document.getElementById('live').innerHTML = '<span class="muted">Not running in this dashboard.</span>'; return; }
+  document.getElementById('live').innerHTML = list.map(s => `
+    <div class="strat"><div class="strat-head"><b>${s.name}</b>
+      <span>${s.phase}${s.reason ? ' · ' + s.reason : ''} · MTM <span class="${cls(s.mtm)}">₹${fmt(s.mtm, 0)}</span></span></div>
+      ${s.legs.length ? `<table><tr><th>Leg</th><th>Side</th><th>Entry</th><th>Stop</th><th>LTP</th><th>Exit</th><th>Pts</th><th></th></tr>
+      ${s.legs.map(l => `<tr><td>${l.symbol}</td><td>${l.side}</td><td>${fmt(l.entry)}</td><td>${fmt(l.stop)}</td>
+        <td>${fmt(l.ltp)}</td><td>${fmt(l.exit)}</td><td class="${cls(l.pnl_points)}">${fmt(l.pnl_points)}</td><td class="muted">${l.why || ''}</td></tr>`).join('')}
+      </table>` : `<div class="body muted">Expiry ${s.expiry || '—'} · waiting for entry</div>`}
+    </div>`).join('');
+}
+
+function renderSummary(rows) {
+  const t = document.getElementById('summary');
+  if (!rows.length) { t.innerHTML = '<tr><td class="muted">No completed paper days yet.</td></tr>'; return; }
+  t.innerHTML = '<tr><th>Date</th><th>Strategy</th><th>Credit</th><th>Exit</th><th>Charges</th><th>Net P&amp;L</th><th>Fill − model</th></tr>' +
+    rows.map(r => `<tr><td>${r.date}</td><td>${r.strategy}</td><td>${r.entry_credit}</td><td>${r.exit_reason}</td>
+      <td>${r.charges}</td><td class="${cls(r.net_pnl)}">₹${r.net_pnl}</td><td>${r.fill_vs_model_points || '—'}</td></tr>`).join('');
+}
+
+function renderEvents(ev) {
+  document.getElementById('events').innerHTML = ev.slice().reverse().map(e => {
+    const extra = Object.entries(e).filter(([k]) => !['ts','strategy','kind','params'].includes(k))
+      .map(([k, v]) => k + '=' + (typeof v === 'object' ? JSON.stringify(v) : v)).join(' ');
+    return `<div><span class="muted">${(e.ts||'').slice(11)}</span> <b>${e.strategy}</b> ${e.kind} <span class="muted">${extra.slice(0, 160)}</span></div>`;
+  }).join('') || '<div class="muted">No events today.</div>';
+}
+
+const COLORS = ['#29b6f6', '#ffb300', '#ab47bc', '#26a69a', '#ef5350', '#8d6e63'];
+const rupee = v => (v === null || v === undefined) ? '—' : '₹' + Math.round(v).toLocaleString('en-IN');
+
+function renderReport(r) {
+  const stats = document.getElementById('repStats'), daily = document.getElementById('repDaily'), svg = document.getElementById('repChart');
+  if (!r.has_data) {
+    document.getElementById('repPeriod').textContent = 'No completed paper days yet.';
+    stats.innerHTML = daily.innerHTML = svg.innerHTML = ''; document.getElementById('repLegend').innerHTML = '';
+    return;
+  }
+  document.getElementById('repPeriod').textContent = `${r.first_day} → ${r.last_day}`;
+  stats.innerHTML = '<tr><th>Strategy</th><th>Days</th><th>Net P&amp;L</th><th>Avg/day</th><th>Win %</th><th>Best</th><th>Worst</th><th>Max DD</th><th>Charges</th><th>Fill − model</th></tr>' +
+    r.stats.map(s => `<tr style="${s.strategy === 'ALL STRATEGIES' ? 'font-weight:700' : ''}"><td>${s.strategy}</td><td>${s.days}</td>
+      <td class="${cls(s.net_pnl)}">${rupee(s.net_pnl)}</td><td class="${cls(s.avg_per_day)}">${rupee(s.avg_per_day)}</td>
+      <td>${s.win_rate_pct}%</td><td class="up">${rupee(s.best_day)}</td><td class="down">${rupee(s.worst_day)}</td>
+      <td class="down">${rupee(s.max_drawdown)}</td><td>${rupee(s.charges)}</td><td>${s.avg_fill_vs_model_pts ?? '—'}</td></tr>`).join('');
+  // cumulative chart
+  const series = Object.entries(r.cumulative_by_strategy);
+  const all = series.flatMap(([, pts]) => pts.map(p => p.cum)).concat([0]);
+  const lo = Math.min(...all), hi = Math.max(...all), W = svg.clientWidth || 800, Hh = 190, pad = 24;
+  const n = Math.max(...series.map(([, p]) => p.length));
+  const x = i => pad + (n <= 1 ? (W - 2 * pad) / 2 : i * (W - 2 * pad) / (n - 1));
+  const y = v => Hh - pad - (hi === lo ? 0.5 : (v - lo) / (hi - lo)) * (Hh - 2 * pad);
+  let html = `<line x1="${pad}" x2="${W - pad}" y1="${y(0)}" y2="${y(0)}" stroke="#8a99ad" stroke-dasharray="4 4" stroke-width="1"/>`;
+  html += `<text x="4" y="${y(0) - 4}" fill="#8a99ad" font-size="10">₹0</text>`;
+  series.forEach(([name, pts], si) => {
+    const color = name === 'ALL' ? '#00e676' : COLORS[si % COLORS.length];
+    const path = pts.map((p, i) => `${x(i)},${y(p.cum)}`).join(' ');
+    html += `<polyline points="${path}" fill="none" stroke="${color}" stroke-width="${name === 'ALL' ? 3 : 1.5}"/>`;
+    pts.forEach((p, i) => html += `<circle cx="${x(i)}" cy="${y(p.cum)}" r="${name === 'ALL' ? 3.5 : 2.5}" fill="${color}"><title>${name} ${p.date}: ${rupee(p.cum)}</title></circle>`);
+  });
+  svg.innerHTML = html;
+  document.getElementById('repLegend').innerHTML = series.map(([name], si) =>
+    `<span style="color:${name === 'ALL' ? '#00e676' : COLORS[si % COLORS.length]}">■ ${name === 'ALL' ? 'ALL (cumulative)' : name}</span>`).join(' &nbsp; ');
+  // daily table
+  const cols = r.strategies;
+  daily.innerHTML = '<tr><th>Date</th>' + cols.map(c => `<th>${c}</th>`).join('') + '<th>Day total</th><th>Cumulative</th></tr>' +
+    r.daily.map(d => '<tr><td>' + d.date + '</td>' + cols.map(c => `<td class="${cls(d[c])}">${rupee(d[c])}</td>`).join('') +
+      `<td class="${cls(d.day_total)}"><b>${rupee(d.day_total)}</b></td><td class="${cls(d.cumulative)}"><b>${rupee(d.cumulative)}</b></td></tr>`).join('');
+}
+
+let lastReportAt = 0;
+async function refreshReport(force) {
+  if (!force && Date.now() - lastReportAt < 60000) return;
+  lastReportAt = Date.now();
+  try { renderReport(await (await fetch('/api/options_paper/report')).json()); } catch (e) {}
+}
+
+async function refresh() {
+  try {
+    const j = await (await fetch('/api/options_paper/status')).json();
+    const st = document.getElementById('state');
+    if (j.running) { st.className = 'badge badge-green'; st.textContent = 'RUNNING since ' + (j.started_at || '').slice(11); }
+    else if (j.running_elsewhere) { st.className = 'badge badge-amber'; st.textContent = 'RUNNING in ' + j.running_elsewhere.owner; }
+    else if (j.error) { st.className = 'badge badge-red'; st.textContent = 'ERROR'; }
+    else { st.className = 'badge badge-muted'; st.textContent = 'STOPPED'; }
+    if (j.error) document.getElementById('msg').textContent = 'Last error: ' + j.error;
+    document.getElementById('btnStart').disabled = j.running || !!j.running_elsewhere;
+    document.getElementById('autoStart').checked = !!j.auto_start;
+    document.getElementById('autoWin').textContent = j.auto_start_window ? '(' + j.auto_start_window + ')' : '';
+    document.getElementById('btnStop').disabled = !j.running;
+    renderCfg(j.config || [], j.running);
+    renderLive(j.strategies || []);
+    renderSummary(j.summary || []);
+    refreshReport((j.summary || []).length !== window._lastSummaryLen);
+    window._lastSummaryLen = (j.summary || []).length;
+    renderEvents(j.today_events || []);
+  } catch (e) { document.getElementById('state').textContent = 'offline'; }
+}
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>
