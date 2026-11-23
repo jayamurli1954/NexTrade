@@ -73,7 +73,18 @@ th{color:var(--muted);font-weight:600}
     </div>
 
     <div class="pane">
-      <h2>Daily results (summary.csv)</h2>
+      <h2>Report — daily &amp; cumulative <a class="badge badge-green" href="/api/options_paper/report.xlsx">⬇ Excel</a></h2>
+      <div class="body" style="overflow:auto">
+        <div id="repPeriod" class="note"></div>
+        <table id="repStats" style="margin-top:6px"></table>
+        <svg id="repChart" width="100%" height="190" style="margin-top:10px;background:var(--hover);border-radius:8px"></svg>
+        <div class="note" id="repLegend" style="margin:4px 0 10px"></div>
+        <table id="repDaily"></table>
+      </div>
+    </div>
+
+    <div class="pane">
+      <h2>Strategy-day detail (summary.csv)</h2>
       <div class="body" style="overflow:auto"><table id="summary"></table></div>
     </div>
   </div>
@@ -125,7 +136,7 @@ function renderCfg(cfg, running) {
   document.getElementById('cfg').innerHTML = cfg.map(s => `
     <div class="strat"><div class="strat-head">
       <div><b>${s.name}</b><div class="note">${s.type} · ${s.symbol} · ${s.entry}–${s.exit}
-        ${s.sl_pct ? '· SL ' + s.sl_pct + '%' : ''}${s.expiry_day_only ? ' · expiry day only' : ''}
+        ${s.sl_pct ? '· SL ' + s.sl_pct + '%' : ''}${s.expiry_day_only ? ' · expiry day only' : ''}${(s.max_dte !== null && s.max_dte !== undefined && !s.expiry_day_only) ? ' · only ≤' + s.max_dte + ' days to expiry' : ''}
         ${s.target_premium ? ' · ₹' + s.target_premium + ' legs' : ''}${s.hedge_premium ? ' · hedge ₹' + s.hedge_premium : ''}</div></div>
       <label class="switch"><input type="checkbox" ${s.enabled ? 'checked' : ''} ${running ? 'disabled' : ''}
         onchange="toggle('${s.name}', this.checked)"> on</label>
@@ -160,6 +171,54 @@ function renderEvents(ev) {
   }).join('') || '<div class="muted">No events today.</div>';
 }
 
+const COLORS = ['#29b6f6', '#ffb300', '#ab47bc', '#26a69a', '#ef5350', '#8d6e63'];
+const rupee = v => (v === null || v === undefined) ? '—' : '₹' + Math.round(v).toLocaleString('en-IN');
+
+function renderReport(r) {
+  const stats = document.getElementById('repStats'), daily = document.getElementById('repDaily'), svg = document.getElementById('repChart');
+  if (!r.has_data) {
+    document.getElementById('repPeriod').textContent = 'No completed paper days yet.';
+    stats.innerHTML = daily.innerHTML = svg.innerHTML = ''; document.getElementById('repLegend').innerHTML = '';
+    return;
+  }
+  document.getElementById('repPeriod').textContent = `${r.first_day} → ${r.last_day}`;
+  stats.innerHTML = '<tr><th>Strategy</th><th>Days</th><th>Net P&amp;L</th><th>Avg/day</th><th>Win %</th><th>Best</th><th>Worst</th><th>Max DD</th><th>Charges</th><th>Fill − model</th></tr>' +
+    r.stats.map(s => `<tr style="${s.strategy === 'ALL STRATEGIES' ? 'font-weight:700' : ''}"><td>${s.strategy}</td><td>${s.days}</td>
+      <td class="${cls(s.net_pnl)}">${rupee(s.net_pnl)}</td><td class="${cls(s.avg_per_day)}">${rupee(s.avg_per_day)}</td>
+      <td>${s.win_rate_pct}%</td><td class="up">${rupee(s.best_day)}</td><td class="down">${rupee(s.worst_day)}</td>
+      <td class="down">${rupee(s.max_drawdown)}</td><td>${rupee(s.charges)}</td><td>${s.avg_fill_vs_model_pts ?? '—'}</td></tr>`).join('');
+  // cumulative chart
+  const series = Object.entries(r.cumulative_by_strategy);
+  const all = series.flatMap(([, pts]) => pts.map(p => p.cum)).concat([0]);
+  const lo = Math.min(...all), hi = Math.max(...all), W = svg.clientWidth || 800, Hh = 190, pad = 24;
+  const n = Math.max(...series.map(([, p]) => p.length));
+  const x = i => pad + (n <= 1 ? (W - 2 * pad) / 2 : i * (W - 2 * pad) / (n - 1));
+  const y = v => Hh - pad - (hi === lo ? 0.5 : (v - lo) / (hi - lo)) * (Hh - 2 * pad);
+  let html = `<line x1="${pad}" x2="${W - pad}" y1="${y(0)}" y2="${y(0)}" stroke="#8a99ad" stroke-dasharray="4 4" stroke-width="1"/>`;
+  html += `<text x="4" y="${y(0) - 4}" fill="#8a99ad" font-size="10">₹0</text>`;
+  series.forEach(([name, pts], si) => {
+    const color = name === 'ALL' ? '#00e676' : COLORS[si % COLORS.length];
+    const path = pts.map((p, i) => `${x(i)},${y(p.cum)}`).join(' ');
+    html += `<polyline points="${path}" fill="none" stroke="${color}" stroke-width="${name === 'ALL' ? 3 : 1.5}"/>`;
+    pts.forEach((p, i) => html += `<circle cx="${x(i)}" cy="${y(p.cum)}" r="${name === 'ALL' ? 3.5 : 2.5}" fill="${color}"><title>${name} ${p.date}: ${rupee(p.cum)}</title></circle>`);
+  });
+  svg.innerHTML = html;
+  document.getElementById('repLegend').innerHTML = series.map(([name], si) =>
+    `<span style="color:${name === 'ALL' ? '#00e676' : COLORS[si % COLORS.length]}">■ ${name === 'ALL' ? 'ALL (cumulative)' : name}</span>`).join(' &nbsp; ');
+  // daily table
+  const cols = r.strategies;
+  daily.innerHTML = '<tr><th>Date</th>' + cols.map(c => `<th>${c}</th>`).join('') + '<th>Day total</th><th>Cumulative</th></tr>' +
+    r.daily.map(d => '<tr><td>' + d.date + '</td>' + cols.map(c => `<td class="${cls(d[c])}">${rupee(d[c])}</td>`).join('') +
+      `<td class="${cls(d.day_total)}"><b>${rupee(d.day_total)}</b></td><td class="${cls(d.cumulative)}"><b>${rupee(d.cumulative)}</b></td></tr>`).join('');
+}
+
+let lastReportAt = 0;
+async function refreshReport(force) {
+  if (!force && Date.now() - lastReportAt < 60000) return;
+  lastReportAt = Date.now();
+  try { renderReport(await (await fetch('/api/options_paper/report')).json()); } catch (e) {}
+}
+
 async function refresh() {
   try {
     const j = await (await fetch('/api/options_paper/status')).json();
@@ -176,6 +235,8 @@ async function refresh() {
     renderCfg(j.config || [], j.running);
     renderLive(j.strategies || []);
     renderSummary(j.summary || []);
+    refreshReport((j.summary || []).length !== window._lastSummaryLen);
+    window._lastSummaryLen = (j.summary || []).length;
     renderEvents(j.today_events || []);
   } catch (e) { document.getElementById('state').textContent = 'offline'; }
 }

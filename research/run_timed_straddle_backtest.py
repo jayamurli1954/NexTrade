@@ -64,7 +64,20 @@ def get_calibration(rebuild: bool = False) -> IVCalibration:
     return cal
 
 
+class RealSource:
+    """Marker for --source real: replay on the 1-minute real option store instead of the pricing model."""
+
+    def __init__(self, symbol: str, start: str, end: str):
+        self.symbol, self.start, self.end = symbol, start, end
+
+
 def run_once(params: TimedStraddleParams, panel, expiry_map, cal, margin: float):
+    if isinstance(panel, RealSource):
+        from research.real_options.engine import RealPriceEngine
+        from research.real_options.store import iter_days
+
+        trades = RealPriceEngine(params).run(iter_days(panel.symbol.lower(), panel.start, panel.end))
+        return trades, summarize(trades, margin)
     engine_cls = PremiumStrangleEngine if isinstance(params, PremiumStrangleParams) else TimedStraddleEngine
     trades = engine_cls(params, cal).run(panel, expiry_map)
     return trades, summarize(trades, margin)
@@ -102,6 +115,8 @@ def main(argv=None) -> int:
     ap.add_argument("--rebuild-calibration", action="store_true")
     ap.add_argument("--time-blend", type=float, default=None,
                     help="Trading-time weight for theta (default pricing.TIME_BLEND=0.75)")
+    ap.add_argument("--source", default="model", choices=["model", "real"],
+                    help="model = synthetic premiums (2016+); real = 1-minute real option prices (2020-01..2024-10)")
     ap.add_argument("--sweep", action="store_true")
     ap.add_argument("--tag", default=None)
     args = ap.parse_args(argv)
@@ -138,11 +153,16 @@ def main(argv=None) -> int:
         from research.timed_straddle import pricing
 
         pricing.TIME_BLEND = float(args.time_blend)
-    cal = IVCalibration.identity() if args.no_calibration else get_calibration(args.rebuild_calibration)
-    panel = build_panel(args.symbol, args.start, args.end)
-    real_exp = load_real_options(OPTIONS_CSV)["expiry"].unique() if args.symbol == "NIFTY" and OPTIONS_CSV.exists() else None
-    expiry_map = build_expiry_calendar(args.symbol, panel.index.normalize().unique(), real_exp)
-    logger.info("Panel %s bars, %s days with an expiry", len(panel), len(expiry_map))
+    if args.source == "real":
+        cal = expiry_map = None
+        panel = RealSource(args.symbol, args.start, args.end or "2099-12-31")
+        logger.info("Real 1-minute option prices: %s %s..%s", args.symbol, args.start, args.end or "end of store")
+    else:
+        cal = IVCalibration.identity() if args.no_calibration else get_calibration(args.rebuild_calibration)
+        panel = build_panel(args.symbol, args.start, args.end)
+        real_exp = load_real_options(OPTIONS_CSV)["expiry"].unique() if args.symbol == "NIFTY" and OPTIONS_CSV.exists() else None
+        expiry_map = build_expiry_calendar(args.symbol, panel.index.normalize().unique(), real_exp)
+        logger.info("Panel %s bars, %s days with an expiry", len(panel), len(expiry_map))
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     if args.strategy == "premium_strangle":
@@ -150,6 +170,8 @@ def main(argv=None) -> int:
                            f"_sl{int(params.sl_pct)}_adj{params.max_adjustments}")
     else:
         tag = args.tag or f"{args.symbol.lower()}_{args.entry.replace(':', '')}_sl{int(params.sl_pct)}_p{int(args.points)}"
+    if args.source == "real" and not args.tag:
+        tag = "real_" + tag
 
     if args.sweep and args.strategy == "premium_strangle":
         rows = []
@@ -190,7 +212,7 @@ def main(argv=None) -> int:
     trades["vix_bucket"] = pd.cut(trades["vix_entry"], [0, 12, 15, 18, 22, 30, 100])
     report = {
         "params": params.to_dict(),
-        "calibration": cal.stats or "identity (raw VIX)",
+        "calibration": "real 1-minute option prices" if cal is None else (cal.stats or "identity (raw VIX)"),
         "summary": summary,
         "by_year": breakdown(trades, "year").reset_index().to_dict("records"),
         "by_dte": breakdown(trades, "dte").reset_index().to_dict("records"),

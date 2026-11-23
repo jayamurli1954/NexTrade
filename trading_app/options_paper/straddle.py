@@ -218,6 +218,11 @@ class TimedStraddlePaper:
             self.s.phase, self.s.exit_reason = "SKIPPED", "no_expiry_in_scrip_master"
             self.ledger.event("skipped", reason=self.s.exit_reason)
             return
+        dte = (exp - self.today).days
+        if self.p.max_dte is not None and dte > self.p.max_dte:
+            self.s.phase, self.s.exit_reason = "SKIPPED", f"not_trading_day_dte{dte}"
+            self.ledger.event("skipped", reason=self.s.exit_reason, expiry=exp.isoformat())
+            return
         step = self.p.strike_step
         atm = round(spot / step) * step
         ce_k, pe_k = atm + self.p.points_from_atm, atm - self.p.points_from_atm

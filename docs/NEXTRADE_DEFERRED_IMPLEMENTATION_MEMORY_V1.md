@@ -218,6 +218,8 @@ ledger, C2 cost policy, or LIVE promotion rules (all still frozen / unchanged). 
 | OPT-R2 | Premium-based strangle + premium-matching re-entries backtest | **DONE** (2026-11-22) | `research/timed_straddle/strangle.py`; +₹7.9L @0.5pt slip, +₹2.2L @1pt, −₹4.0L @1.5pt (doc §6) |
 | OPT-R3 | Expiry-day premium strangle + premium hedges | **DONE** (2026-11-22) | `--expiry-day-only --hedge-premium`; NIFTY 2019–26 +₹1.53L @0.5pt, +₹0.26L @1.5pt (doc §7). Fixed pre-2019 NIFTY expiry calendar |
 | OPT-R4 | 11:00 short straddle (+ hedged / BankNifty variants) | **DONE** (2026-11-22) | NIFTY +₹8.7L vs 09:20 +₹2.9L; robust at 1pt slip (doc §10). Enabled in paper config alongside 09:20 (2026-11-22) |
+| OPT-R5 | Real-price 1-minute backtester (Kaggle 2020-01..2024-10, NIFTY+BANKNIFTY) | **DONE** (2026-11-23) | Model overstated 2-5x; daily ₹40 strangle loses on real prices; 2022-23 losing years (doc §11) |
+| OPT-R6 | BANKNIFTY monthly-era evaluation (NSE bhavcopy Nov-2024 →) | **DONE (proxy)** (2026-11-23) | Daily proxy ₹636/day vs ₹559 weekly era (same yardstick); best 3-13 DTE; ~₹265/day opening-print bias (doc §12) |
 | OPT-P1 | Options paper runner (Angel live quotes, simulated fills, own ledger) | **BUILT** (2026-11-22), not yet run live | Multi-strategy via `config/options_paper.json`; timed straddle + premium/expiry strangle; daily launcher `run_options_paper.ps1` |
 | OPT-P2 | Paper-vs-model slippage evidence | PENDING | Compare each paper fill to backtest model price |
 | OPT-P3 | More decoded strategies plugged into the runner | PENDING | Personal purchased tools; recovered rules kept outside the repo |

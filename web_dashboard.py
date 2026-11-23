@@ -1789,6 +1789,36 @@ class UnifiedWebAppHandler(BaseHTTPRequestHandler):
             self.wfile.write(render_options_html().encode("utf-8"))
             return
 
+        if path == "/api/options_paper/report":
+            from trading_app.options_paper.report import build_report
+
+            self._set_json_headers(200)
+            self.wfile.write(json.dumps(build_report(), default=str).encode("utf-8"))
+            return
+
+        if path == "/api/options_paper/report.xlsx":
+            from trading_app.options_paper.report import write_excel
+
+            try:
+                xlsx = write_excel()
+                if xlsx is None:
+                    self._set_json_headers(404)
+                    self.wfile.write(json.dumps({"success": False, "message": "No completed options paper days yet."}).encode("utf-8"))
+                    return
+                content = xlsx.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                self.send_header("Content-Disposition", f'attachment; filename="{xlsx.name}"')
+                self.send_header("Content-Length", str(len(content)))
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                self.wfile.write(content)
+            except Exception as exc:
+                logger.exception("Options report export failed: %s", exc)
+                self._set_json_headers(500)
+                self.wfile.write(json.dumps({"success": False, "message": str(exc)}).encode("utf-8"))
+            return
+
         if path == "/api/options_paper/status":
             from trading_app.options_paper.service import get_service
 

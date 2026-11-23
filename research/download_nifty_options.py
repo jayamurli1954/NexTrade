@@ -418,6 +418,41 @@ def coverage_stats(store: OptionsStore, *, symbol: str = "NIFTY", min_far_dte: i
     }
 
 
+NSE_INDEX_NAMES = {"NIFTY": "NIFTY 50", "BANKNIFTY": "NIFTY BANK"}
+
+
+def extend_spot_from_nse(spot: pd.DataFrame, symbol: str, end: date) -> pd.DataFrame:
+    """Append daily index OHLC from NSE (jugaad-data) for days after the Excel workbook ends."""
+    last = spot.index.max().date() if len(spot) else None
+    if last is not None and last >= end:
+        return spot
+    from jugaad_data.nse import index_df
+
+    frm = (last + timedelta(days=1)) if last is not None else end - timedelta(days=60)
+    raw = index_df(symbol=NSE_INDEX_NAMES[symbol.upper()], from_date=frm, to_date=end)
+    if raw is None or raw.empty:
+        logger.warning("NSE index history returned nothing for %s %s..%s", symbol, frm, end)
+        return spot
+    cols = {c.upper(): c for c in raw.columns}
+    def col(*names):
+        for n in names:
+            if n in cols:
+                return raw[cols[n]]
+        raise KeyError(f"index_df columns {list(raw.columns)}")
+    ext = pd.DataFrame({
+        "open": pd.to_numeric(col("OPEN_INDEX_VAL", "OPEN"), errors="coerce").values,
+        "high": pd.to_numeric(col("HIGH_INDEX_VAL", "HIGH"), errors="coerce").values,
+        "low": pd.to_numeric(col("LOW_INDEX_VAL", "LOW"), errors="coerce").values,
+        "close": pd.to_numeric(col("CLOSE_INDEX_VAL", "CLOSE"), errors="coerce").values,
+    }, index=pd.to_datetime(col("HistoricalDate", "HISTORICALDATE", "DATE", "INDEX_DATE").values, dayfirst=True))
+    ext = ext.dropna().sort_index()
+    ext = ext[~ext.index.isin(spot.index)]
+    logger.info("Extended %s spot with %d NSE days (%s..%s)", symbol, len(ext),
+                ext.index.min().date() if len(ext) else "-", ext.index.max().date() if len(ext) else "-")
+    out = pd.concat([spot[["open", "high", "low", "close"]], ext]).sort_index()
+    return out[~out.index.duplicated(keep="first")]
+
+
 def run_download(
     *,
     excel_path: Path,
@@ -435,7 +470,7 @@ def run_download(
     lookback_days: Optional[int] = None,
 ) -> OptionsStore:
     frames = load_index_workbook(excel_path, start=str(start), end=str(end))
-    spot = frames[symbol.upper()]
+    spot = extend_spot_from_nse(frames[symbol.upper()], symbol, end)
     store = OptionsStore.load(store_path)
 
     if mode == "calendar":

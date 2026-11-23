@@ -48,6 +48,19 @@
       "profit_lock": null
     },
     {
+      "name": "bn_monthly_straddle",
+      "type": "timed_straddle",
+      "enabled": true,
+      "symbol": "BANKNIFTY",
+      "entry": "09:20",
+      "exit": "15:05",
+      "sl_pct": 35,
+      "trail_sl_to_cost": false,
+      "max_dte": 13,
+      "lots": 1,
+      "profit_lock": null
+    },
+    {
       "name": "premium_strangle_nifty",
       "type": "premium_strangle",
       "enabled": false,

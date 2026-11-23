@@ -392,3 +392,89 @@ def test_auto_start_rules(tmp_path):
     held.release()
     assert svc.auto_start_tick(datetime(2026, 11, 25, 9, 5))["success"]       # next day, free -> fires
     assert svc.status()["auto_start"] is True
+
+
+# ---------------------------------------------------------------- daily / cumulative report
+def _write_summary(path, rows):
+    import csv as _csv
+
+    fields = ["date", "strategy", "symbol", "expiry", "atm", "entry_credit", "exit_reason", "gross_points",
+              "charges", "net_pnl", "model_entry_credit", "fill_vs_model_points", "legs"]
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        w = _csv.DictWriter(fh, fieldnames=fields)
+        w.writeheader()
+        for r in rows:
+            w.writerow({**{f: "" for f in fields}, **r})
+
+
+def test_report_daily_cumulative_drawdown_and_excel(tmp_path):
+    from trading_app.options_paper.report import build_report, write_excel
+    import openpyxl
+
+    _write_summary(tmp_path / "summary.csv", [
+        {"date": "2026-11-23", "strategy": "a", "net_pnl": 1000, "charges": 100, "legs": "X:10->5(time)"},
+        {"date": "2026-11-23", "strategy": "b", "net_pnl": -400, "charges": 50},
+        {"date": "2026-11-25", "strategy": "a", "net_pnl": -1500, "charges": 100},
+        {"date": "2026-11-25", "strategy": "a", "net_pnl": -1200, "charges": 100},   # restarted day: last row wins
+        {"date": "2026-11-26", "strategy": "b", "net_pnl": 300, "charges": 50},
+    ])
+    rep = build_report(tmp_path)
+    assert rep["has_data"] and rep["strategies"] == ["a", "b"]
+    assert [d["date"] for d in rep["daily"]] == ["2026-11-26", "2026-11-25", "2026-11-23"]   # newest first
+    assert rep["daily"][0]["cumulative"] == pytest.approx(1000 - 400 - 1200 + 300)
+    total = next(s for s in rep["stats"] if s["strategy"] == "ALL STRATEGIES")
+    assert total["days"] == 3 and total["net_pnl"] == pytest.approx(-300)
+    assert total["max_drawdown"] == pytest.approx(-1200)        # peak +600 after day 1 -> -600 after day 2
+    a = next(s for s in rep["stats"] if s["strategy"] == "a")
+    assert a["win_rate_pct"] == 50.0 and a["worst_day"] == -1200
+    x = write_excel(tmp_path, out_dir=tmp_path / "out")
+    wb = openpyxl.load_workbook(x)
+    assert wb.sheetnames == ["Summary", "Daily & Cumulative", "Strategy-days", "Legs"]
+    assert wb["Legs"].max_row == 2
+
+
+def test_report_empty(tmp_path):
+    from trading_app.options_paper.report import build_report, write_excel
+
+    assert build_report(tmp_path)["has_data"] is False
+    assert write_excel(tmp_path, out_dir=tmp_path) is None
+
+
+# ---------------------------------------------------------------- BANKNIFTY monthly straddle (max_dte filter)
+def _bn_chain():
+    tm = {"NFO:BANKNIFTY29DEC2661000CE": "7001", "NFO:BANKNIFTY29DEC2661000PE": "7002",
+          "NFO:BANKNIFTY29DEC2661100CE": "7003", "NFO:BANKNIFTY29DEC2661100PE": "7004"}
+    return OptionChainIndex.from_token_map(tm)
+
+
+def _bn_strategy(tmp_path, day):
+    from trading_app.options_paper.runner import spec_to_params
+
+    name, params, scls = spec_to_params({"name": "bn", "type": "timed_straddle", "symbol": "BANKNIFTY", "entry": "09:20",
+                                         "exit": "15:05", "sl_pct": 35, "trail_sl_to_cost": False, "max_dte": 13})
+    assert params.max_dte == 13 and params.qty == 30 and params.strike_step == 100
+    return scls(params, _bn_chain(), PaperLedger(name, day, tmp_path), day, name=name)
+
+
+def _bn_ticks(spot, ce, pe):
+    bn = INDEX_TOKENS["BANKNIFTY"]
+    return {bn: Quote(bn, spot), VIX: Quote(VIX, 14.0), "7001": q("7001", ce), "7002": q("7002", pe)}
+
+
+def test_bn_monthly_straddle_skips_far_from_expiry(tmp_path):
+    s = _bn_strategy(tmp_path, date(2026, 12, 1))            # 28 days to 29-Dec expiry
+    s.on_tick(datetime(2026, 12, 1, 9, 20), _bn_ticks(61020, 900, 880))
+    assert s.s.phase == "SKIPPED" and s.s.exit_reason == "not_trading_day_dte28"
+
+
+def test_bn_monthly_straddle_trades_inside_window(tmp_path):
+    s = _bn_strategy(tmp_path, date(2026, 12, 17))           # 12 days to expiry
+    idx = {k: v for k, v in _bn_ticks(61020, 600, 580).items() if k in (INDEX_TOKENS["BANKNIFTY"], VIX)}
+    s.on_tick(datetime(2026, 12, 17, 9, 20), idx)
+    assert s.s.phase == "READY" and s.s.atm == 61000
+    s.on_tick(datetime(2026, 12, 17, 9, 20, 5), _bn_ticks(61020, 600, 580))
+    assert s.s.phase == "OPEN"
+    ce, pe = s.s.legs
+    assert ce.stop == round(ce.entry * 1.35, 2)
+    s.on_tick(datetime(2026, 12, 17, 10, 0), _bn_ticks(61500, 850, 300))   # CE through stop, no trail
+    assert ce.exit_reason == "sl" and pe.stop == round(pe.entry * 1.35, 2)

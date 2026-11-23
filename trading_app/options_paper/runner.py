@@ -112,14 +112,16 @@ def spec_to_params(spec: dict):
               profit_lock=ProfitLockRule.parse(spec.get("profit_lock")))
     if kind == "timed_straddle":
         kw.update(sl_pct=float(spec.get("sl_pct", 25.0)), points_from_atm=float(spec.get("points", 0.0)),
-                  buy_wings=spec.get("wings") is not None, wing_points=float(spec.get("wings") or 500.0))
+                  buy_wings=spec.get("wings") is not None, wing_points=float(spec.get("wings") or 500.0),
+                  max_dte=None if spec.get("max_dte") is None else int(spec["max_dte"]))
     else:
         tp = float(spec.get("target_premium", 40.0))
         kw.update(sl_pct=float(spec.get("sl_pct", 40.0)), target_premium=tp,
                   min_premium=float(spec.get("min_premium", 0.5 * tp)),
                   max_premium=float(spec.get("max_premium", 1.5 * tp)),
                   leg_target_pct=spec.get("leg_target_pct"), hedge_premium=spec.get("hedge_premium"),
-                  max_adjustments=0, max_dte=0 if spec.get("expiry_day_only") else None)
+                  max_adjustments=0,
+                  max_dte=0 if spec.get("expiry_day_only") else (None if spec.get("max_dte") is None else int(spec["max_dte"])))
     name = spec.get("name") or f"{kind}_{symbol.lower()}"
     return name, pcls(**kw), scls
 

@@ -306,6 +306,83 @@ BANKNIFTY template: 09:30, 35% stop. New engine flag `--keep-wings` (`sell_wing_
 * Same caveats as §3–§6: synthetic premiums, no intraday IV spikes, so absolute levels (Sharpe > 4) are optimistic.
   The *relative* gap vs 09:20 is large and consistent across slippage settings.
 
+---
+
+## 11. Real 1-minute option prices (2020-01 → 2024-10) — the model was far too optimistic
+
+**Data:** Kaggle archive of real 1-minute OHLC for every strike of the nearest weekly expiry, NIFTY + BANKNIFTY,
+plus spot (1,200 days each), converted to `research/data/real_options/<und>/<date>.npz` by
+`research/real_options/store.py`. **Engine:** `research/real_options/engine.py` replays the same rules and parameter
+objects on real bars (entry at the minute's open, stops on real bar highs with gaps paid, MTM on real closes).
+Runner: `--source real`. Bars are trade prints, so the per-fill slippage on top is an assumption (0, 0.25, 0.5 shown).
+
+### NIFTY, same period, 1 lot (65)
+
+| Strategy | Model | Real, 0.5 pt | Real, 0.25 pt | Real, 0 pt |
+|---|---|---|---|---|
+| 09:20 straddle 25% + stop-to-cost | +₹2.76 L | **+₹1.03 L** (PF 1.10) | +₹1.97 L | +₹2.71 L |
+| 11:00 straddle 40% | +₹5.88 L | **+₹1.28 L** (PF 1.18) | +₹2.03 L | +₹2.82 L |
+| Expiry strangle (₹50 legs, ₹0.8 hedges) | +₹1.24 L | **+₹0.32 L** (PF 1.20) | +₹0.48 L | +₹0.70 L |
+| Daily ₹40 premium strangle (§6) | +₹6.15 L | **−₹2.01 L** (PF 0.69) | | |
+
+By year at 0.5 pt — 09:20: +42k, +78k, +44k, **−68k**, +7k · 11:00: +63k, +96k, **−12k, −17k, −2k** ·
+expiry strangle: +18k, +17k, +16k, **−3k, −15k** (2020…2024).
+
+### BANKNIFTY weekly era, 1 lot (30)
+
+| Strategy | Real, 1.5 pt | Real, 0.5 pt |
+|---|---|---|
+| Streak 09:30 straddle 35% | +₹2.38 L (PF 1.17) | +₹3.76 L |
+| Straddle V2 09:20 25% + stop-to-cost | +₹2.55 L (PF 1.19) | +₹4.11 L |
+| 11:00 straddle 40% | +₹1.80 L (PF 1.17) | +₹3.05 L |
+| Expiry strangle ₹150 legs, ₹3 hedges | −₹0.22 L (PF 0.93) | +₹0.19 L |
+
+By year (1.5 pt) — V2: **+2.06 L (2020)**, +73k, −43k, −42k, +62k · Streak: +1.46 L, +53k, −3k, −47k, +90k.
+
+### Conclusions
+1. **The synthetic model overstated every strategy 2–5×** and turned a losing strategy (daily ₹40 strangle) into a
+   star. What it missed is exactly what §4 warned about: intraday IV/skew spikes that hit stops, and real far-OTM prices.
+   Treat §3–§10 numbers as upper bounds; use real-price results for decisions.
+2. **Most of the profit came from 2020–2021** (high volatility). 2022–2023 were losing years for almost every variant
+   on both indices; 2024 mixed. The edge is thin and regime-dependent, not structural.
+3. **The 11:00 advantage seen in the model mostly disappears** on real NIFTY prices (+₹1.28 L vs +₹1.03 L for 09:20).
+4. **Slippage still decides profitability**: NIFTY straddles roughly double from 0.5 → 0 pt. Live paper fills on
+   2026-11-23 showed 0.05–0.35 pt spreads on ATM, so ~0.25 pt is a reasonable working estimate.
+5. **BANKNIFTY weekly straddles were stronger than NIFTY** in this period, but BANKNIFTY weeklies no longer exist; the
+   monthly-only era (Nov 2024 →) needs separate evaluation (daily NSE bhavcopy data in
+   `research/data/options/nse_bhavcopy/`, not yet used).
+
+---
+
+## 12. BANKNIFTY monthly-only era (Nov 2024 → Nov 2026) — daily-price proxy
+
+**Data:** NSE F&O UDiFF bhavcopies (`research/download_nse_fo_bhavcopy.py`, 506 days, daily OHLC for every
+strike/expiry) + daily index opens (Excel workbook, topped up from NSE). **Method:** `research/real_options/daily_proxy.py`
+— ATM straddle sold at the day's OPEN, each leg stopped if the day's HIGH reaches entry × 1.35 (else bought back at the
+CLOSE), slippage 1.5 pt BANKNIFTY / 0.5 pt NIFTY, 1 lot (30 / 65), no stop-to-cost.
+
+**Validation on 2020-01 → 2024-10** (where 1-minute data exists): the proxy tracks a 1-minute engine that trades the
+same 09:15-open → 15:29 window closely (daily correlation 0.92–0.93, ₹27–64/day pessimistic). **But the 09:15 opening
+print itself is not achievable:** on real minute data, entering one minute later halves the result (BANKNIFTY
+₹7.5 L → ₹3.2 L; 2022–23 from +₹1.9 L to a loss). So the proxy is **optimistic by roughly ₹250–270 per day** versus a
+realistic 09:16–09:20 entry. Read the numbers below relative to the weekly era measured the same way.
+
+| Same proxy, 35% stop | Days | Per day | Win % | PF |
+|---|---|---|---|---|
+| BANKNIFTY weekly era 2020–24 | 1,199 | ₹559 | 59.8 | 1.36 |
+| **BANKNIFTY monthly era Nov-24 → Nov-26** | 506 | **₹636** | 65.4 | 1.51 |
+| NIFTY 2020–24 | 1,199 | ₹438 | 62.1 | 1.41 |
+| NIFTY Nov-24 → Nov-26 | 506 | ₹729 | 65.0 | 1.60 |
+
+BANKNIFTY monthly era by days to expiry (proxy, per day): expiry day ₹792 · 1–2 days ₹574 · **3–6 days ₹1,190 ·
+7–13 days ₹1,092** · 14–20 days ₹362 · 21+ days ₹230. Every quarter positive except 2024-Q4 (−₹1.4k).
+
+**Reading it:** on the same yardstick the monthly era is *not worse* than the weekly era for BANKNIFTY, and recent
+NIFTY is better than 2020–24. After subtracting the ~₹265/day opening-print bias, a realistic BANKNIFTY monthly straddle
+is roughly **₹300–400/day in the 3–13-days-to-expiry window and about breakeven 14+ days out** — an estimate, not a
+measurement (no intraday data after Oct 2024). It is worth paper trading, restricted to the last ~2 weeks before the
+monthly expiry.
+
 ## Reproducing
 
 ```
@@ -315,6 +392,9 @@ python -m research.run_timed_straddle_backtest --symbol NIFTY --slippage 1.0
 python -m research.run_timed_straddle_backtest --sweep
 python -m research.run_timed_straddle_backtest --strategy premium_strangle --target-premium 40 --adjustments 2
 python -m research.run_timed_straddle_backtest --strategy premium_strangle --sweep
+python -m research.real_options.store --zip "D:/Download/archive (1).zip" --underlying banknifty   # one-off
+python -m research.run_timed_straddle_backtest --source real --symbol BANKNIFTY --start 2020-01-01 --end 2024-10-31
+python -m research.download_nse_fo_bhavcopy --start 2024-11-01        # daily NSE option prices, resumable
 python -m research.run_timed_straddle_backtest --strategy premium_strangle --start 2019-02-11 --expiry-day-only     --entry 10:00 --exit 15:00 --target-premium 50 --sl-pct 30 --leg-target-pct 99 --adjustments 0 --no-trail     --hedge-premium 0.8 --target 3250 --max-loss 3250
 python -m pytest -p no:asyncio tests/test_timed_straddle_research.py
 ```

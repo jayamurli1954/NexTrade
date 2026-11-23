@@ -181,6 +181,12 @@ class OptionsPaperService:
             self._error = str(exc)
         finally:
             self._lock.release()
+            try:  # end-of-run Excel report, like the equity daily log
+                from trading_app.options_paper.report import write_excel
+
+                write_excel(self.log_dir)
+            except Exception:
+                log.exception("Options paper Excel report failed")
 
     # ------------------------------------------------------------------ status
     def status(self) -> Dict[str, Any]:
@@ -207,7 +213,7 @@ class OptionsPaperService:
             "auto_start": bool(cfg.get("auto_start", False)),
             "auto_start_window": f"{AUTO_START_AT:%H:%M}-{AUTO_START_UNTIL:%H:%M} weekdays",
             "config": [{k: s.get(k) for k in ("name", "type", "enabled", "symbol", "entry", "exit", "sl_pct",
-                                               "expiry_day_only", "target_premium", "hedge_premium")}
+                                               "expiry_day_only", "max_dte", "target_premium", "hedge_premium")}
                        for s in cfg.get("strategies", [])],
             "strategies": live,
             "today_events": self.today_events(limit=60),
