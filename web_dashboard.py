@@ -3392,7 +3392,7 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
         <button class="tab-btn" onclick="showTab(event, 'tab-opportunities')">🔎 Opportunities ("Why Trade?")</button>
         <button class="tab-btn" onclick="showTab(event, 'tab-ticket')">🎟️ Trade Ticket & Plan</button>
         <a class="tab-btn" href="/terminal" style="text-decoration:none;">Paper Terminal</a>
-        <a class="tab-btn" href="/options" style="text-decoration:none;">📊 Options Paper</a>
+        <button class="tab-btn" onclick="showTab(event, 'tab-options')" id="btn-tab-options">📊 Options Paper</button>
         <button class="tab-btn" onclick="showTab(event, 'tab-paper')" id="btn-tab-paper">🧪 Paper Simulator (4 Modes)</button>
         <button class="tab-btn" onclick="showTab(event, 'tab-positions')" id="btn-tab-positions">📈 Live Positions & Protection</button>
         <button class="tab-btn" onclick="showTab(event, 'tab-holdings')">💼 Holdings & Portfolio</button>
@@ -3904,6 +3904,12 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
     </div>
 
     <!-- TAB 8: JOURNAL (7J) -->
+    <!-- OPT-PAPER: options paper lane page embedded as a tab (loaded on first open) -->
+    <div id="tab-options" class="tab-content">
+        <iframe id="options-frame" title="Options Paper" data-src="/options?embed=1"
+            style="width:100%; height:calc(100vh - 230px); min-height:720px; border:0; border-radius:10px; background:transparent;"></iframe>
+    </div>
+
     <div id="tab-journal" class="tab-content">
         <div class="grid">
             <div class="card">
@@ -4023,6 +4029,10 @@ HTML_UNIFIED_APP = """<!DOCTYPE html>
             if (tabId === 'tab-journal') fetchJournal();
             if (tabId === 'tab-paper' || tabId === 'tab-positions') fetchPositions();
             if (tabId === 'tab-premarket') fetchPremarket();
+            if (tabId === 'tab-options') {
+                const fr = document.getElementById('options-frame');
+                if (fr && !fr.getAttribute('src')) fr.setAttribute('src', fr.dataset.src);
+            }
         }
 
         async function fetchTodayMandate() {

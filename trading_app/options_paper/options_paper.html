@@ -103,6 +103,11 @@ th{color:var(--muted);font-weight:600}
 </div>
 
 <script>
+// Embedded as a dashboard tab (?embed=1 or inside an iframe): the dashboard already shows navigation.
+if (new URLSearchParams(location.search).has('embed') || window.self !== window.top) {
+  document.querySelector('.top').style.display = 'none';
+  document.body.style.background = 'transparent';
+}
 const fmt = (v, d=2) => (v === null || v === undefined || v === '') ? '—' : (typeof v === 'number' ? v.toFixed(d) : v);
 const cls = v => (v === null || v === undefined || v === '') ? '' : (parseFloat(v) >= 0 ? 'up' : 'down');
 
