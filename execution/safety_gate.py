@@ -1,13 +1,13 @@
 # execution/safety_gate.py
 """
 Live Gateway Safety Controls (LiveSafetyGate) for NexTrade (Sub-Phase 4D).
-Implements a fail-closed, un-bypassable safety gate evaluating 12 fail-closed barriers (S1–S12)
+Implements a fail-closed, un-bypassable safety gate evaluating fail-closed barriers (S1–S14)
 before order dispatch to concrete BrokerAdapter implementations.
 """
 from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 
-from contracts.broker_domain import BrokerOrderRequest, BrokerOrderSide
+from contracts.broker_domain import BrokerOrderRequest, BrokerOrderSide, BrokerOrderType
 from contracts.safety_contracts import (
     SafetyBarrierStatus,
     SafetyBarrierResult,
@@ -19,6 +19,9 @@ from contracts.safety_contracts import (
 )
 from utils.rate_limiter import SlidingWindowRateLimiter
 
+# Indian exchange / segment codes on which algo MARKET orders are blocked.
+INDIAN_EXCHANGES = frozenset({"NSE", "NFO", "BSE", "BFO", "CDS", "BCD", "MCX", "NCO"})
+
 
 class LiveSafetyGate:
     """
@@ -29,12 +32,17 @@ class LiveSafetyGate:
         self,
         limits: Optional[LiveSafetyLimits] = None,
         rate_limiter: Optional[SlidingWindowRateLimiter] = None,
-        metrics_registry: Optional[Any] = None
+        metrics_registry: Optional[Any] = None,
+        per_second_rate_limiter: Optional[SlidingWindowRateLimiter] = None,
     ):
         self.limits = limits or LiveSafetyLimits()
         self.rate_limiter = rate_limiter or SlidingWindowRateLimiter(
             max_requests=self.limits.max_orders_per_minute,
             window_seconds=60.0
+        )
+        self.per_second_rate_limiter = per_second_rate_limiter or SlidingWindowRateLimiter(
+            max_requests=self.limits.max_orders_per_second,
+            window_seconds=1.0
         )
         self.metrics_registry = metrics_registry
 
@@ -44,7 +52,7 @@ class LiveSafetyGate:
         context: SafetyEvaluationContext
     ) -> SafetyEvaluationResult:
         """
-        Stage 1 Pre-Authorization Evaluation evaluating all 12 fail-closed safety barriers.
+        Stage 1 Pre-Authorization Evaluation evaluating all fail-closed safety barriers (S0–S14).
         If ANY barrier evaluates to DENY or UNKNOWN, returns is_authorized = False.
         """
         now = datetime.now(timezone.utc)
@@ -268,6 +276,54 @@ class LiveSafetyGate:
                         barrier_name="Atomic Rate Limiter Barrier",
                         status=SafetyBarrierStatus.PASS,
                         reason="Rate limiter token acquired",
+                        evaluated_at=now
+                    )
+                )
+
+            # S13: Per-second order rate cap (NSE 10 OPS threshold for unregistered client algos)
+            if not self.per_second_rate_limiter.try_acquire():
+                barrier_results.append(
+                    SafetyBarrierResult(
+                        barrier_id="S13_ORDERS_PER_SECOND",
+                        barrier_name="Orders-Per-Second Cap Barrier",
+                        status=SafetyBarrierStatus.DENY,
+                        reason=f"More than {self.limits.max_orders_per_second} orders in the last second",
+                        evaluated_at=now
+                    )
+                )
+                denial_reasons.append("ORDERS_PER_SECOND_EXCEEDED")
+            else:
+                barrier_results.append(
+                    SafetyBarrierResult(
+                        barrier_id="S13_ORDERS_PER_SECOND",
+                        barrier_name="Orders-Per-Second Cap Barrier",
+                        status=SafetyBarrierStatus.PASS,
+                        reason="Within per-second order cap",
+                        evaluated_at=now
+                    )
+                )
+
+            # S14: No algo market orders on Indian exchanges
+            # (NSE/INVG/69255 Annexure I para 11.1, check 5: market price protection)
+            exchange = str((request.metadata or {}).get("exchange") or "").upper()
+            if exchange in INDIAN_EXCHANGES and request.order_type == BrokerOrderType.MARKET:
+                barrier_results.append(
+                    SafetyBarrierResult(
+                        barrier_id="S14_NO_MARKET_ORDERS_INDIA",
+                        barrier_name="Indian Exchange Market-Order Ban Barrier",
+                        status=SafetyBarrierStatus.DENY,
+                        reason=f"Algo MARKET orders are not permitted on {exchange}; send a LIMIT order",
+                        evaluated_at=now
+                    )
+                )
+                denial_reasons.append("MARKET_ORDER_NOT_ALLOWED_ON_INDIAN_EXCHANGE")
+            else:
+                barrier_results.append(
+                    SafetyBarrierResult(
+                        barrier_id="S14_NO_MARKET_ORDERS_INDIA",
+                        barrier_name="Indian Exchange Market-Order Ban Barrier",
+                        status=SafetyBarrierStatus.PASS,
+                        reason="Order type permitted for venue",
                         evaluated_at=now
                     )
                 )
