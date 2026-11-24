@@ -40,7 +40,10 @@ class IBKRTranslator:
             BrokerOrderType.STOP_LIMIT: "STP LMT",
             BrokerOrderType.TRAILING_STOP: "TRAIL",
         }
-        ibkr_order_type = order_type_map.get(request.order_type, "MKT")
+        ibkr_order_type = order_type_map.get(request.order_type)
+        if ibkr_order_type is None:
+            # Fail closed: never fall back to a market order for an unknown type.
+            raise ValueError(f"Unsupported order_type '{request.order_type}' for IBKR translation")
 
         order = {
             "action": order_action,

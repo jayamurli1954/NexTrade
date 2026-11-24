@@ -36,18 +36,22 @@ def to_broker_order_request(request: ExecutionRequest) -> BrokerOrderRequest:
     side_str = request.order_side.value if hasattr(request.order_side, "value") else str(request.order_side)
     side = BrokerOrderSide.BUY if side_str.upper() == "BUY" else BrokerOrderSide.SELL
 
-    # Map order_type to BrokerOrderType
+    # Map order_type to BrokerOrderType. An unrecognised type is rejected rather than
+    # silently becoming a MARKET order (NSE retail algo rules forbid algo market orders,
+    # NSE/INVG/69255 Annexure I para 11.1 check 5).
     order_type_str = (request.order_type or "MARKET").upper()
-    if order_type_str == "LIMIT":
-        order_type = BrokerOrderType.LIMIT
-    elif order_type_str == "STOP":
-        order_type = BrokerOrderType.STOP
-    elif order_type_str == "STOP_LIMIT":
-        order_type = BrokerOrderType.STOP_LIMIT
-    elif order_type_str == "TRAILING_STOP":
-        order_type = BrokerOrderType.TRAILING_STOP
-    else:
-        order_type = BrokerOrderType.MARKET
+    order_type_aliases = {
+        "MARKET": BrokerOrderType.MARKET,
+        "MKT": BrokerOrderType.MARKET,
+        "LIMIT": BrokerOrderType.LIMIT,
+        "LMT": BrokerOrderType.LIMIT,
+        "STOP": BrokerOrderType.STOP,
+        "STOP_LIMIT": BrokerOrderType.STOP_LIMIT,
+        "TRAILING_STOP": BrokerOrderType.TRAILING_STOP,
+    }
+    order_type = order_type_aliases.get(order_type_str)
+    if order_type is None:
+        raise ValueError(f"Unsupported order_type '{request.order_type}' for broker translation")
 
     return BrokerOrderRequest(
         nextrade_execution_id=request.execution_request_id,

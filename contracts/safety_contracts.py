@@ -64,6 +64,9 @@ class LiveSafetyLimits:
     max_daily_loss: float = 5000.0
     max_open_orders: int = 20
     max_orders_per_minute: int = 60
+    # NSE retail algo framework: client-developed algos above 10 orders/second must be
+    # registered with the exchange (NSE/INVG/69255 Annexure I para 8.2.3).
+    max_orders_per_second: int = 10
 
 
 @dataclass(frozen=True)
